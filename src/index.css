@@ -1,0 +1,109 @@
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/fraunces';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  background: oklch(0.115 0 0);
+}
+
+body {
+  @apply bg-bg font-sans text-[15px] leading-relaxed text-ink antialiased;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+/* Focus is part of the design, not an afterthought. */
+:focus-visible {
+  outline: 2px solid oklch(0.72 0.17 155);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: oklch(0.46 0.11 155);
+  color: oklch(0.97 0 0);
+}
+
+/* Thin, unobtrusive scrollbars that match the wall. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.3 0 0) transparent;
+}
+
+@layer components {
+  /* Skeleton shimmer — state, not decoration. */
+  .skeleton {
+    @apply relative overflow-hidden rounded-card bg-surface;
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 30%, oklch(0.22 0 0 / 0.6) 50%, transparent 70%);
+    animation: shimmer 1.6s infinite;
+  }
+  @keyframes shimmer {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  /* View crossfade on route change. */
+  .view-enter {
+    animation: view-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes view-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .toast-in {
+    animation: toast-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+  .view-enter,
+  .toast-in {
+    animation-duration: 0.01ms;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
