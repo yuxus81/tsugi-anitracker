@@ -196,7 +196,7 @@ export interface FranchiseNode {
   relationFromPrevious: 'SEQUEL' | 'ROOT';
 }
 
-interface RelationSlice {
+export interface RelationSlice {
   id: number;
   relations: MediaDetail['relations'];
   card: MediaCard;
@@ -209,7 +209,7 @@ const RELATION_QUERY = (alias: string) => `
   }
 `;
 
-async function fetchRelationSlices(
+export async function fetchRelationSlices(
   ids: number[],
   signal?: AbortSignal,
 ): Promise<Map<number, RelationSlice>> {
@@ -247,6 +247,17 @@ function pick(
     if (edge) return edge.node.id;
   }
   return null;
+}
+
+/** Der offizielle Sequel-Knoten einer Staffel (nur TV/Film/ONA zählen als Hauptlinie). */
+export function pickSequel(slice: RelationSlice): MediaCard | null {
+  const edge = slice.relations.edges.find(
+    (e) =>
+      e.relationType === 'SEQUEL' &&
+      e.node.type === 'ANIME' &&
+      (e.node.format === 'TV' || e.node.format === 'MOVIE' || e.node.format === 'ONA'),
+  );
+  return edge ? edge.node : null;
 }
 
 const MAX_CHAIN = 20;

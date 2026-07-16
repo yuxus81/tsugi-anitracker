@@ -1,18 +1,34 @@
 import { Link } from 'react-router-dom';
 import type { MediaCard } from '@/api/types';
-import { bestTitle, cover, FORMAT_LABEL, seasonLabel } from '@/api/types';
-import { useLibrary } from '@/store/library';
+import { bestTitle, cover, formatLabel, seasonLabel } from '@/api/types';
+import { findEntryFor, isReleased, useLibrary } from '@/store/library';
+import { useSettings } from '@/i18n';
 
 /**
- * The workhorse card: cover, title, one meta line. Tracked entries carry a
- * jade progress hairline at the bottom edge of the cover — library state is
+ * The workhorse card: cover, title, one meta line. Tracked franchises carry an
+ * accent progress hairline at the bottom edge of the cover — library state is
  * visible everywhere without opening anything.
  */
 export function PosterCard({ media, sizes }: { media: MediaCard; sizes?: string }) {
-  const entry = useLibrary((s) => s.entries[media.id]);
+  const entries = useLibrary((s) => s.entries);
+  const lang = useSettings((s) => s.lang);
+  const entry = findEntryFor(entries, media.id);
   const src = cover(media);
-  const progress =
-    entry && entry.episodes ? Math.min(1, entry.progress / entry.episodes) : entry ? 0 : null;
+
+  // Fortschritt dieser Staffel innerhalb des Franchise-Eintrags.
+  let progress: number | null = null;
+  if (entry) {
+    const idx = entry.seasons.findIndex((s) => s.id === media.id);
+    const season = entry.seasons[idx];
+    if (idx < entry.seasonIndex) progress = 1;
+    else if (idx === entry.seasonIndex && season?.episodes) {
+      progress = Math.min(1, entry.progress / season.episodes);
+    } else if (idx === entry.seasonIndex && season && isReleased(season)) {
+      progress = 0;
+    } else {
+      progress = 0;
+    }
+  }
 
   return (
     <Link
@@ -20,7 +36,7 @@ export function PosterCard({ media, sizes }: { media: MediaCard; sizes?: string 
       className="group block w-full"
       aria-label={bestTitle(media)}
     >
-      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-card bg-surface">
+      <div className="hover-lift relative aspect-[2/3] w-full overflow-hidden rounded-card bg-surface">
         {src && (
           <img
             src={src}
@@ -37,11 +53,11 @@ export function PosterCard({ media, sizes }: { media: MediaCard; sizes?: string 
         )}
         {entry && (
           <>
-            <span className="absolute left-1.5 top-1.5 h-2 w-2 rounded-full bg-jade shadow-[0_0_0_3px_oklch(0.115_0_0/0.8)]" />
+            <span className="absolute left-1.5 top-1.5 h-2 w-2 rounded-full bg-accent shadow-[0_0_0_3px_rgba(13,15,24,0.8)]" />
             {progress !== null && progress > 0 && (
               <span className="absolute inset-x-0 bottom-0 h-1 bg-bg/70">
                 <span
-                  className="block h-full bg-jade transition-[width] duration-200 ease-out"
+                  className="block h-full bg-accent transition-[width] duration-200 ease-out"
                   style={{ width: `${progress * 100}%` }}
                 />
               </span>
@@ -53,7 +69,7 @@ export function PosterCard({ media, sizes }: { media: MediaCard; sizes?: string 
         {bestTitle(media)}
       </p>
       <p className="mt-0.5 text-xs text-ink-dim">
-        {[media.format ? FORMAT_LABEL[media.format] : null, seasonLabel(media)]
+        {[media.format ? formatLabel(media.format, lang) : null, seasonLabel(media, lang)]
           .filter(Boolean)
           .join(' · ')}
       </p>

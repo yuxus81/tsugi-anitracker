@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useT } from '@/i18n';
 import { IconArrowRight } from './icons';
 
 /** Editorial page header: serif display title + quiet subline. */
@@ -25,18 +26,17 @@ export function SectionHead({ title, count }: { title: string; count?: number })
 }
 
 export function ErrorBox({ onRetry, text }: { onRetry?: () => void; text?: string }) {
+  const t = useT();
   return (
     <div className="flex flex-col items-start gap-3 rounded-card border border-line bg-surface p-5">
-      <p className="text-sm text-ink-dim">
-        {text ?? 'Das hat gerade nicht geklappt. AniList ist vermutlich kurz nicht erreichbar.'}
-      </p>
+      <p className="text-sm text-ink-dim">{text ?? t('detailError')}</p>
       {onRetry && (
         <button
           type="button"
           onClick={onRetry}
-          className="rounded-ctl bg-raised px-3.5 py-2 text-sm font-medium text-ink transition-colors duration-150 hover:bg-jade-deep"
+          className="rounded-ctl bg-raised px-3.5 py-2 text-sm font-medium text-ink transition-colors duration-150 hover:bg-accent-deep"
         >
-          Nochmal versuchen
+          {t('retry')}
         </button>
       )}
     </div>
@@ -72,7 +72,7 @@ export function LinkishButton({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 text-sm font-medium text-jade transition-opacity duration-150 hover:opacity-80"
+      className="inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-opacity duration-150 hover:opacity-80"
     >
       {children}
       <IconArrowRight className="h-4 w-4" />

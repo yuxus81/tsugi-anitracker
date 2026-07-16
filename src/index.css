@@ -10,7 +10,7 @@
 }
 
 html {
-  background: oklch(0.115 0 0);
+  background: #0d0f18;
 }
 
 body {
@@ -25,20 +25,26 @@ h3 {
 
 /* Focus is part of the design, not an afterthought. */
 :focus-visible {
-  outline: 2px solid oklch(0.72 0.17 155);
+  outline: 2px solid #00f5d4;
   outline-offset: 2px;
   border-radius: 4px;
 }
 
+/* Eingebettete Felder (z. B. Suchleiste) markieren ihren Container per
+   focus-within — der eigene Ring würde vom overflow-hidden abgeschnitten. */
+.no-focus-ring:focus-visible {
+  outline: none;
+}
+
 ::selection {
-  background: oklch(0.46 0.11 155);
-  color: oklch(0.97 0 0);
+  background: #0b6e63;
+  color: #f1f3f9;
 }
 
 /* Thin, unobtrusive scrollbars that match the wall. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: oklch(0.3 0 0) transparent;
+  scrollbar-color: #262c47 transparent;
 }
 
 @layer components {
@@ -50,7 +56,7 @@ h3 {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(100deg, transparent 30%, oklch(0.22 0 0 / 0.6) 50%, transparent 70%);
+    background: linear-gradient(100deg, transparent 30%, rgba(126, 141, 166, 0.14) 50%, transparent 70%);
     animation: shimmer 1.6s infinite;
   }
   @keyframes shimmer {
@@ -90,6 +96,82 @@ h3 {
       transform: none;
     }
   }
+
+  /* Aufklapp-Panel (Hinzufügen-Flow, Franchise-Auswahl). */
+  .unfold {
+    animation: unfold 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+    transform-origin: top center;
+  }
+  @keyframes unfold {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scaleY(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Gestaffeltes Erscheinen von Listen (Zeitstrahl, Panels). */
+  .stagger-in {
+    animation: stagger-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--i, 0) * 45ms);
+  }
+  @keyframes stagger-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Kurzer Erfolgs-Pop, z. B. nach dem Hinzufügen. */
+  .pop-in {
+    animation: pop-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes pop-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+    55% {
+      opacity: 1;
+      transform: scale(1.04);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Panel-Wechsel auf Home. */
+  .panel-in {
+    animation: panel-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translateX(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Sanftes Heben auf Zeiger-Geräten. */
+  @media (hover: hover) and (pointer: fine) {
+    .hover-lift {
+      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-3px) scale(1.015);
+    }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -97,8 +179,13 @@ h3 {
     animation: none;
   }
   .view-enter,
-  .toast-in {
+  .toast-in,
+  .unfold,
+  .stagger-in,
+  .pop-in,
+  .panel-in {
     animation-duration: 0.01ms;
+    animation-delay: 0ms;
   }
   *,
   *::before,

@@ -1,9 +1,9 @@
 {
-  "name": "tsugi",
+  "name": "tsugi-anitracker",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
-  "description": "Tsugi — dein Anime-Archiv. AniTracker Version 2, à la Claude.",
+  "description": "Tsugi-Anitracker — Anime-Archiv mit Franchise-Tracking. AniTracker Version 2.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

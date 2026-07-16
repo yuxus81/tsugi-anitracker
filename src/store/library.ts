@@ -1,79 +1,194 @@
 import { create } from 'zustand';
 import { dbGetAll, dbPut, dbDelete, dbClear } from '@/lib/db';
-import type { MediaCard, MediaFormat } from '@/api/types';
+import type { MediaCard, MediaFormat, MediaStatus } from '@/api/types';
 import { bestTitle, cover } from '@/api/types';
+import { translate, useSettings, type DictKey } from '@/i18n';
+import { useToasts } from '@/store/toast';
 
-/** Tracking status vocabulary — the heart of the app. */
-export type WatchStatus = 'watching' | 'planned' | 'completed' | 'paused' | 'dropped';
+/**
+ * Franchise-basierte Bibliothek (Modell aus V1 übernommen): EIN Eintrag pro
+ * Franchise, nicht pro Staffel. Der Eintrag kennt seine Hauptlinien-Staffeln
+ * und einen Zeiger (seasonIndex + progress), bis wohin geschaut wurde.
+ */
 
-export const STATUS_LABEL: Record<WatchStatus, string> = {
-  watching: 'Schaue ich',
-  planned: 'Geplant',
-  completed: 'Abgeschlossen',
-  paused: 'Pausiert',
-  dropped: 'Abgebrochen',
+export type WatchStatus =
+  | 'watching' // Weiter schauen
+  | 'planned' // Watchlist
+  | 'nextup' // Noch zu schauen (neue Staffel verfügbar / bereit)
+  | 'continuation' // Fortsetzung folgt (angekündigt / erwartet)
+  | 'completed' // Abgeschlossen
+  | 'paused'; // Pausiert
+
+export const STATUS_KEY: Record<WatchStatus, DictKey> = {
+  watching: 'stWatching',
+  planned: 'stPlanned',
+  nextup: 'stNextup',
+  continuation: 'stContinuation',
+  completed: 'stCompleted',
+  paused: 'stPaused',
 };
 
 export const STATUS_ORDER: WatchStatus[] = [
   'watching',
+  'nextup',
   'planned',
-  'completed',
+  'continuation',
   'paused',
-  'dropped',
+  'completed',
 ];
 
-/** One tracked anime. A denormalized snapshot of the AniList card lives inside,
- *  so the library renders instantly and fully offline. */
-export interface LibraryEntry {
-  mediaId: number;
-  status: WatchStatus;
-  progress: number; // episodes seen
-  rating: number | null; // personal, 1..10
-  addedAt: number;
-  updatedAt: number;
-  // snapshot
-  title: string;
-  coverUrl: string | null;
-  bannerUrl?: string | null;
-  format: MediaFormat | null;
-  episodes: number | null; // null = unknown/ongoing
-  duration: number | null; // minutes per episode
-  genres: string[];
-  seasonYear: number | null;
-  averageScore: number | null;
-  releasing: boolean;
-  notes: string;
+/** Bibliothek zeigt genau diese vier Kategorien, in dieser Reihenfolge. */
+export const LIBRARY_TABS: WatchStatus[] = ['completed', 'paused', 'continuation', 'nextup'];
+
+/** Beim Hinzufügen wählbare Status (Rest wird abgeleitet). */
+export const ADD_STATUSES: WatchStatus[] = ['watching', 'planned', 'nextup', 'paused', 'completed'];
+
+function statusLabelNow(s: WatchStatus): string {
+  return translate(useSettings.getState().lang, STATUS_KEY[s]);
 }
 
-export function snapshotFrom(card: MediaCard): Omit<
-  LibraryEntry,
-  'status' | 'progress' | 'rating' | 'addedAt' | 'updatedAt' | 'notes'
-> {
+/** Denormalisierter Staffel-Schnappschuss — die Bibliothek rendert offline. */
+export interface SeasonSnap {
+  id: number;
+  title: string;
+  coverUrl: string | null;
+  format: MediaFormat | null;
+  episodes: number | null;
+  seasonYear: number | null;
+  airStatus: MediaStatus | null;
+  averageScore: number | null;
+  duration: number | null;
+}
+
+export function seasonSnapFrom(card: MediaCard): SeasonSnap {
   return {
-    mediaId: card.id,
+    id: card.id,
     title: bestTitle(card),
     coverUrl: cover(card),
     format: card.format,
     episodes: card.episodes,
-    duration: card.duration,
-    genres: card.genres,
     seasonYear: card.seasonYear,
+    airStatus: card.status,
     averageScore: card.averageScore,
-    releasing: card.status === 'RELEASING',
+    duration: card.duration,
   };
+}
+
+export function isReleased(s: SeasonSnap): boolean {
+  return s.airStatus === 'FINISHED' || s.airStatus === 'RELEASING';
+}
+
+export interface LibraryEntry {
+  rootId: number; // IndexedDB-Key: erste Staffel der Hauptlinie
+  status: WatchStatus;
+  seasons: SeasonSnap[]; // Hauptlinie in chronologischer Reihenfolge
+  seasonIndex: number; // aktuelle / nächste Staffel (0-basiert)
+  progress: number; // gesehene Episoden in der aktuellen Staffel
+  rating: number | null; // persönlich, 1..10 (fürs ganze Franchise)
+  notes: string;
+  genres: string[];
+  addedAt: number;
+  updatedAt: number;
+  lastScanAt: number;
+  releaseNote: string | null; // z. B. "2027" bei angekündigter Fortsetzung
+}
+
+// ---- Abgeleitete Helfer ---------------------------------------------------------
+
+export function entryTitle(e: LibraryEntry): string {
+  return e.seasons[0]?.title ?? '—';
+}
+
+export function currentSeason(e: LibraryEntry): SeasonSnap | undefined {
+  return e.seasons[e.seasonIndex];
+}
+
+export function entryCover(e: LibraryEntry): string | null {
+  return currentSeason(e)?.coverUrl ?? e.seasons[0]?.coverUrl ?? null;
+}
+
+/** Insgesamt gesehene Episoden über alle Staffeln. */
+export function watchedEpisodes(e: LibraryEntry): number {
+  let sum = e.progress;
+  for (let i = 0; i < e.seasonIndex; i++) sum += e.seasons[i]?.episodes ?? 0;
+  return sum;
+}
+
+/** Bekannte Gesamtfolgen der veröffentlichten Hauptlinie. */
+export function totalEpisodes(e: LibraryEntry): number {
+  return e.seasons.filter(isReleased).reduce((s, x) => s + (x.episodes ?? 0), 0);
+}
+
+export function meanDuration(e: LibraryEntry): number {
+  const known = e.seasons.map((s) => s.duration).filter((d): d is number => d != null);
+  return known.length ? known.reduce((a, b) => a + b, 0) / known.length : 24;
+}
+
+/** Findet den Eintrag, zu dem eine AniList-Media-Id gehört (beliebige Staffel). */
+export function findEntryFor(
+  entries: Record<number, LibraryEntry>,
+  mediaId: number,
+): LibraryEntry | undefined {
+  return Object.values(entries).find((e) => e.seasons.some((s) => s.id === mediaId));
+}
+
+/**
+ * Leitet den effektiven Status ab: Zeiger hinter der letzten Staffel oder auf
+ * einer unveröffentlichten → completed/continuation, egal was gewählt wurde.
+ */
+function deriveStatus(
+  chosen: WatchStatus,
+  seasons: SeasonSnap[],
+  seasonIndex: number,
+  progress: number,
+): { status: WatchStatus; seasonIndex: number; progress: number; releaseNote: string | null } {
+  const last = seasons.length - 1;
+  const idx = Math.max(0, Math.min(seasonIndex, last));
+  const cur = seasons[idx];
+
+  // Alles Bekannte geschaut?
+  const allWatched =
+    idx === last && cur && isReleased(cur) && cur.episodes !== null && progress >= cur.episodes;
+
+  if (allWatched) {
+    return { status: 'completed', seasonIndex: idx, progress: cur.episodes ?? progress, releaseNote: null };
+  }
+
+  // Zeiger steht auf einer angekündigten, noch nicht erschienenen Staffel.
+  if (cur && !isReleased(cur)) {
+    return {
+      status: 'continuation',
+      seasonIndex: idx,
+      progress: 0,
+      releaseNote: cur.seasonYear ? String(cur.seasonYear) : null,
+    };
+  }
+
+  return { status: chosen, seasonIndex: idx, progress, releaseNote: null };
+}
+
+// ---- Store ---------------------------------------------------------------------
+
+interface AddFranchiseArgs {
+  seasons: SeasonSnap[];
+  genres: string[];
+  status: WatchStatus;
+  /** Anzahl komplett geschauter Staffeln (0 = noch nicht angefangen). */
+  watchedThrough: number;
 }
 
 interface LibraryState {
   entries: Record<number, LibraryEntry>;
   hydrated: boolean;
   hydrate: () => Promise<void>;
-  add: (card: MediaCard, status: WatchStatus) => LibraryEntry;
-  setStatus: (mediaId: number, status: WatchStatus) => void;
-  setProgress: (mediaId: number, progress: number) => void;
-  setRating: (mediaId: number, rating: number | null) => void;
-  setNotes: (mediaId: number, notes: string) => void;
-  refreshSnapshot: (card: MediaCard) => void;
-  remove: (mediaId: number) => void;
+  addFranchise: (args: AddFranchiseArgs) => LibraryEntry | null;
+  setStatus: (rootId: number, status: WatchStatus) => void;
+  setProgress: (rootId: number, progress: number) => void;
+  setWatchedThrough: (rootId: number, watchedThrough: number) => void;
+  setRating: (rootId: number, rating: number | null) => void;
+  setNotes: (rootId: number, notes: string) => void;
+  applyScan: (rootId: number, patch: Partial<LibraryEntry>) => void;
+  remove: (rootId: number) => void;
   importAll: (entries: LibraryEntry[]) => Promise<void>;
 }
 
@@ -83,113 +198,181 @@ export const useLibrary = create<LibraryState>((set, get) => ({
 
   hydrate: async () => {
     const rows = await dbGetAll<LibraryEntry>();
+    const valid = rows.filter((r) => typeof r.rootId === 'number' && Array.isArray(r.seasons));
     set({
-      entries: Object.fromEntries(rows.map((r) => [r.mediaId, r])),
+      entries: Object.fromEntries(valid.map((r) => [r.rootId, r])),
       hydrated: true,
     });
   },
 
-  add: (card, status) => {
+  addFranchise: ({ seasons, genres, status, watchedThrough }) => {
+    if (seasons.length === 0) return null;
+    const rootId = seasons[0].id;
     const now = Date.now();
+
+    const releasedCount = seasons.filter(isReleased).length;
+    // "Abgeschlossen" gewählt → alles Veröffentlichte gilt als geschaut.
+    const through = status === 'completed' ? releasedCount : Math.min(watchedThrough, releasedCount);
+
+    let seasonIndex: number;
+    let progress: number;
+    if (through >= seasons.length) {
+      // Alle bekannten Staffeln komplett.
+      seasonIndex = seasons.length - 1;
+      progress = seasons[seasonIndex].episodes ?? 0;
+    } else {
+      seasonIndex = through;
+      progress = 0;
+    }
+
+    const derived = deriveStatus(status, seasons, seasonIndex, progress);
     const entry: LibraryEntry = {
-      ...snapshotFrom(card),
-      status,
-      // "Abgeschlossen" direkt beim Hinzufügen → Fortschritt = volle Länge.
-      progress: status === 'completed' ? (card.episodes ?? 0) : 0,
+      rootId,
+      status: derived.status,
+      seasons,
+      seasonIndex: derived.seasonIndex,
+      progress: derived.progress,
       rating: null,
+      notes: '',
+      genres,
       addedAt: now,
       updatedAt: now,
-      notes: '',
+      lastScanAt: 0,
+      releaseNote: derived.releaseNote,
     };
-    set((s) => ({ entries: { ...s.entries, [card.id]: entry } }));
+    set((s) => ({ entries: { ...s.entries, [rootId]: entry } }));
     void dbPut(entry);
     return entry;
   },
 
-  setStatus: (mediaId, status) => {
-    const cur = get().entries[mediaId];
+  setStatus: (rootId, status) => {
+    const cur = get().entries[rootId];
     if (!cur) return;
-    const next: LibraryEntry = {
-      ...cur,
-      status,
-      // Completing a finished show fills the progress bar.
-      progress:
-        status === 'completed' && cur.episodes ? cur.episodes : cur.progress,
-      updatedAt: Date.now(),
-    };
-    set((s) => ({ entries: { ...s.entries, [mediaId]: next } }));
+    let next: LibraryEntry = { ...cur, status, updatedAt: Date.now() };
+    if (status === 'completed') {
+      // Manuell abgeschlossen → Zeiger ans Ende des Veröffentlichten.
+      const releasedIdx = cur.seasons.reduce((acc, s, i) => (isReleased(s) ? i : acc), 0);
+      next = {
+        ...next,
+        seasonIndex: releasedIdx,
+        progress: cur.seasons[releasedIdx]?.episodes ?? cur.progress,
+        releaseNote: null,
+      };
+    }
+    set((s) => ({ entries: { ...s.entries, [rootId]: next } }));
     void dbPut(next);
   },
 
-  setProgress: (mediaId, progress) => {
-    const cur = get().entries[mediaId];
+  setProgress: (rootId, progress) => {
+    const cur = get().entries[rootId];
     if (!cur) return;
-    const max = cur.episodes ?? Number.MAX_SAFE_INTEGER;
-    const clamped = Math.max(0, Math.min(progress, max));
-    const done = cur.episodes !== null && clamped >= cur.episodes && !cur.releasing;
-    const next: LibraryEntry = {
-      ...cur,
-      progress: clamped,
-      // Watching the last episode completes the entry automatically.
-      status: done ? 'completed' : cur.status === 'planned' && clamped > 0 ? 'watching' : cur.status,
-      updatedAt: Date.now(),
-    };
-    set((s) => ({ entries: { ...s.entries, [mediaId]: next } }));
+    const season = currentSeason(cur);
+    if (!season) return;
+
+    const max = season.episodes ?? Number.MAX_SAFE_INTEGER;
+    const clamped = Math.max(0, Math.min(Math.floor(progress), max));
+    let next: LibraryEntry = { ...cur, progress: clamped, updatedAt: Date.now() };
+
+    // Etwas angefangen → aus Watchlist/Noch-zu-schauen wird "Schaue ich".
+    if (clamped > 0 && (cur.status === 'planned' || cur.status === 'nextup')) {
+      next.status = 'watching';
+    }
+
+    // Letzte Episode einer fertigen Staffel gesehen → weiter im Franchise.
+    const seasonDone =
+      season.episodes !== null && clamped >= season.episodes && season.airStatus === 'FINISHED';
+    if (seasonDone) {
+      const push = useToasts.getState().push;
+      const lang = useSettings.getState().lang;
+      const nextSeason = cur.seasons[cur.seasonIndex + 1];
+      if (nextSeason && isReleased(nextSeason)) {
+        next = { ...next, seasonIndex: cur.seasonIndex + 1, progress: 0, status: 'watching', releaseNote: null };
+        push(translate(lang, 'seasonCompleteNext', { t: nextSeason.title }));
+      } else if (nextSeason) {
+        next = {
+          ...next,
+          seasonIndex: cur.seasonIndex + 1,
+          progress: 0,
+          status: 'continuation',
+          releaseNote: nextSeason.seasonYear ? String(nextSeason.seasonYear) : null,
+        };
+        push(`${translate(lang, 'stContinuation')} · ${nextSeason.title}`);
+      } else {
+        next = { ...next, status: 'completed', releaseNote: null };
+        push(translate(lang, 'franchiseComplete'));
+      }
+    }
+
+    set((s) => ({ entries: { ...s.entries, [rootId]: next } }));
     void dbPut(next);
   },
 
-  setRating: (mediaId, rating) => {
-    const cur = get().entries[mediaId];
+  setWatchedThrough: (rootId, watchedThrough) => {
+    const cur = get().entries[rootId];
+    if (!cur) return;
+    const releasedCount = cur.seasons.filter(isReleased).length;
+    const through = Math.max(0, Math.min(watchedThrough, releasedCount));
+    let seasonIndex: number;
+    let progress: number;
+    if (through >= cur.seasons.length) {
+      seasonIndex = cur.seasons.length - 1;
+      progress = cur.seasons[seasonIndex].episodes ?? 0;
+    } else {
+      seasonIndex = through;
+      progress = 0;
+    }
+    const derived = deriveStatus(cur.status, cur.seasons, seasonIndex, progress);
+    const next: LibraryEntry = {
+      ...cur,
+      ...derived,
+      updatedAt: Date.now(),
+    };
+    set((s) => ({ entries: { ...s.entries, [rootId]: next } }));
+    void dbPut(next);
+  },
+
+  setRating: (rootId, rating) => {
+    const cur = get().entries[rootId];
     if (!cur) return;
     const next = { ...cur, rating, updatedAt: Date.now() };
-    set((s) => ({ entries: { ...s.entries, [mediaId]: next } }));
+    set((s) => ({ entries: { ...s.entries, [rootId]: next } }));
     void dbPut(next);
   },
 
-  setNotes: (mediaId, notes) => {
-    const cur = get().entries[mediaId];
+  setNotes: (rootId, notes) => {
+    const cur = get().entries[rootId];
     if (!cur) return;
     const next = { ...cur, notes, updatedAt: Date.now() };
-    set((s) => ({ entries: { ...s.entries, [mediaId]: next } }));
+    set((s) => ({ entries: { ...s.entries, [rootId]: next } }));
     void dbPut(next);
   },
 
-  refreshSnapshot: (card) => {
-    const cur = get().entries[card.id];
+  /** Scan-Ergebnisse einspielen (neue Staffeln, aktualisierte Air-Status, Statuswechsel). */
+  applyScan: (rootId, patch) => {
+    const cur = get().entries[rootId];
     if (!cur) return;
-    const snap = snapshotFrom(card);
-    // Only persist when something actually changed (episode count announced,
-    // show finished airing, cover swapped) to avoid write churn.
-    if (
-      snap.episodes === cur.episodes &&
-      snap.releasing === cur.releasing &&
-      snap.coverUrl === cur.coverUrl &&
-      snap.averageScore === cur.averageScore
-    ) {
-      return;
-    }
-    const next = { ...cur, ...snap };
-    set((s) => ({ entries: { ...s.entries, [card.id]: next } }));
+    const next = { ...cur, ...patch, lastScanAt: Date.now() };
+    set((s) => ({ entries: { ...s.entries, [rootId]: next } }));
     void dbPut(next);
   },
 
-  remove: (mediaId) => {
+  remove: (rootId) => {
     set((s) => {
       const entries = { ...s.entries };
-      delete entries[mediaId];
+      delete entries[rootId];
       return { entries };
     });
-    void dbDelete(mediaId);
+    void dbDelete(rootId);
   },
 
   importAll: async (rows) => {
     await dbClear();
     for (const r of rows) await dbPut(r);
-    set({ entries: Object.fromEntries(rows.map((r) => [r.mediaId, r])) });
+    set({ entries: Object.fromEntries(rows.map((r) => [r.rootId, r])) });
   },
 }));
 
-// ---- Derived helpers -----------------------------------------------------------
+// ---- Gruppierung -----------------------------------------------------------------
 
 export function entriesByStatus(
   entries: Record<number, LibraryEntry>,
@@ -197,11 +380,14 @@ export function entriesByStatus(
   const out: Record<WatchStatus, LibraryEntry[]> = {
     watching: [],
     planned: [],
+    nextup: [],
+    continuation: [],
     completed: [],
     paused: [],
-    dropped: [],
   };
   for (const e of Object.values(entries)) out[e.status].push(e);
   for (const k of STATUS_ORDER) out[k].sort((a, b) => b.updatedAt - a.updatedAt);
   return out;
 }
+
+export { statusLabelNow };

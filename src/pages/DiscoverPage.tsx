@@ -1,22 +1,24 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchDiscover, fetchGenre } from '@/api/anilist';
 import { bestTitle, cover, type MediaCard } from '@/api/types';
 import { PosterRow, PosterRowSkeleton } from '@/components/PosterCard';
 import { ErrorBox, PageTitle, SectionHead } from '@/components/ui';
 import { StatusMenu } from '@/components/TrackControls';
+import { findEntryFor, useLibrary } from '@/store/library';
+import { useSettings, useT } from '@/i18n';
+import { IconPlus } from '@/components/icons';
 
 /**
  * The whole default view is ONE GraphQL request (five aliased pages). Genres
- * are one more request each. Compare V1: ~5 serial Jikan calls that regularly
- * tipped the rate limit.
+ * are one more request each.
  */
 
 const GENRES = ['Action', 'Adventure', 'Fantasy', 'Romance', 'Drama', 'Sports', 'Comedy', 'Thriller'] as const;
 type Genre = (typeof GENRES)[number];
 
-const GENRE_LABEL: Record<Genre, string> = {
+const GENRE_LABEL_DE: Record<Genre, string> = {
   Action: 'Action',
   Adventure: 'Abenteuer',
   Fantasy: 'Fantasy',
@@ -30,6 +32,11 @@ const GENRE_LABEL: Record<Genre, string> = {
 /** Editorial spotlight: the #1 trending title as a wide banner, not a card. */
 function Spotlight({ media }: { media: MediaCard }) {
   const img = cover(media);
+  const t = useT();
+  const navigate = useNavigate();
+  const entries = useLibrary((s) => s.entries);
+  const entry = findEntryFor(entries, media.id);
+
   return (
     <section className="relative mb-10 overflow-hidden rounded-card border border-line">
       <div className="absolute inset-0">
@@ -47,7 +54,7 @@ function Spotlight({ media }: { media: MediaCard }) {
           {img && <img src={img} alt="" className="aspect-[2/3] w-full object-cover" />}
         </div>
         <div className="min-w-0">
-          <p className="text-[13px] font-medium text-jade">Gerade das Gesprächsthema</p>
+          <p className="text-[13px] font-medium text-accent">{t('spotlightKicker')}</p>
           <h2 className="mt-1.5 font-display text-2xl font-semibold leading-tight text-ink sm:text-3xl">
             <Link to={`/anime/${media.id}`} className="hover:underline">
               {bestTitle(media)}
@@ -55,7 +62,18 @@ function Spotlight({ media }: { media: MediaCard }) {
           </h2>
           <p className="mt-1.5 line-clamp-1 text-sm text-ink-dim">{media.genres.slice(0, 4).join(' · ')}</p>
           <div className="mt-4">
-            <StatusMenu media={media} />
+            {entry ? (
+              <StatusMenu rootId={entry.rootId} />
+            ) : (
+              <button
+                type="button"
+                onClick={() => navigate(`/anime/${media.id}`)}
+                className="inline-flex items-center gap-2 rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter] duration-150 hover:brightness-110"
+              >
+                <IconPlus className="h-4 w-4" />
+                {t('add')}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -75,6 +93,10 @@ function Row({ title, items }: { title: string; items: MediaCard[] | undefined }
 
 export function DiscoverPage() {
   const [genre, setGenre] = useState<Genre | null>(null);
+  const t = useT();
+  const lang = useSettings((s) => s.lang);
+
+  const genreLabel = (g: Genre) => (lang === 'de' ? GENRE_LABEL_DE[g] : g);
 
   const main = useQuery({
     queryKey: ['discover'],
@@ -89,15 +111,12 @@ export function DiscoverPage() {
 
   return (
     <div>
-      <PageTitle
-        title="Entdecken"
-        sub="Was die Welt gerade schaut — und was du als Nächstes schauen könntest."
-      />
+      <PageTitle title={t('discoverTitle')} sub={t('discoverSub')} />
 
       <div
         className="-mx-4 mb-8 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6"
         role="tablist"
-        aria-label="Genre-Filter"
+        aria-label="Genre"
       >
         <button
           type="button"
@@ -106,11 +125,11 @@ export function DiscoverPage() {
           onClick={() => setGenre(null)}
           className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors duration-150 ${
             genre === null
-              ? 'border-jade bg-jade-deep/30 text-jade'
+              ? 'border-accent bg-accent/10 text-accent'
               : 'border-line bg-surface text-ink-dim hover:text-ink'
           }`}
         >
-          Alles
+          {t('filterAll')}
         </button>
         {GENRES.map((g) => (
           <button
@@ -121,11 +140,11 @@ export function DiscoverPage() {
             onClick={() => setGenre(genre === g ? null : g)}
             className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors duration-150 ${
               genre === g
-                ? 'border-jade bg-jade-deep/30 text-jade'
+                ? 'border-accent bg-accent/10 text-accent'
                 : 'border-line bg-surface text-ink-dim hover:text-ink'
             }`}
           >
-            {GENRE_LABEL[g]}
+            {genreLabel(g)}
           </button>
         ))}
       </div>
@@ -141,11 +160,11 @@ export function DiscoverPage() {
         ) : (
           <>
             {main.data!.trending.media[0] && <Spotlight media={main.data!.trending.media[0]} />}
-            <Row title="Im Trend" items={main.data!.trending.media.slice(1)} />
-            <Row title="Diese Season" items={main.data!.season.media} />
-            <Row title="Nächste Season" items={main.data!.upcoming.media} />
-            <Row title="Bestbewertet aller Zeiten" items={main.data!.top.media} />
-            <Row title="Filme" items={main.data!.movies.media} />
+            <Row title={t('rowTrending')} items={main.data!.trending.media.slice(1)} />
+            <Row title={t('rowSeason')} items={main.data!.season.media} />
+            <Row title={t('rowUpcoming')} items={main.data!.upcoming.media} />
+            <Row title={t('rowTop')} items={main.data!.top.media} />
+            <Row title={t('rowMovies')} items={main.data!.movies.media} />
           </>
         )
       ) : genreQ.isError ? (
@@ -158,9 +177,9 @@ export function DiscoverPage() {
         </>
       ) : (
         <>
-          <Row title={`Beliebt in ${GENRE_LABEL[genre]}`} items={genreQ.data!.popular.media} />
-          <Row title="Am besten bewertet" items={genreQ.data!.best.media} />
-          <Row title="Neu erschienen" items={genreQ.data!.fresh.media} />
+          <Row title={t('rowPopularIn', { g: genreLabel(genre) })} items={genreQ.data!.popular.media} />
+          <Row title={t('rowBestRated')} items={genreQ.data!.best.media} />
+          <Row title={t('rowFresh')} items={genreQ.data!.fresh.media} />
         </>
       )}
     </div>

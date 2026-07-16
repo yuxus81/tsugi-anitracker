@@ -2,11 +2,12 @@ import { useRef, useState } from 'react';
 import { useLibrary, type LibraryEntry } from '@/store/library';
 import { useToasts } from '@/store/toast';
 import { PageTitle, SectionHead } from '@/components/ui';
-import { IconDownload, IconTrash, IconUpload } from '@/components/icons';
+import { useSettings, useT, type Lang } from '@/i18n';
+import { IconCheck, IconDownload, IconTrash, IconUpload } from '@/components/icons';
 
 interface BackupFile {
   app: 'tsugi';
-  version: 1;
+  version: 2;
   exportedAt: string;
   entries: LibraryEntry[];
 }
@@ -15,6 +16,9 @@ export function SettingsPage() {
   const entries = useLibrary((s) => s.entries);
   const importAll = useLibrary((s) => s.importAll);
   const push = useToasts((s) => s.push);
+  const t = useT();
+  const lang = useSettings((s) => s.lang);
+  const setLang = useSettings((s) => s.setLang);
   const fileRef = useRef<HTMLInputElement>(null);
   const [confirmWipe, setConfirmWipe] = useState(false);
 
@@ -23,7 +27,7 @@ export function SettingsPage() {
   const doExport = () => {
     const payload: BackupFile = {
       app: 'tsugi',
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
       entries: Object.values(entries),
     };
@@ -34,7 +38,7 @@ export function SettingsPage() {
     a.download = `tsugi-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    push('Backup exportiert');
+    push(t('exportedToast'));
   };
 
   const doImport = async (file: File) => {
@@ -44,53 +48,82 @@ export function SettingsPage() {
         throw new Error('Kein Tsugi-Backup');
       }
       const valid = parsed.entries.filter(
-        (e) => typeof e.mediaId === 'number' && typeof e.title === 'string' && e.status,
+        (e) => typeof e.rootId === 'number' && Array.isArray(e.seasons) && e.status,
       );
       await importAll(valid);
-      push(`${valid.length} Einträge importiert`);
+      push(t('importedToast', { n: valid.length }));
     } catch {
-      push('Datei konnte nicht gelesen werden — ist das ein Tsugi-Backup?', 'error');
+      push(t('importError'), 'error');
     }
   };
 
   const doWipe = async () => {
     await importAll([]);
     setConfirmWipe(false);
-    push('Archiv geleert');
+    push(t('wipedToast'));
   };
+
+  const LANGS: Array<{ key: Lang; label: string }> = [
+    { key: 'de', label: t('languageGerman') },
+    { key: 'en', label: t('languageEnglish') },
+  ];
 
   return (
     <div className="max-w-2xl">
-      <PageTitle
-        title="Einstellungen"
-        sub="Tsugi ist local-first: Dein Archiv liegt ausschließlich in diesem Browser."
-      />
+      <PageTitle title={t('settingsTitle')} sub={t('settingsSub')} />
 
       <section className="mb-9">
-        <SectionHead title="Backup" />
+        <SectionHead title={t('languageTitle')} />
+        <div className="rounded-card border border-line bg-surface p-5">
+          <div className="flex flex-wrap gap-3" role="radiogroup" aria-label={t('languageTitle')}>
+            {LANGS.map(({ key, label }) => {
+              const active = key === lang;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setLang(key)}
+                  className={`inline-flex items-center gap-2 rounded-ctl border px-4 py-2.5 text-sm font-semibold transition-colors duration-150 ${
+                    active
+                      ? 'border-accent bg-accent/10 text-accent'
+                      : 'border-line bg-raised text-ink-dim hover:text-ink'
+                  }`}
+                >
+                  {active && <IconCheck className="h-4 w-4" />}
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-3 max-w-[60ch] text-xs leading-5 text-ink-faint">{t('languageNote')}</p>
+        </div>
+      </section>
+
+      <section className="mb-9">
+        <SectionHead title={t('backupTitle')} />
         <div className="rounded-card border border-line bg-surface p-5">
           <p className="max-w-[60ch] text-sm leading-6 text-ink-dim">
-            Exportiere dein Archiv ({count} {count === 1 ? 'Eintrag' : 'Einträge'}) als
-            JSON-Datei — z.&nbsp;B. um es auf ein anderes Gerät zu übertragen oder zu sichern.
-            Der Import ersetzt das aktuelle Archiv vollständig.
+            {t('backupText', { n: count, plural: count === 1 ? t('entryOne') : t('entryMany') })}
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <button
               type="button"
               onClick={doExport}
               disabled={count === 0}
-              className="inline-flex items-center gap-2 rounded-ctl bg-jade-deep px-4 py-2.5 text-sm font-semibold text-ink transition-[filter] duration-150 hover:brightness-110 disabled:opacity-40"
+              className="inline-flex items-center gap-2 rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg transition-[filter] duration-150 hover:brightness-110 disabled:opacity-40"
             >
               <IconDownload className="h-4 w-4" />
-              Exportieren
+              {t('exportBtn')}
             </button>
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-ctl border border-line bg-raised px-4 py-2.5 text-sm font-medium text-ink transition-colors duration-150 hover:border-jade"
+              className="inline-flex items-center gap-2 rounded-ctl border border-line bg-raised px-4 py-2.5 text-sm font-medium text-ink transition-colors duration-150 hover:border-accent"
             >
               <IconUpload className="h-4 w-4" />
-              Importieren
+              {t('importBtn')}
             </button>
             <input
               ref={fileRef}
@@ -108,35 +141,31 @@ export function SettingsPage() {
       </section>
 
       <section className="mb-9">
-        <SectionHead title="Gefahrenzone" />
+        <SectionHead title={t('dangerTitle')} />
         <div className="rounded-card border border-rose/25 bg-surface p-5">
           {confirmWipe ? (
             <>
-              <p className="text-sm font-medium text-ink">
-                Wirklich alle {count} Einträge unwiderruflich löschen?
-              </p>
+              <p className="text-sm font-medium text-ink">{t('wipeConfirm', { n: count })}</p>
               <div className="mt-4 flex gap-3">
                 <button
                   type="button"
                   onClick={() => void doWipe()}
                   className="rounded-ctl bg-rose px-4 py-2.5 text-sm font-semibold text-bg transition-[filter] duration-150 hover:brightness-110"
                 >
-                  Ja, alles löschen
+                  {t('wipeYes')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmWipe(false)}
                   className="rounded-ctl border border-line bg-raised px-4 py-2.5 text-sm font-medium text-ink"
                 >
-                  Abbrechen
+                  {t('cancel')}
                 </button>
               </div>
             </>
           ) : (
             <>
-              <p className="max-w-[60ch] text-sm leading-6 text-ink-dim">
-                Löscht das komplette Archiv aus diesem Browser. Vorher exportieren lohnt sich.
-              </p>
+              <p className="max-w-[60ch] text-sm leading-6 text-ink-dim">{t('dangerText')}</p>
               <button
                 type="button"
                 onClick={() => setConfirmWipe(true)}
@@ -144,7 +173,7 @@ export function SettingsPage() {
                 className="mt-4 inline-flex items-center gap-2 rounded-ctl border border-rose/40 px-4 py-2.5 text-sm font-medium text-rose transition-colors duration-150 hover:bg-rose/10 disabled:opacity-40"
               >
                 <IconTrash className="h-4 w-4" />
-                Archiv leeren
+                {t('wipeBtn')}
               </button>
             </>
           )}
@@ -152,13 +181,11 @@ export function SettingsPage() {
       </section>
 
       <section>
-        <SectionHead title="Über Tsugi" />
+        <SectionHead title={t('aboutTitleSettings')} />
         <div className="rounded-card border border-line bg-surface p-5 text-sm leading-6 text-ink-dim">
           <p>
-            <span className="font-display text-base text-ink">Tsugi</span> (つぎ, „als
-            Nächstes“) ist AniTracker Version 2 — entworfen und gebaut von Claude auf Basis
-            der Funktionen von V1. Daten: AniList. Kein Account, kein Tracking, dein Archiv
-            gehört dir.
+            <span className="font-display text-base text-ink">Tsugi-Anitracker</span> —{' '}
+            {t('aboutText')}
           </p>
         </div>
       </section>

@@ -1,26 +1,27 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchDetail, fetchFranchise } from '@/api/anilist';
+import { bestTitle, cover, formatLabel, seasonLabel, type MediaCard } from '@/api/types';
 import {
-  bestTitle,
-  cover,
-  FORMAT_LABEL,
-  seasonLabel,
-  type MediaCard,
-} from '@/api/types';
-import { useLibrary } from '@/store/library';
+  findEntryFor,
+  isReleased,
+  useLibrary,
+  type LibraryEntry,
+} from '@/store/library';
 import { EpisodeStepper, RatingStrip, StatusMenu } from '@/components/TrackControls';
+import { AddPanel } from '@/components/AddPanel';
 import { PosterRow } from '@/components/PosterCard';
 import { ErrorBox, SectionHead } from '@/components/ui';
-import { IconChevronLeft, IconPlay } from '@/components/icons';
+import { useLocale, useSettings, useT, type DictKey } from '@/i18n';
+import { IconCheck, IconChevronLeft, IconPlay, IconPlus } from '@/components/icons';
 
-const STATUS_TEXT: Record<string, string> = {
-  FINISHED: 'Abgeschlossen',
-  RELEASING: 'Läuft gerade',
-  NOT_YET_RELEASED: 'Angekündigt',
-  CANCELLED: 'Abgebrochen',
-  HIATUS: 'Pausiert',
+const AIR_STATUS_KEY: Record<string, DictKey> = {
+  FINISHED: 'statusFinished',
+  RELEASING: 'statusReleasing',
+  NOT_YET_RELEASED: 'statusNotYet',
+  CANCELLED: 'statusCancelled',
+  HIATUS: 'statusHiatus',
 };
 
 function Fact({ label, value }: { label: string; value: string | null }) {
@@ -33,36 +34,58 @@ function Fact({ label, value }: { label: string; value: string | null }) {
   );
 }
 
-/** Vertical franchise timeline. The current page's anime is marked "Du bist hier". */
-function FranchiseTimeline({ mainline, currentId }: { mainline: MediaCard[]; currentId: number }) {
-  const entries = useLibrary((s) => s.entries);
+/** Erste noch nicht komplett geschaute Staffel des Eintrags. */
+function watchedUpTo(entry: LibraryEntry): number {
+  const cur = entry.seasons[entry.seasonIndex];
+  if (cur && isReleased(cur) && cur.episodes !== null && entry.progress >= cur.episodes) {
+    return entry.seasonIndex + 1;
+  }
+  return entry.seasonIndex;
+}
+
+/** Vertikaler Franchise-Zeitstrahl mit Geschaut-Häkchen aus der Bibliothek. */
+function FranchiseTimeline({
+  mainline,
+  currentId,
+  entry,
+}: {
+  mainline: MediaCard[];
+  currentId: number;
+  entry: LibraryEntry | undefined;
+}) {
+  const t = useT();
+  const lang = useSettings((s) => s.lang);
   if (mainline.length < 2) return null;
+
+  const upTo = entry ? watchedUpTo(entry) : 0;
 
   return (
     <section className="mb-10">
-      <SectionHead title="Franchise-Zeitstrahl" count={mainline.length} />
+      <SectionHead title={t('franchiseTimeline')} count={mainline.length} />
       <ol className="relative ml-2 border-l border-line pl-6">
-        {mainline.map((m) => {
+        {mainline.map((m, i) => {
           const here = m.id === currentId;
-          const tracked = entries[m.id];
+          const idxInEntry = entry ? entry.seasons.findIndex((s) => s.id === m.id) : -1;
+          const watched = idxInEntry !== -1 && idxInEntry < upTo;
+          const isCurrent = entry && idxInEntry === entry.seasonIndex && entry.status === 'watching';
           return (
-            <li key={m.id} className="relative pb-5 last:pb-0">
+            <li key={m.id} className="stagger-in relative pb-5 last:pb-0" style={{ ['--i' as string]: i }}>
               <span
                 aria-hidden
                 className={`absolute -left-6 top-4 h-3 w-3 -translate-x-1/2 rounded-full border-2 ${
-                  here
-                    ? 'border-jade bg-jade'
-                    : tracked
-                      ? 'border-jade bg-bg'
+                  watched
+                    ? 'border-green bg-green'
+                    : here
+                      ? 'border-accent bg-accent'
                       : 'border-line bg-bg'
                 }`}
               />
               <Link
                 to={`/anime/${m.id}`}
-                className={`flex items-center gap-3.5 rounded-card border p-2.5 transition-colors duration-150 ${
+                className={`hover-lift flex items-center gap-3.5 rounded-card border p-2.5 transition-colors duration-150 ${
                   here
-                    ? 'border-jade/50 bg-jade-deep/15'
-                    : 'border-line bg-surface hover:border-jade/40'
+                    ? 'border-accent/50 bg-accent/5'
+                    : 'border-line bg-surface hover:border-accent/40'
                 }`}
               >
                 <span className="block h-[58px] w-[42px] shrink-0 overflow-hidden rounded-[6px] bg-raised">
@@ -74,21 +97,27 @@ function FranchiseTimeline({ mainline, currentId }: { mainline: MediaCard[]; cur
                   </span>
                   <span className="mt-0.5 block text-xs text-ink-dim">
                     {[
-                      m.format ? FORMAT_LABEL[m.format] : null,
-                      seasonLabel(m),
+                      m.format ? formatLabel(m.format, lang) : null,
+                      seasonLabel(m, lang),
                       m.episodes ? `${m.episodes} Ep.` : null,
+                      m.status === 'NOT_YET_RELEASED' ? t('statusNotYet') : null,
                     ]
                       .filter(Boolean)
                       .join(' · ')}
                   </span>
                 </span>
-                {here ? (
-                  <span className="shrink-0 rounded-full bg-jade/15 px-2.5 py-1 text-[11px] font-semibold text-jade">
-                    Du bist hier
+                {watched ? (
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green/15 px-2.5 py-1 text-[11px] font-semibold text-green">
+                    <IconCheck className="h-3 w-3" />
+                    {t('addUpTo')}
                   </span>
-                ) : tracked ? (
-                  <span className="shrink-0 rounded-full bg-raised px-2.5 py-1 text-[11px] font-medium text-ink-dim">
-                    im Archiv
+                ) : isCurrent ? (
+                  <span className="shrink-0 rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-semibold text-accent">
+                    {t('stWatching')}
+                  </span>
+                ) : here ? (
+                  <span className="shrink-0 rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-semibold text-accent">
+                    {t('youAreHere')}
                   </span>
                 ) : null}
               </Link>
@@ -104,18 +133,17 @@ export function DetailPage() {
   const { id } = useParams();
   const mediaId = Number(id);
   const navigate = useNavigate();
-  const entry = useLibrary((s) => s.entries[mediaId]);
-  const refreshSnapshot = useLibrary((s) => s.refreshSnapshot);
+  const t = useT();
+  const lang = useSettings((s) => s.lang);
+  const locale = useLocale();
+  const entries = useLibrary((s) => s.entries);
+  const entry = useMemo(() => findEntryFor(entries, mediaId), [entries, mediaId]);
+  const [addOpen, setAddOpen] = useState(false);
 
   const q = useQuery({
     queryKey: ['detail', mediaId],
     enabled: Number.isFinite(mediaId),
-    queryFn: async ({ signal }) => {
-      const detail = await fetchDetail(mediaId, signal);
-      // Keep the offline snapshot in sync whenever fresh data flows through.
-      refreshSnapshot(detail);
-      return detail;
-    },
+    queryFn: ({ signal }) => fetchDetail(mediaId, signal),
   });
 
   const franchise = useQuery({
@@ -133,6 +161,28 @@ export function DetailPage() {
         .slice(0, 12),
     [q.data],
   );
+
+  // Anime-bezogene Kennzahlen übers ganze Franchise (nicht nur diese Staffel).
+  const fb = useMemo(() => {
+    const f = franchise.data;
+    if (!f || f.mainline.length === 0) return null;
+    const main = f.mainline;
+    const released = main.filter((m) => m.status === 'FINISHED' || m.status === 'RELEASING');
+    const episodes = released.reduce((s, m) => s + (m.episodes ?? 0), 0);
+    const seasons = main.filter((m) => m.format !== 'MOVIE').length;
+    const movies =
+      main.filter((m) => m.format === 'MOVIE').length +
+      f.extras.filter((x) => x.media.format === 'MOVIE').length;
+    const specials = f.extras.filter(
+      (x) => x.media.format === 'SPECIAL' || x.media.format === 'OVA',
+    ).length;
+    const scores = main
+      .map((m) => m.averageScore)
+      .filter((n): n is number => n != null);
+    const score = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+    const minutes = released.reduce((s, m) => s + (m.episodes ?? 0) * (m.duration ?? 24), 0);
+    return { episodes, seasons, movies, specials, score, minutes };
+  }, [franchise.data]);
 
   if (q.isError) {
     return (
@@ -160,11 +210,13 @@ export function DetailPage() {
 
   const m = q.data;
   const img = cover(m);
-  const studios = m.studios.nodes.filter((s) => s.isAnimationStudio).map((s) => s.name);
+  const studios = [...new Set(m.studios.nodes.filter((s) => s.isAnimationStudio).map((s) => s.name))];
   const trailerUrl =
     m.trailer?.site === 'youtube' && m.trailer.id
       ? `https://www.youtube.com/watch?v=${m.trailer.id}`
       : null;
+  const showStepper =
+    entry && (entry.status === 'watching' || entry.status === 'paused' || entry.status === 'nextup');
 
   return (
     <div className="-mt-5 md:-mt-8">
@@ -184,7 +236,7 @@ export function DetailPage() {
           className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full bg-bg/70 py-1.5 pl-2 pr-3.5 text-sm font-medium text-ink backdrop-blur transition-colors duration-150 hover:bg-bg"
         >
           <IconChevronLeft className="h-4 w-4" />
-          Zurück
+          {t('back')}
         </button>
       </div>
 
@@ -202,47 +254,66 @@ export function DetailPage() {
           )}
           <p className="mt-2 text-sm text-ink-dim">
             {[
-              m.format ? FORMAT_LABEL[m.format] : null,
-              seasonLabel(m),
-              m.episodes ? `${m.episodes} Episoden` : null,
-              m.status ? STATUS_TEXT[m.status] : null,
+              m.format ? formatLabel(m.format, lang) : null,
+              seasonLabel(m, lang),
+              m.episodes ? t('episodesN', { n: m.episodes }) : null,
+              m.status ? t(AIR_STATUS_KEY[m.status]) : null,
             ]
               .filter(Boolean)
               .join(' · ')}
           </p>
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
-            <StatusMenu media={m} />
-            {entry && (entry.status === 'watching' || entry.status === 'paused') && (
-              <EpisodeStepper mediaId={mediaId} />
+            {entry ? (
+              <StatusMenu rootId={entry.rootId} />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAddOpen((v) => !v)}
+                aria-expanded={addOpen}
+                className="inline-flex items-center gap-2 rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter,transform] duration-150 hover:brightness-110 active:scale-[0.98]"
+              >
+                <IconPlus className="h-4 w-4" />
+                {t('add')}
+              </button>
             )}
+            {showStepper && <EpisodeStepper rootId={entry.rootId} />}
             {trailerUrl && (
               <a
                 href={trailerUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-ctl border border-line bg-surface px-4 py-2.5 text-sm font-medium text-ink transition-colors duration-150 hover:border-jade"
+                className="inline-flex items-center gap-2 rounded-ctl border border-line bg-surface px-4 py-2.5 text-sm font-medium text-ink transition-colors duration-150 hover:border-accent"
               >
                 <IconPlay className="h-4 w-4" />
-                Trailer
+                {t('trailer')}
               </a>
             )}
           </div>
 
           {entry && (
             <div className="mt-4 flex items-center gap-3">
-              <span className="text-sm text-ink-dim">Deine Wertung</span>
-              <RatingStrip mediaId={mediaId} />
+              <span className="text-sm text-ink-dim">{t('yourRating')}</span>
+              <RatingStrip rootId={entry.rootId} />
             </div>
           )}
         </div>
       </div>
 
+      {!entry && addOpen && (
+        <AddPanel
+          detail={m}
+          franchise={franchise.data}
+          loading={franchise.isLoading}
+          onClose={() => setAddOpen(false)}
+        />
+      )}
+
       <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_280px]">
         <div className="min-w-0">
           {m.description && (
             <section className="mb-10">
-              <SectionHead title="Worum es geht" />
+              <SectionHead title={t('aboutTitle')} />
               <p
                 className="max-w-[70ch] whitespace-pre-line text-[15px] leading-7 text-ink-dim"
                 style={{ textWrap: 'pretty' }}
@@ -258,7 +329,7 @@ export function DetailPage() {
 
           {franchise.isLoading ? (
             <div className="mb-10">
-              <SectionHead title="Franchise-Zeitstrahl" />
+              <SectionHead title={t('franchiseTimeline')} />
               <div className="space-y-3">
                 <div className="skeleton h-[78px] w-full" />
                 <div className="skeleton h-[78px] w-full" />
@@ -267,13 +338,14 @@ export function DetailPage() {
           ) : (
             franchise.data && (
               <>
-                <FranchiseTimeline mainline={franchise.data.mainline} currentId={mediaId} />
+                <FranchiseTimeline
+                  mainline={franchise.data.mainline}
+                  currentId={mediaId}
+                  entry={entry}
+                />
                 {franchise.data.extras.length > 0 && (
                   <section className="mb-10">
-                    <SectionHead
-                      title="Specials & Nebengeschichten"
-                      count={franchise.data.extras.length}
-                    />
+                    <SectionHead title={t('extrasTitle')} count={franchise.data.extras.length} />
                     <ul className="divide-y divide-line rounded-card border border-line bg-surface">
                       {franchise.data.extras.slice(0, 10).map(({ relation, media }) => (
                         <li key={media.id}>
@@ -301,33 +373,69 @@ export function DetailPage() {
 
           {recommendations.length > 0 && (
             <section className="mb-10">
-              <SectionHead title="Wenn dir das gefällt" />
+              <SectionHead title={t('recsTitle')} />
               <PosterRow items={recommendations} />
             </section>
           )}
         </div>
 
-        <aside>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-card border border-line bg-surface p-5 lg:grid-cols-1">
-            <Fact label="Community-Wertung" value={m.averageScore != null ? `${(m.averageScore / 10).toFixed(1)} / 10` : null} />
-            <Fact label="Studio" value={studios.length ? studios.join(', ') : null} />
-            <Fact label="Episodenlänge" value={m.duration ? `${m.duration} min` : null} />
-            <Fact
-              label="Zeitraum"
-              value={
-                m.startDate?.year
-                  ? `${m.startDate.year}${m.endDate?.year && m.endDate.year !== m.startDate.year ? ` – ${m.endDate.year}` : ''}`
-                  : null
-              }
-            />
-            <Fact label="Genres" value={m.genres.length ? m.genres.join(', ') : null} />
-            {m.nextAiringEpisode && (
+        <aside className="space-y-5">
+          {/* Anime-/Franchise-bezogene Box — über der Staffel-Box. */}
+          {fb && (
+            <div className="rounded-card border border-purple/30 bg-surface p-5">
+              <p className="mb-3.5 text-[13px] font-semibold uppercase tracking-wide text-purple">
+                {t('franchiseBox')}
+              </p>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-4 lg:grid-cols-1">
+                <Fact
+                  label={t('fbScore')}
+                  value={fb.score != null ? `${(fb.score / 10).toFixed(1)} / 10` : null}
+                />
+                <Fact label={t('fbEpisodes')} value={fb.episodes ? String(fb.episodes) : null} />
+                <Fact label={t('fbSeasons')} value={fb.seasons ? String(fb.seasons) : null} />
+                <Fact label={t('fbMovies')} value={fb.movies ? String(fb.movies) : null} />
+                <Fact label={t('fbSpecials')} value={fb.specials ? String(fb.specials) : null} />
+                <Fact
+                  label={t('fbRuntime')}
+                  value={
+                    fb.minutes
+                      ? `${Math.round(fb.minutes / 60).toLocaleString(locale)} h`
+                      : null
+                  }
+                />
+              </dl>
+            </div>
+          )}
+
+          {/* Staffel-bezogene Box. */}
+          <div className="rounded-card border border-line bg-surface p-5">
+            <p className="mb-3.5 text-[13px] font-semibold uppercase tracking-wide text-ink-faint">
+              {t('thisSeasonBox')}
+            </p>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-4 lg:grid-cols-1">
               <Fact
-                label="Nächste Episode"
-                value={`Ep. ${m.nextAiringEpisode.episode} · ${new Date(m.nextAiringEpisode.airingAt * 1000).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })}`}
+                label={t('communityScore')}
+                value={m.averageScore != null ? `${(m.averageScore / 10).toFixed(1)} / 10` : null}
               />
-            )}
-          </dl>
+              <Fact label={t('studio')} value={studios.length ? studios.join(', ') : null} />
+              <Fact label={t('epLength')} value={m.duration ? `${m.duration} min` : null} />
+              <Fact
+                label={t('period')}
+                value={
+                  m.startDate?.year
+                    ? `${m.startDate.year}${m.endDate?.year && m.endDate.year !== m.startDate.year ? ` – ${m.endDate.year}` : ''}`
+                    : null
+                }
+              />
+              <Fact label={t('genres')} value={m.genres.length ? m.genres.join(', ') : null} />
+              {m.nextAiringEpisode && (
+                <Fact
+                  label={t('nextEpisode')}
+                  value={`${t('epShort')} ${m.nextAiringEpisode.episode} · ${new Date(m.nextAiringEpisode.airingAt * 1000).toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' })}`}
+                />
+              )}
+            </dl>
+          </div>
         </aside>
       </div>
     </div>

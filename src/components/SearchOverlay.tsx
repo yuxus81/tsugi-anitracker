@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { searchAnime } from '@/api/anilist';
-import { bestTitle, cover, FORMAT_LABEL, seasonLabel } from '@/api/types';
-import { useLibrary } from '@/store/library';
+import { bestTitle, cover, formatLabel, seasonLabel } from '@/api/types';
+import { findEntryFor, useLibrary } from '@/store/library';
+import { useSettings, useT } from '@/i18n';
 import { useSearchOverlay } from './searchStore';
 import { IconSearch, IconX } from './icons';
 
@@ -28,6 +29,8 @@ export function SearchOverlay() {
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const entries = useLibrary((s) => s.entries);
+  const t = useT();
+  const lang = useSettings((s) => s.lang);
 
   const q = useQuery({
     queryKey: ['search', debounced],
@@ -78,8 +81,8 @@ export function SearchOverlay() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Anime suchen"
-        className="w-full max-w-xl overflow-hidden rounded-card border border-line bg-surface shadow-2xl"
+        aria-label={t('search')}
+        className="unfold w-full max-w-xl overflow-hidden rounded-card border border-line bg-surface shadow-2xl transition-colors duration-150 focus-within:border-accent"
         onKeyDown={onKey}
       >
         <div className="flex items-center gap-3 border-b border-line px-4">
@@ -88,13 +91,13 @@ export function SearchOverlay() {
             ref={inputRef}
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            placeholder="Anime oder Film suchen …"
-            className="w-full bg-transparent py-3.5 text-[15px] text-ink outline-none placeholder:text-ink-dim"
+            placeholder={t('searchPlaceholder')}
+            className="no-focus-ring w-full bg-transparent py-3.5 text-[15px] text-ink outline-none placeholder:text-ink-dim"
           />
           <button
             type="button"
             onClick={close}
-            aria-label="Suche schließen"
+            aria-label={t('searchClose')}
             className="rounded p-1 text-ink-dim transition-colors duration-150 hover:text-ink"
           >
             <IconX className="h-4 w-4" />
@@ -103,9 +106,7 @@ export function SearchOverlay() {
 
         <div className="max-h-[52vh] overflow-y-auto">
           {debounced.length < 2 ? (
-            <p className="px-4 py-8 text-center text-sm text-ink-dim">
-              Tippe mindestens zwei Zeichen.
-            </p>
+            <p className="px-4 py-8 text-center text-sm text-ink-dim">{t('searchMinChars')}</p>
           ) : q.isLoading ? (
             <div className="space-y-2 p-3">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -113,12 +114,10 @@ export function SearchOverlay() {
               ))}
             </div>
           ) : q.isError ? (
-            <p className="px-4 py-8 text-center text-sm text-ink-dim">
-              Suche gerade nicht möglich — gleich nochmal versuchen.
-            </p>
+            <p className="px-4 py-8 text-center text-sm text-ink-dim">{t('searchError')}</p>
           ) : results.length === 0 ? (
             <p className="px-4 py-8 text-center text-sm text-ink-dim">
-              Nichts gefunden für „{debounced}“.
+              {t('searchEmpty', { q: debounced })}
             </p>
           ) : (
             <ul>
@@ -142,14 +141,14 @@ export function SearchOverlay() {
                         {bestTitle(m)}
                       </span>
                       <span className="block text-xs text-ink-dim">
-                        {[m.format ? FORMAT_LABEL[m.format] : null, seasonLabel(m)]
+                        {[m.format ? formatLabel(m.format, lang) : null, seasonLabel(m, lang)]
                           .filter(Boolean)
                           .join(' · ')}
                       </span>
                     </span>
-                    {entries[m.id] && (
-                      <span className="ml-auto shrink-0 rounded-full bg-jade-deep/40 px-2 py-0.5 text-[11px] font-medium text-jade">
-                        im Archiv
+                    {findEntryFor(entries, m.id) && (
+                      <span className="ml-auto shrink-0 rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-medium text-accent">
+                        {t('inArchive')}
                       </span>
                     )}
                   </button>

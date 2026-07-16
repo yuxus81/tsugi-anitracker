@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { HashRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { useLibrary } from '@/store/library';
 import { useToasts } from '@/store/toast';
+import { useStartupScan } from '@/lib/scan';
+import { useT } from '@/i18n';
 import { HomePage } from '@/pages/HomePage';
 import { DiscoverPage } from '@/pages/DiscoverPage';
 import { LibraryPage } from '@/pages/LibraryPage';
@@ -18,23 +20,31 @@ import {
   IconSearch,
   IconStack,
 } from '@/components/icons';
+import type { DictKey } from '@/i18n';
 
-const NAV = [
-  { to: '/', label: 'Heute', Icon: IconHome, end: true },
-  { to: '/entdecken', label: 'Entdecken', Icon: IconCompass, end: false },
-  { to: '/bibliothek', label: 'Bibliothek', Icon: IconStack, end: false },
-  { to: '/statistik', label: 'Statistik', Icon: IconChart, end: false },
-  { to: '/einstellungen', label: 'Mehr', Icon: IconGear, end: false },
+const NAV: Array<{ to: string; label: DictKey; Icon: typeof IconHome; end: boolean }> = [
+  { to: '/', label: 'navHome', Icon: IconHome, end: true },
+  { to: '/entdecken', label: 'navDiscover', Icon: IconCompass, end: false },
+  { to: '/bibliothek', label: 'navLibrary', Icon: IconStack, end: false },
+  { to: '/statistik', label: 'navStats', Icon: IconChart, end: false },
+  { to: '/einstellungen', label: 'navMore', Icon: IconGear, end: false },
 ];
 
 function Wordmark() {
   return (
-    <NavLink to="/" className="flex items-center gap-2.5 px-1" aria-label="Tsugi — Startseite">
-      <span className="grid h-8 w-8 place-items-center rounded-ctl bg-jade-deep font-display text-lg font-semibold text-ink">
-        つ
-      </span>
-      <span className="hidden font-display text-xl font-semibold tracking-tight text-ink lg:block">
+    <NavLink to="/" className="flex items-center gap-2.5 px-1" aria-label="Tsugi-Anitracker — Home">
+      <img
+        src={`${import.meta.env.BASE_URL}logo.png`}
+        alt=""
+        width={32}
+        height={32}
+        className="h-8 w-8 rounded-ctl shadow-glow-purple"
+      />
+      <span className="hidden font-display text-lg font-semibold leading-tight tracking-tight text-ink lg:block">
         Tsugi
+        <span className="block text-[11px] font-sans font-medium tracking-wide text-ink-dim">
+          Anitracker
+        </span>
       </span>
     </NavLink>
   );
@@ -42,21 +52,22 @@ function Wordmark() {
 
 function Sidebar() {
   const openSearch = useSearchOverlay((s) => s.open);
+  const t = useT();
   return (
     <aside className="fixed inset-y-0 left-0 z-sticky hidden w-16 flex-col gap-6 border-r border-line bg-bg px-2.5 py-5 md:flex lg:w-52 lg:px-4">
       <Wordmark />
       <button
         type="button"
         onClick={openSearch}
-        className="flex items-center gap-3 rounded-ctl border border-line bg-surface px-2.5 py-2 text-ink-dim transition-colors duration-150 hover:border-jade hover:text-ink"
+        className="flex items-center gap-3 rounded-ctl border border-line bg-surface px-2.5 py-2 text-ink-dim transition-colors duration-150 hover:border-accent hover:text-ink"
       >
         <IconSearch className="h-5 w-5 shrink-0" />
-        <span className="hidden text-sm lg:block">Suchen</span>
+        <span className="hidden text-sm lg:block">{t('search')}</span>
         <kbd className="ml-auto hidden rounded border border-line px-1.5 py-0.5 text-[11px] text-ink-faint lg:block">
           /
         </kbd>
       </button>
-      <nav className="flex flex-col gap-1" aria-label="Hauptnavigation">
+      <nav className="flex flex-col gap-1" aria-label="Navigation">
         {NAV.map(({ to, label, Icon, end }) => (
           <NavLink
             key={to}
@@ -65,29 +76,30 @@ function Sidebar() {
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-ctl px-2.5 py-2.5 text-sm transition-colors duration-150 ${
                 isActive
-                  ? 'bg-raised font-semibold text-jade'
+                  ? 'bg-raised font-semibold text-accent'
                   : 'text-ink-dim hover:bg-surface hover:text-ink'
               }`
             }
           >
             <Icon className="h-5 w-5 shrink-0" />
-            <span className="hidden lg:block">{label}</span>
+            <span className="hidden lg:block">{t(label)}</span>
           </NavLink>
         ))}
       </nav>
       <p className="mt-auto hidden px-1 text-xs leading-5 text-ink-faint lg:block">
-        Dein Archiv lebt auf diesem Gerät.
+        {t('sidebarTagline')}
         <br />
-        AniTracker V2 · à la Claude
+        Tsugi-Anitracker · V2
       </p>
     </aside>
   );
 }
 
 function BottomBar() {
+  const t = useT();
   return (
     <nav
-      aria-label="Hauptnavigation"
+      aria-label="Navigation"
       className="fixed inset-x-0 bottom-0 z-sticky flex border-t border-line bg-bg/95 backdrop-blur md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
@@ -98,12 +110,12 @@ function BottomBar() {
           end={end}
           className={({ isActive }) =>
             `flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors duration-150 ${
-              isActive ? 'text-jade' : 'text-ink-dim'
+              isActive ? 'text-accent' : 'text-ink-dim'
             }`
           }
         >
           <Icon className="h-5 w-5" />
-          {label}
+          {t(label)}
         </NavLink>
       ))}
     </nav>
@@ -121,7 +133,7 @@ function Toasts() {
           className={`toast-in pointer-events-auto rounded-ctl border px-4 py-2.5 text-sm font-medium shadow-lg ${
             t.kind === 'error'
               ? 'border-rose/40 bg-surface text-rose'
-              : 'border-line bg-raised text-ink'
+              : 'border-accent/30 bg-raised text-ink'
           }`}
         >
           {t.text}
@@ -172,6 +184,9 @@ export function App() {
   useEffect(() => {
     void hydrate();
   }, [hydrate]);
+
+  // Update-Scan: einmal pro App-Öffnung nach neuen Staffeln/Ankündigungen schauen.
+  useStartupScan();
 
   return (
     <HashRouter>

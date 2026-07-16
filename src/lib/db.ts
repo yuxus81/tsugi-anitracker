@@ -6,7 +6,8 @@
  */
 
 const DB_NAME = 'tsugi';
-const DB_VERSION = 1;
+// v2: Bibliothek ist franchise-basiert (keyPath rootId statt mediaId).
+const DB_VERSION = 2;
 const STORE = 'library';
 
 let dbPromise: Promise<IDBDatabase | null> | null = null;
@@ -22,9 +23,11 @@ function open(): Promise<IDBDatabase | null> {
       return resolve(null);
     }
     req.onupgradeneeded = () => {
-      if (!req.result.objectStoreNames.contains(STORE)) {
-        req.result.createObjectStore(STORE, { keyPath: 'mediaId' });
+      // Altes v1-Schema (keyPath mediaId) ist inkompatibel — Store neu anlegen.
+      if (req.result.objectStoreNames.contains(STORE)) {
+        req.result.deleteObjectStore(STORE);
       }
+      req.result.createObjectStore(STORE, { keyPath: 'rootId' });
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => resolve(null);
@@ -56,11 +59,11 @@ export async function dbPut<T>(value: T): Promise<void> {
   }
 }
 
-export async function dbDelete(mediaId: number): Promise<void> {
+export async function dbDelete(rootId: number): Promise<void> {
   const db = await open();
   if (!db) return;
   try {
-    db.transaction(STORE, 'readwrite').objectStore(STORE).delete(mediaId);
+    db.transaction(STORE, 'readwrite').objectStore(STORE).delete(rootId);
   } catch {
     /* ignore */
   }

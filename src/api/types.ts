@@ -1,3 +1,5 @@
+import { translate, type Lang } from '@/i18n';
+
 /** AniList media shapes — only the fields Tsugi consumes. */
 
 export type MediaFormat = 'TV' | 'TV_SHORT' | 'MOVIE' | 'SPECIAL' | 'OVA' | 'ONA' | 'MUSIC';
@@ -72,25 +74,29 @@ export function cover(m: MediaCard): string | null {
   return m.coverImage.extraLarge || m.coverImage.large || null;
 }
 
-export const FORMAT_LABEL: Record<MediaFormat, string> = {
-  TV: 'Serie',
-  TV_SHORT: 'Kurzserie',
-  MOVIE: 'Film',
-  SPECIAL: 'Special',
-  OVA: 'OVA',
-  ONA: 'ONA',
-  MUSIC: 'Musik',
-};
+const FORMAT_KEY = {
+  TV: 'fmtTV',
+  TV_SHORT: 'fmtTVShort',
+  MOVIE: 'fmtMovie',
+  SPECIAL: 'fmtSpecial',
+  OVA: 'fmtOVA',
+  ONA: 'fmtONA',
+  MUSIC: 'fmtMusic',
+} as const;
 
-export const SEASON_LABEL: Record<MediaSeason, string> = {
-  WINTER: 'Winter',
-  SPRING: 'Frühling',
-  SUMMER: 'Sommer',
-  FALL: 'Herbst',
-};
+const SEASON_KEY = {
+  WINTER: 'seasonWinter',
+  SPRING: 'seasonSpring',
+  SUMMER: 'seasonSummer',
+  FALL: 'seasonFall',
+} as const;
 
-export function seasonLabel(m: MediaCard): string | null {
-  if (m.season && m.seasonYear) return `${SEASON_LABEL[m.season]} ${m.seasonYear}`;
+export function formatLabel(f: MediaFormat, lang: Lang): string {
+  return translate(lang, FORMAT_KEY[f]);
+}
+
+export function seasonLabel(m: Pick<MediaCard, 'season' | 'seasonYear'>, lang: Lang): string | null {
+  if (m.season && m.seasonYear) return `${translate(lang, SEASON_KEY[m.season])} ${m.seasonYear}`;
   if (m.seasonYear) return String(m.seasonYear);
   return null;
 }
