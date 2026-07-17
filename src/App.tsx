@@ -100,33 +100,42 @@ function Sidebar() {
 /**
  * Mobile-Kopfleiste: die Sidebar (samt Logo) ist unter `md` komplett
  * ausgeblendet, wodurch auf dem Handy sowohl das Logo als auch der einzige
- * Weg zur Suche/zum Hinzufügen-Flow verschwanden. Diese schmale, sticky
- * Leiste bringt beides zurück, ohne die Bottom-Tab-Bar zu überladen.
+ * Weg zur Suche/zum Hinzufügen-Flow verschwanden. `position: fixed` statt
+ * `sticky` — mit `overflow-x: hidden` auf html/body (App-Feeling-Fix)
+ * verlor eine sticky Leiste sonst ihre Fixierung beim Scrollen in Safari.
+ * Ein Platzhalter gleicher Höhe direkt danach schiebt den Inhalt runter,
+ * damit nichts unter der fest positionierten Leiste verschwindet.
  */
 function MobileHeader() {
   const openSearch = useSearchOverlay((s) => s.open);
   const t = useT();
   return (
-    <header className="sticky top-0 z-sticky flex items-center justify-between border-b border-line bg-bg/90 px-4 py-2.5 backdrop-blur md:hidden">
-      <NavLink to="/" className="flex items-center gap-2" aria-label="Tsugi-Anitracker — Home">
-        <img
-          src={`${import.meta.env.BASE_URL}logo.png`}
-          alt=""
-          width={26}
-          height={26}
-          className="h-[26px] w-[26px] rounded-ctl shadow-glow-purple"
-        />
-        <span className="font-display text-[15px] font-semibold tracking-tight text-ink">Tsugi</span>
-      </NavLink>
-      <button
-        type="button"
-        onClick={openSearch}
-        aria-label={t('search')}
-        className="grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-ink-dim transition-colors duration-150 active:border-accent active:text-ink"
+    <>
+      <header
+        className="fixed inset-x-0 top-0 z-sticky flex items-center justify-between border-b border-line bg-bg/90 px-4 py-2.5 backdrop-blur md:hidden"
+        style={{ paddingTop: 'calc(0.625rem + env(safe-area-inset-top))' }}
       >
-        <IconSearch className="h-[18px] w-[18px]" />
-      </button>
-    </header>
+        <NavLink to="/" className="flex items-center gap-2" aria-label="Tsugi-Anitracker — Home">
+          <img
+            src={`${import.meta.env.BASE_URL}logo.png`}
+            alt=""
+            width={26}
+            height={26}
+            className="h-[26px] w-[26px] rounded-ctl shadow-glow-purple"
+          />
+          <span className="font-display text-[15px] font-semibold tracking-tight text-ink">Tsugi</span>
+        </NavLink>
+        <button
+          type="button"
+          onClick={openSearch}
+          aria-label={t('search')}
+          className="grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-ink-dim transition-colors duration-150 active:border-accent active:text-ink"
+        >
+          <IconSearch className="h-[18px] w-[18px]" />
+        </button>
+      </header>
+      <div aria-hidden className="md:hidden" style={{ height: 'calc(60px + env(safe-area-inset-top))' }} />
+    </>
   );
 }
 

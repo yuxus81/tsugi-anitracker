@@ -237,6 +237,8 @@ const DICT = {
   watchedUpToTitle: { de: 'Bis „{t}“ geschaut', en: 'Watched up to “{t}”' },
   pausedAtEp: { de: 'Pausiert bei Episode {n}/{t}', en: 'Paused at episode {n}/{t}' },
   resumeBtn: { de: 'Fortsetzen', en: 'Resume' },
+  markCompleteBtn: { de: 'Abschließen', en: 'Mark complete' },
+  watchNowBtn: { de: 'Schauen', en: 'Watch' },
 
   // Statistik
   statsTitle: { de: 'Statistik', en: 'Stats' },

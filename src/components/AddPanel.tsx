@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Franchise } from '@/api/anilist';
 import type { MediaDetail, MediaFormat } from '@/api/types';
-import { formatLabel, seasonLabel } from '@/api/types';
+import { formatLabel } from '@/api/types';
 import {
   ADD_STATUSES,
   seasonSnapFrom,
@@ -131,101 +131,86 @@ export function AddPanel({
         <p className="mb-3 text-[13px] font-medium text-ink-dim">{t('addHowFar')}</p>
 
         {loading ? (
-          <div className="space-y-2">
-            <div className="skeleton h-12 w-full" />
-            <div className="skeleton h-12 w-full" />
+          <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="skeleton aspect-[2/3] w-full" />
+            ))}
           </div>
         ) : (
-          <ol className="relative ml-2 border-l border-line pl-5">
-            <li className="relative pb-2.5" style={{ ['--i' as string]: 0 }}>
-              <span
-                aria-hidden
-                className={`absolute -left-5 top-3 h-2.5 w-2.5 -translate-x-1/2 rounded-full border-2 ${
-                  effectiveThrough === 0 ? 'border-accent bg-accent' : 'border-line bg-bg'
-                }`}
-              />
-              <button
-                type="button"
-                disabled={status === 'completed'}
-                onClick={() => setThrough(0)}
-                className={`stagger-in w-full rounded-ctl border px-3 py-2 text-left text-sm transition-colors duration-150 ${
-                  effectiveThrough === 0
-                    ? 'border-accent/50 bg-accent/5 font-medium text-ink'
-                    : 'border-line bg-raised text-ink-dim hover:border-accent/40 hover:text-ink'
-                } disabled:opacity-50`}
-              >
-                {t('addNotStarted')}
-              </button>
-            </li>
+          <>
+            {/* Ganzes Franchise auf einen Blick als Karten-Raster statt eines
+                langen, einspaltigen Zeitstrahls — auf dem Handy sonst extrem
+                scrolllastig bei Franchises mit vielen Staffeln/Filmen. */}
+            <button
+              type="button"
+              disabled={status === 'completed'}
+              onClick={() => setThrough(0)}
+              className={`mb-2.5 w-full rounded-ctl border px-3 py-2 text-left text-sm transition-colors duration-150 ${
+                effectiveThrough === 0
+                  ? 'border-accent/50 bg-accent/5 font-medium text-ink'
+                  : 'border-line bg-raised text-ink-dim hover:border-accent/40 hover:text-ink'
+              } disabled:opacity-50`}
+            >
+              {t('addNotStarted')}
+            </button>
 
-            {seasons.map((s, i) => {
-              const released = isReleased(s);
-              const watched = released && i < effectiveThrough;
-              const isMark = released && i === effectiveThrough - 1;
-              const disabled = !released || status === 'completed';
-              const TypeIcon = typeIcon(s.format);
-              return (
-                <li key={s.id} className="relative pb-3 last:pb-0" style={{ ['--i' as string]: i + 1 }}>
-                  <span
-                    aria-hidden
-                    className={`absolute -left-5 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-colors duration-200 ${
-                      watched ? 'border-accent bg-accent shadow-glow-accent' : 'border-line bg-bg'
-                    }`}
-                  />
-                  <button
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => setThrough(i + 1)}
-                    className={`stagger-in flex w-full items-center gap-4 rounded-card border p-2.5 text-left transition-all duration-200 ${
-                      watched
-                        ? 'border-accent/50 bg-gradient-to-r from-accent/10 to-surface shadow-[0_14px_28px_-18px_rgba(0,245,212,0.6)]'
-                        : 'border-line bg-raised hover:border-accent/40'
-                    } ${disabled ? 'opacity-50' : ''}`}
-                  >
-                    <span
-                      className={`block h-[92px] w-16 shrink-0 overflow-hidden rounded-[10px] bg-bg transition-shadow duration-200 ${
-                        watched ? 'shadow-[0_0_0_2px_rgba(0,245,212,0.5)]' : ''
-                      }`}
+            <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-6">
+              {(() => {
+                let tvIndex = 0;
+                return seasons.map((s, i) => {
+                  const isTv = s.format !== 'MOVIE' && s.format !== 'SPECIAL' && s.format !== 'OVA' && s.format !== 'MUSIC';
+                  if (isTv) tvIndex += 1;
+                  const shortLabel = isTv ? t('seasonN', { n: tvIndex }) : formatLabel(s.format ?? 'TV', lang);
+                  const released = isReleased(s);
+                  const watched = released && i < effectiveThrough;
+                  const isMark = released && i === effectiveThrough - 1;
+                  const disabled = !released || status === 'completed';
+                  const TypeIcon = typeIcon(s.format);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => setThrough(i + 1)}
+                      title={s.title}
+                      style={{ ['--i' as string]: Math.min(i, 12) }}
+                      className={`stagger-in group relative block aspect-[2/3] overflow-hidden rounded-card border-2 bg-bg text-left transition-all duration-200 ${
+                        watched
+                          ? 'border-accent shadow-[0_0_0_3px_rgba(0,245,212,0.22)]'
+                          : 'border-line hover:border-accent/40'
+                      } ${disabled ? 'opacity-50' : ''}`}
                     >
                       {s.coverUrl && (
                         <img src={s.coverUrl} alt="" className="h-full w-full object-cover" />
                       )}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span
-                        className={`block truncate font-display text-[15px] ${watched ? 'font-semibold text-ink' : 'text-ink-dim'}`}
-                      >
-                        {s.title}
+                      <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-bg/95 via-bg/50 to-transparent px-1.5 pb-1.5 pt-5">
+                        <span
+                          className={`flex items-center gap-1 text-[10.5px] font-semibold leading-tight ${watched ? 'text-ink' : 'text-ink-dim'}`}
+                        >
+                          <TypeIcon className="h-2.5 w-2.5 shrink-0" />
+                          <span className="truncate">{shortLabel}</span>
+                        </span>
                       </span>
-                      <span className="mt-1 block text-xs text-ink-faint">
-                        {[
-                          s.format ? formatLabel(s.format, lang) : null,
-                          seasonLabel({ season: null, seasonYear: s.seasonYear }, lang),
-                          s.episodes ? `${s.episodes} Ep.` : null,
-                          !released ? t('statusNotYet') : null,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </span>
-                      {isMark && (
-                        <span className="mt-2 inline-flex shrink-0 items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-semibold text-accent">
-                          <IconCheck className="h-3 w-3" />
-                          {t('addUpTo')}
+                      {!released && (
+                        <span className="absolute left-1 top-1 rounded-full bg-bg/80 px-1.5 py-0.5 text-[9px] font-semibold text-ink-faint backdrop-blur-sm">
+                          {t('statusNotYet')}
                         </span>
                       )}
-                    </span>
-                    <span
-                      className={`grid h-9 w-9 shrink-0 place-items-center rounded-[10px] ${
-                        watched ? 'bg-accent/15 text-accent' : 'bg-bg text-ink-faint'
-                      }`}
-                    >
-                      <TypeIcon className="h-4 w-4" />
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
+                      {watched && (
+                        <span
+                          className={`absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full ${
+                            isMark ? 'bg-accent text-bg' : 'bg-bg/70 text-accent backdrop-blur-sm'
+                          }`}
+                        >
+                          <IconCheck className="h-3 w-3" />
+                        </span>
+                      )}
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+          </>
         )}
 
         <div className="mt-4 flex items-center gap-3">

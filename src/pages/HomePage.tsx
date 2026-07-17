@@ -15,7 +15,7 @@ import { entryQuery, useDisplayTitle } from '@/store/titles';
 import { EmptyState, PageTitle, SectionHead } from '@/components/ui';
 import { useSearchOverlay } from '@/components/searchStore';
 import { useLocale, useSettings, useT } from '@/i18n';
-import { IconCalendar, IconDice, IconFilm, IconPlay, IconSearch } from '@/components/icons';
+import { IconCalendar, IconCheck, IconDice, IconFilm, IconPlay, IconSearch } from '@/components/icons';
 
 type PanelKey = 'watching' | 'nextup' | 'planned';
 
@@ -58,6 +58,7 @@ const RING_C = 2 * Math.PI * RING_R;
 function ContinueCard({ entry }: { entry: LibraryEntry }) {
   const t = useT();
   const setProgress = useLibrary((s) => s.setProgress);
+  const setStatus = useLibrary((s) => s.setStatus);
   const season = currentSeason(entry);
   const seasonNo = entry.seasonIndex + 1;
   const multi = entry.seasons.length > 1;
@@ -98,6 +99,18 @@ function ContinueCard({ entry }: { entry: LibraryEntry }) {
               ? t('continueWithEp', { n: Math.min(entry.progress + 1, season.episodes) })
               : t('episodesSeen', { n: entry.progress })}
           </span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setStatus(entry.rootId, 'completed');
+            }}
+            className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-line bg-bg/40 px-2.5 py-1 text-[11px] font-semibold text-ink-dim transition-colors duration-150 hover:border-green/50 hover:text-green"
+          >
+            <IconCheck className="h-3 w-3" />
+            {t('markCompleteBtn')}
+          </button>
         </span>
       </Link>
       <div className="relative flex shrink-0 items-center gap-3 pr-4 sm:gap-4 sm:pr-5">
@@ -143,6 +156,7 @@ function ContinueCard({ entry }: { entry: LibraryEntry }) {
 function NextupCard({ entry }: { entry: LibraryEntry }) {
   const t = useT();
   const lang = useSettings((s) => s.lang);
+  const setStatus = useLibrary((s) => s.setStatus);
   const season = currentSeason(entry);
   const cov = entryCover(entry);
   const isFilm = season?.format === 'MOVIE';
@@ -184,6 +198,18 @@ function NextupCard({ entry }: { entry: LibraryEntry }) {
           {t('newSeasonReady')}
         </span>
       </span>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setStatus(entry.rootId, 'watching');
+        }}
+        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-ctl bg-pink px-3 py-1.5 text-[12px] font-bold text-ink shadow-glow-pink transition-transform duration-150 active:scale-[0.98]"
+      >
+        <IconPlay className="h-3 w-3 translate-x-[1px]" />
+        {t('watchNowBtn')}
+      </button>
     </Link>
   );
 }
@@ -207,6 +233,7 @@ function PlannedCard({
 }) {
   const t = useT();
   const lang = useSettings((s) => s.lang);
+  const setStatus = useLibrary((s) => s.setStatus);
   const totalEp = entry.seasons.reduce((s, x) => s + (x.episodes ?? 0), 0);
   const cov = entryCover(entry);
   const seasons = entry.seasons.length;
@@ -232,9 +259,19 @@ function PlannedCard({
         />
       )}
       <span className="absolute inset-0 bg-gradient-to-t from-bg via-bg/25 to-transparent" />
-      <span className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-bg/70 text-purple backdrop-blur-sm">
+      <button
+        type="button"
+        aria-label={t('watchNowBtn')}
+        title={t('watchNowBtn')}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setStatus(entry.rootId, 'watching');
+        }}
+        className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-bg/70 text-purple backdrop-blur-sm transition-colors duration-150 hover:bg-accent hover:text-bg active:scale-95"
+      >
         <IconPlay className="h-3.5 w-3.5 translate-x-[1px]" />
-      </span>
+      </button>
       <span className="absolute inset-x-0 bottom-0 p-3">
         <span className="block line-clamp-2 text-[14px] font-semibold leading-snug text-ink drop-shadow">
           {title}

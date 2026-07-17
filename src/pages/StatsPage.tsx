@@ -190,7 +190,7 @@ export function StatsPage() {
     <div>
       <PageTitle title={t('statsTitle')} sub={t('statsSub')} />
 
-      <div className="mb-10 grid gap-4 lg:grid-cols-[268px_1fr]">
+      <div className="mb-10 grid gap-4 sm:grid-cols-[220px_1fr] lg:grid-cols-[268px_1fr]">
         <div
           className="rounded-card border border-line bg-surface p-6 text-center"
           style={{ background: 'radial-gradient(120% 120% at 30% 0%, rgba(0,245,212,0.14), #16192b 60%)' }}
@@ -235,7 +235,7 @@ export function StatsPage() {
         </section>
       )}
 
-      <div className="grid gap-10 lg:grid-cols-2">
+      <div className="grid gap-6 sm:grid-cols-2 sm:gap-8 lg:gap-10">
         {stats.genres.length > 0 && (
           <section>
             <SectionHead title={t('statsGenres')} />
