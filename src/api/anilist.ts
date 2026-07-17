@@ -1,4 +1,4 @@
-import type { MediaCard, MediaDetail, MediaSeason, PageOf } from './types';
+import type { MediaCard, MediaDetail, MediaFormat, MediaSeason, PageOf } from './types';
 
 /**
  * AniList GraphQL client. One request per view: the Discover page, the detail
@@ -231,17 +231,33 @@ export async function fetchRelationSlices(
   return out;
 }
 
+/**
+ * Zeigt an, ob ein Format als eigene "Staffel"/eigener Eintrag auf dem
+ * Zeitstrahl zählt. TV/Film/ONA ja — Specials/OVAs/Music nicht (V1s
+ * Einordnungs-Bug: die durften nie als Staffel durchgehen).
+ *
+ * WICHTIG: das gilt nur fürs ANZEIGEN, nicht fürs WEITERLAUFEN der Kette.
+ * AniList verbindet manche echten Staffelübergänge über eine kurze
+ * Brücken-OVA/-Special (z. B. Haikyuu S3 → OVA „Riku VS Kuu“ → S4 „TO THE
+ * TOP“; Dr. Stone Stone Wars → Special „Ryuusui“ → New World). Früher brach
+ * pick() an genau so einer Brücke ab, weil sie fürs Weiterlaufen denselben
+ * Formatfilter benutzte wie fürs Anzeigen — die komplette Fortsetzung danach
+ * (neue Staffeln, angekündigte Filme) verschwand dadurch spurlos.
+ */
+export function isMainlineFormat(format: MediaFormat | null): boolean {
+  return format === 'TV' || format === 'MOVIE' || format === 'ONA';
+}
+
 function pick(
   slice: RelationSlice,
   types: Array<'SEQUEL' | 'PREQUEL' | 'PARENT'>,
 ): number | null {
-  // Main-line walk: only TV/Movie continuations count, so specials/OVAs never
-  // masquerade as a "season" on the timeline (V1's Einordnungs-bug).
+  // Zum WEITERLAUFEN zählt jedes ANIME-Relation-Ziel, unabhängig vom Format —
+  // sonst bricht die Kette an einer Brücken-OVA/-Special ab (siehe oben).
   for (const t of types) {
     const edge = slice.relations.edges.find((e) => {
       if (e.relationType !== t) return false;
       if (e.node.type !== 'ANIME') return false;
-      if (e.node.format !== 'TV' && e.node.format !== 'MOVIE' && e.node.format !== 'ONA') return false;
       // Chronology guard: a prequel/parent can't start after the current node
       // and a sequel can't start before it — rejects spurious edges like ONE
       // PIECE's (id 21) PREQUEL link to a 2024 crossover ONA (AniList #167404)
@@ -259,13 +275,16 @@ function pick(
   return null;
 }
 
-/** Der offizielle Sequel-Knoten einer Staffel (nur TV/Film/ONA zählen als Hauptlinie). */
+/**
+ * Der nächste SEQUEL-Knoten einer Staffel (ein Schritt, jedes Format —
+ * Formatfilterung ist Sache des Aufrufers, siehe `isMainlineFormat`). Kann
+ * einen Brücken-Knoten zurückgeben; der Aufrufer erkennt das am Format und
+ * läuft bei Bedarf selbst einen Schritt weiter (er hat den Async-Zugriff
+ * fürs Nachladen, diese Funktion bleibt bewusst synchron).
+ */
 export function pickSequel(slice: RelationSlice): MediaCard | null {
   const edge = slice.relations.edges.find(
-    (e) =>
-      e.relationType === 'SEQUEL' &&
-      e.node.type === 'ANIME' &&
-      (e.node.format === 'TV' || e.node.format === 'MOVIE' || e.node.format === 'ONA'),
+    (e) => e.relationType === 'SEQUEL' && e.node.type === 'ANIME',
   );
   return edge ? edge.node : null;
 }
@@ -306,8 +325,11 @@ export async function fetchFranchise(startId: number, signal?: AbortSignal): Pro
     rootId = prev;
   }
 
-  // Walk forward along sequels.
+  // Walk forward along sequels. Brücken-Knoten (Specials/OVAs, die zwei echte
+  // Staffeln verbinden) laufen mit durch, damit die Kette nicht an ihnen
+  // abreißt — sie zählen aber nicht als eigene Staffel, siehe `isMainlineFormat`.
   const mainline: MediaCard[] = [];
+  const bridgeNodes: MediaCard[] = [];
   const seen = new Set<number>();
   let cur: number | null = rootId;
   for (let i = 0; i < MAX_CHAIN && cur !== null; i++) {
@@ -316,13 +338,18 @@ export async function fetchFranchise(startId: number, signal?: AbortSignal): Pro
     await ensure([cur]);
     const slice = slices.get(cur);
     if (!slice) break;
-    mainline.push(slice.card);
+    if (isMainlineFormat(slice.card.format)) {
+      mainline.push(slice.card);
+    } else {
+      bridgeNodes.push(slice.card);
+    }
     cur = pick(slice, ['SEQUEL']);
   }
 
-  // Extras: anything attached to a mainline node that isn't mainline itself.
-  const extras: Franchise['extras'] = [];
-  const extraSeen = new Set<number>();
+  // Extras: anything attached to a mainline node that isn't mainline itself,
+  // plus the bridge nodes found above (visible, just not counted as seasons).
+  const extras: Franchise['extras'] = bridgeNodes.map((media) => ({ relation: 'Special', media }));
+  const extraSeen = new Set<number>(bridgeNodes.map((m) => m.id));
   const LABEL: Record<string, string> = {
     SIDE_STORY: 'Side Story',
     SPIN_OFF: 'Spin-off',

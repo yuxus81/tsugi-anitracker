@@ -158,12 +158,13 @@ export function currentSeason(e: LibraryEntry): SeasonSnap | undefined {
 
 /**
  * Die zuletzt tatsächlich fertig geschaute Staffel. Bei „Fortsetzung folgt“
- * zeigt der Zeiger (seasonIndex) schon auf die kommende, unveröffentlichte
- * Staffel — hier interessiert aber, was wirklich geschaut wurde. Gibt
- * `undefined` zurück, wenn noch gar nichts abgeschlossen wurde.
+ * und „Noch zu schauen“ zeigt der Zeiger (seasonIndex) schon auf die
+ * kommende bzw. bereits veröffentlichte, aber noch nicht begonnene Staffel —
+ * hier interessiert aber, was wirklich geschaut wurde. Gibt `undefined`
+ * zurück, wenn noch gar nichts abgeschlossen wurde.
  */
 export function lastWatchedSeason(e: LibraryEntry): SeasonSnap | undefined {
-  if (e.status === 'continuation') {
+  if (e.status === 'continuation' || e.status === 'nextup') {
     return e.seasonIndex > 0 ? e.seasons[e.seasonIndex - 1] : undefined;
   }
   return currentSeason(e);

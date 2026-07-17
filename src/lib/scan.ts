@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { fetchRelationSlices, pickSequel, type RelationSlice } from '@/api/anilist';
+import { fetchRelationSlices, isMainlineFormat, pickSequel, type RelationSlice } from '@/api/anilist';
 import {
   isReleased,
   seasonSnapFrom,
@@ -88,18 +88,39 @@ async function scanLibrary(): Promise<void> {
     });
 
     // Sequel-Kette verlängern: hängt hinten so lange neue Hauptlinien-Staffeln
-    // an, wie AniList welche kennt (angekündigte inklusive).
+    // an, wie AniList welche kennt (angekündigte inklusive). AniList verbindet
+    // manche echten Staffelübergänge über eine kurze Brücken-OVA/-Special
+    // (z. B. Dr. Stone „Stone Wars“ → Special „Ryuusui“ → „New World“) — die
+    // wird transparent übersprungen, ohne das Staffel-Budget zu verbrauchen,
+    // sonst bricht die Kette genau an dieser Brücke ab.
     try {
+      const ensureSlice = async (id: number): Promise<RelationSlice | undefined> => {
+        let slice = slices.get(id);
+        if (!slice) {
+          const extra = await fetchRelationSlices([id]);
+          extra.forEach((v, k) => slices.set(k, v));
+          slice = slices.get(id);
+        }
+        return slice;
+      };
+
       for (let round = 0; round < MAX_SEQUEL_ROUNDS; round++) {
         const last = seasons[seasons.length - 1];
-        let slice = slices.get(last.id);
-        if (!slice) {
-          const extra = await fetchRelationSlices([last.id]);
-          extra.forEach((v, k) => slices.set(k, v));
-          slice = slices.get(last.id);
-        }
+        let slice = await ensureSlice(last.id);
         if (!slice) break;
-        const sequel = pickSequel(slice);
+
+        let sequel = pickSequel(slice);
+        let bridgeHops = 0;
+        while (sequel && !isMainlineFormat(sequel.format) && bridgeHops < 4) {
+          if (seasons.some((s) => s.id === sequel!.id)) {
+            sequel = null;
+            break;
+          }
+          const bridgeSlice = await ensureSlice(sequel.id);
+          sequel = bridgeSlice ? pickSequel(bridgeSlice) : null;
+          bridgeHops += 1;
+        }
+
         if (!sequel || seasons.some((s) => s.id === sequel.id)) break;
         seasons = [...seasons, seasonSnapFrom(sequel)];
       }

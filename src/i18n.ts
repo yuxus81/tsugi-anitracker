@@ -239,6 +239,8 @@ const DICT = {
   resumeBtn: { de: 'Fortsetzen', en: 'Resume' },
   markCompleteBtn: { de: 'Abschließen', en: 'Mark complete' },
   watchNowBtn: { de: 'Schauen', en: 'Watch' },
+  readySeasonOpen: { de: 'Du hast noch eine Staffel offen', en: 'You have a season left to watch' },
+  readyFilmOpen: { de: 'Du hast noch einen Film offen', en: 'You have a movie left to watch' },
 
   // Statistik
   statsTitle: { de: 'Statistik', en: 'Stats' },

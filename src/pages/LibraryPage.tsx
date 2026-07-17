@@ -64,6 +64,12 @@ function CompletedRow({
   const upcoming = entry.status === 'continuation' ? currentSeason(entry) : undefined;
   const upcomingWhen = upcoming ? releaseLabel(upcoming, locale) : null;
 
+  // Alles Veröffentlichte ist geschaut, aber eine bereits erschienene
+  // Staffel/ein Film wartet noch — landet zusätzlich hier, damit „geschaut,
+  // aber nicht ganz fertig“ nicht in einem separaten Tab untergeht.
+  const readyToWatch = entry.status === 'nextup' ? currentSeason(entry) : undefined;
+  const readyIsFilm = readyToWatch?.format === 'MOVIE';
+
   return (
     <div
       className={`flex items-stretch gap-1 rounded-card border border-gold/20 bg-gradient-to-r from-gold/[0.06] via-surface to-surface transition-[opacity,border-color] duration-150 hover:border-gold/45 ${
@@ -115,6 +121,12 @@ function CompletedRow({
             <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue/20 to-purple/20 px-2.5 py-1 text-[10.5px] font-bold text-blue">
               <IconSparkle className="h-3 w-3" />
               {upcomingWhen ? t('continuationComing', { when: upcomingWhen }) : t('continuationComingSoon')}
+            </span>
+          )}
+          {readyToWatch && (
+            <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-pink/15 px-2.5 py-1 text-[10.5px] font-bold text-pink">
+              {readyIsFilm ? <IconFilm className="h-3 w-3" /> : <IconStack className="h-3 w-3" />}
+              {readyIsFilm ? t('readyFilmOpen') : t('readySeasonOpen')}
             </span>
           )}
           <div className="mt-2 h-[2px] w-16 rounded-full bg-gradient-to-r from-gold to-green" />
@@ -375,15 +387,18 @@ export function LibraryPage() {
   const byStatus = useMemo(() => entriesByStatus(entries), [entries]);
   const total = Object.keys(entries).length;
 
-  // „Abgeschlossen“ zeigt zusätzlich Einträge mit angekündigter Fortsetzung —
-  // die haben alles Veröffentlichte bereits geschaut, tauchen aber sonst nur
-  // unter „Fortsetzung folgt“ auf. Beides gleichzeitig ist der Punkt. Danach
-  // greift die manuelle Drag-&-Drop-Reihenfolge; neue/unsortierte Einträge
-  // fallen ans Ende (nach Aktualität sortiert).
+  // „Abgeschlossen“ zeigt zusätzlich Einträge mit angekündigter Fortsetzung
+  // sowie Einträge mit einer bereits erschienenen, aber noch nicht
+  // begonnenen Staffel/einem Film — die haben alles bisher Veröffentlichte
+  // bereits geschaut, tauchen aber sonst nur unter „Fortsetzung folgt“ bzw.
+  // „Noch zu schauen“ auf. Beides gleichzeitig ist der Punkt. Danach greift
+  // die manuelle Drag-&-Drop-Reihenfolge; neue/unsortierte Einträge fallen
+  // ans Ende (nach Aktualität sortiert).
   const completedList = useMemo(() => {
     const merged = [
       ...byStatus.completed,
       ...byStatus.continuation.filter((e) => lastWatchedSeason(e) !== undefined),
+      ...byStatus.nextup.filter((e) => lastWatchedSeason(e) !== undefined),
     ];
     const rank = new Map(completedOrder.map((id, i) => [id, i]));
     return merged.sort((a, b) => {

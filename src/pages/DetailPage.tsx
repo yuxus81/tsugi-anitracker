@@ -229,7 +229,7 @@ function FranchiseAccordion({
         </div>
 
         {selected && (
-          <aside className="h-fit rounded-card border border-line bg-surface p-4">
+          <aside className="hidden h-fit rounded-card border border-line bg-surface p-4 lg:block">
             <span className="mb-3.5 block aspect-[2/3] w-full max-w-[160px] overflow-hidden rounded-card bg-raised">
               {cover(selected.media) && (
                 <img src={cover(selected.media)!} alt="" className="h-full w-full object-cover" />
@@ -470,7 +470,7 @@ export function DetailPage() {
       )}
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_280px]">
-        <div className="min-w-0">
+        <div className="order-2 min-w-0 lg:order-1">
           {displayDescription && (
             <section className="mb-10">
               <SectionHead title={t('aboutTitle')} />
@@ -510,7 +510,7 @@ export function DetailPage() {
           )}
         </div>
 
-        <aside className="space-y-5">
+        <aside className="order-1 space-y-5 lg:order-2">
           {/* Anime-/Franchise-bezogene Box — über der Staffel-Box. */}
           {fb && (
             <div className="rounded-card border border-purple/30 bg-surface p-5">
