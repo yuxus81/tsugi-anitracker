@@ -50,9 +50,38 @@ const DICT = {
   navMore: { de: 'Mehr', en: 'More' },
   search: { de: 'Suchen', en: 'Search' },
   sidebarTagline: {
-    de: 'Dein Archiv lebt auf diesem Gerät.',
-    en: 'Your archive lives on this device.',
+    de: 'Dein Archiv, auf allen Geräten synchron.',
+    en: 'Your archive, in sync on every device.',
   },
+
+  // Auth
+  authTagline: {
+    de: 'Dein Archiv, überall dabei — auf allen Geräten synchron.',
+    en: 'Your archive, everywhere — in sync on every device.',
+  },
+  authEmail: { de: 'E-Mail', en: 'Email' },
+  authPassword: { de: 'Passwort', en: 'Password' },
+  authRemember: { de: 'Angemeldet bleiben', en: 'Remember me' },
+  authForgot: { de: 'Passwort vergessen?', en: 'Forgot password?' },
+  authLogIn: { de: 'Anmelden', en: 'Log in' },
+  authSignUp: { de: 'Konto erstellen', en: 'Create account' },
+  authSendReset: { de: 'Link senden', en: 'Send link' },
+  authBackToLogin: { de: 'Zurück zum Login', en: 'Back to login' },
+  authHaveAccount: { de: 'Schon ein Konto?', en: 'Already have an account?' },
+  authNoAccount: { de: 'Noch kein Konto?', en: "Don't have an account?" },
+  authResetSent: {
+    de: 'Link zum Zurücksetzen an {email} geschickt — schau in dein Postfach.',
+    en: 'Reset link sent to {email} — check your inbox.',
+  },
+  authNewPasswordHint: { de: 'Wähle ein neues Passwort für dein Konto.', en: 'Choose a new password for your account.' },
+  authNewPassword: { de: 'Neues Passwort', en: 'New password' },
+  authSetPassword: { de: 'Passwort setzen', en: 'Set password' },
+  authPasswordUpdated: {
+    de: 'Passwort aktualisiert. Du bist jetzt angemeldet.',
+    en: 'Password updated. You are now signed in.',
+  },
+  authLoggedInAs: { de: 'Angemeldet als {email}', en: 'Signed in as {email}' },
+  authLogOut: { de: 'Abmelden', en: 'Log out' },
 
   // Status
   stWatching: { de: 'Schaue ich', en: 'Watching' },
@@ -235,9 +264,10 @@ const DICT = {
   // Einstellungen
   settingsTitle: { de: 'Einstellungen', en: 'Settings' },
   settingsSub: {
-    de: 'Tsugi-Anitracker ist local-first: Dein Archiv liegt ausschließlich in diesem Browser.',
-    en: 'Tsugi-Anitracker is local-first: your archive lives only in this browser.',
+    de: 'Dein Archiv ist an dein Konto gebunden und mit all deinen Geräten synchron.',
+    en: 'Your archive is tied to your account and stays in sync across all your devices.',
   },
+  accountTitle: { de: 'Konto', en: 'Account' },
   languageTitle: { de: 'Sprache', en: 'Language' },
   languageGerman: { de: 'Deutsch', en: 'German' },
   languageEnglish: { de: 'Englisch', en: 'English' },

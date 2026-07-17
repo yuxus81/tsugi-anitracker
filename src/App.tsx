@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 import { HashRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { useLibrary } from '@/store/library';
+import { useAuth } from '@/store/auth';
 import { useToasts } from '@/store/toast';
 import { useStartupScan } from '@/lib/scan';
 import { useT } from '@/i18n';
+import { AuthScreen } from '@/components/AuthScreen';
 import { HomePage } from '@/pages/HomePage';
 import { DiscoverPage } from '@/pages/DiscoverPage';
 import { LibraryPage } from '@/pages/LibraryPage';
@@ -180,13 +182,52 @@ function GlobalHotkeys() {
 }
 
 export function App() {
+  const authInit = useAuth((s) => s.init);
+  const authReady = useAuth((s) => s.ready);
+  const user = useAuth((s) => s.user);
+
   const hydrate = useLibrary((s) => s.hydrate);
+  const syncFromRemote = useLibrary((s) => s.syncFromRemote);
+  const resetLocal = useLibrary((s) => s.resetLocal);
+
+  useEffect(() => {
+    authInit();
+  }, [authInit]);
+
+  // Sofortiges Zeichnen aus dem lokalen Cache, unabhängig vom Login-Status.
   useEffect(() => {
     void hydrate();
   }, [hydrate]);
 
+  // Sobald der Login-Status feststeht: mit Supabase abgleichen bzw. lokal leeren.
+  useEffect(() => {
+    if (!authReady) return;
+    if (user) void syncFromRemote(user.id);
+    else resetLocal();
+  }, [authReady, user, syncFromRemote, resetLocal]);
+
   // Update-Scan: einmal pro App-Öffnung nach neuen Staffeln/Ankündigungen schauen.
+  // Muss als Hook unbedingt aufgerufen werden (Rules of Hooks) — scan.ts wartet
+  // selbst auf `hydrated` und pusht nur, wenn ein Nutzer angemeldet ist.
   useStartupScan();
+
+  if (!authReady) {
+    return (
+      <div className="grid min-h-screen place-items-center">
+        <img
+          src={`${import.meta.env.BASE_URL}logo.png`}
+          alt=""
+          width={40}
+          height={40}
+          className="h-10 w-10 animate-pulse rounded-ctl opacity-60"
+        />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthScreen />;
+  }
 
   return (
     <HashRouter>

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useLibrary, type LibraryEntry } from '@/store/library';
+import { signOut, useAuth } from '@/store/auth';
 import { useToasts } from '@/store/toast';
 import { PageTitle, SectionHead } from '@/components/ui';
 import { useSettings, useT, type Lang } from '@/i18n';
@@ -15,6 +16,7 @@ interface BackupFile {
 export function SettingsPage() {
   const entries = useLibrary((s) => s.entries);
   const importAll = useLibrary((s) => s.importAll);
+  const user = useAuth((s) => s.user);
   const push = useToasts((s) => s.push);
   const t = useT();
   const lang = useSettings((s) => s.lang);
@@ -71,6 +73,22 @@ export function SettingsPage() {
   return (
     <div className="max-w-2xl">
       <PageTitle title={t('settingsTitle')} sub={t('settingsSub')} />
+
+      <section className="mb-9">
+        <SectionHead title={t('accountTitle')} />
+        <div className="flex items-center justify-between gap-4 rounded-card border border-line bg-surface p-5">
+          <p className="min-w-0 truncate text-sm text-ink-dim">
+            {user?.email ? t('authLoggedInAs', { email: user.email }) : ''}
+          </p>
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="inline-flex shrink-0 items-center gap-2 rounded-ctl border border-line bg-raised px-4 py-2.5 text-sm font-medium text-ink transition-colors duration-150 hover:border-rose/50 hover:text-rose"
+          >
+            {t('authLogOut')}
+          </button>
+        </div>
+      </section>
 
       <section className="mb-9">
         <SectionHead title={t('languageTitle')} />
