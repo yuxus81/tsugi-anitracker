@@ -252,7 +252,7 @@ function PausedRow({ entry, index }: { entry: LibraryEntry; index: number }) {
             e.preventDefault();
             setStatus(entry.rootId, 'watching');
           }}
-          className="hidden shrink-0 rounded-full border border-amber/40 px-3 py-1.5 text-[12px] font-semibold text-amber opacity-0 transition-opacity duration-150 group-hover:opacity-100 sm:inline-block"
+          className="inline-block shrink-0 rounded-full border border-amber/40 px-3 py-1.5 text-[12px] font-semibold text-amber transition-opacity duration-150 sm:opacity-0 sm:group-hover:opacity-100"
         >
           {t('resumeBtn')}
         </button>

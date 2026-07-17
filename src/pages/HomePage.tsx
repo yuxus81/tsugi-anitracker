@@ -414,15 +414,15 @@ export function HomePage() {
                   aria-selected={isActive}
                   onClick={() => setPanel(key)}
                   style={isActive ? { background: s.activeGrad } : undefined}
-                  className={`rounded-card border px-3 py-3 text-left transition-all duration-200 sm:px-4 ${
+                  className={`rounded-card border px-2.5 py-3 text-left transition-all duration-200 sm:px-4 ${
                     isActive ? `${s.ring} ${s.glow}` : 'border-line hover:border-ink-faint'
                   }`}
                 >
                   <span
-                    className={`flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide sm:gap-2 ${isActive ? s.text : 'text-ink-faint'}`}
+                    className={`flex items-start gap-1.5 text-[10.5px] font-semibold uppercase leading-tight tracking-wide sm:gap-2 sm:text-[11px] sm:tracking-wide ${isActive ? s.text : 'text-ink-faint'}`}
                   >
-                    <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
-                    <span className="truncate">{label}</span>
+                    <span className={`mt-[3px] h-1.5 w-1.5 shrink-0 rounded-full ${s.dot}`} />
+                    <span className="sm:truncate">{label}</span>
                   </span>
                   <span
                     className={`mt-1 block font-display text-2xl font-semibold leading-none sm:text-3xl ${isActive ? 'text-ink' : 'text-ink-dim'}`}

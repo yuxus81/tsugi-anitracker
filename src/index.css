@@ -11,6 +11,16 @@
 
 html {
   background: #0d0f18;
+  /* App-Gefühl statt Website: kein Doppeltipp-Zoom, keine Gummiband-Bounce-
+     Lücke, kein horizontales Verrutschen, keine sichtbare Scrollbar. */
+  touch-action: manipulation;
+  overscroll-behavior-y: none;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
 }
 
 body {
@@ -21,7 +31,33 @@ body {
      (malt zuerst, Schritt 1), body bleibt transparent, damit das darunter
      durchscheint. */
   background: transparent;
+  overflow-x: hidden;
+  -webkit-user-select: none;
+  user-select: none;
   @apply font-sans text-[15px] leading-relaxed text-ink antialiased;
+}
+
+/* Textfelder brauchen ihre eigene Markierbarkeit zurück (Tippen, Markieren,
+   Kopieren) — nur die App-Chrome drumherum bleibt „nicht markierbar“. */
+input,
+textarea,
+[contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* iOS zoomt beim Fokussieren automatisch rein, wenn ein Feld eine
+   Schriftgröße unter 16px hat — und zoomt danach nicht zuverlässig wieder
+   raus. Das ist der Haupttäter hinter „die Seite zoomt komisch rein“.
+   !important ist hier bewusst: die einzelnen Felder tragen alle eigene
+   Tailwind-Größenklassen (z. B. text-[15px]), die als Klassen-Selektoren
+   sonst gegen dieses Element-Selektor-Fix gewinnen würden. */
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }
 
 /* Ambient-Hintergrund für die ganze App: drei weiche, langsam driftende
@@ -82,10 +118,14 @@ h3 {
   color: #f1f3f9;
 }
 
-/* Thin, unobtrusive scrollbars that match the wall. */
+/* Keine sichtbaren Scrollbars irgendwo — Kino-Reihen, Tab-Leisten & Co.
+   scrollen per Touch/Wheel, aber ohne Balken (Website-Tell #1). */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: #262c47 transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+*::-webkit-scrollbar {
+  display: none;
 }
 
 @layer components {
@@ -281,6 +321,15 @@ h3 {
       transform: translateY(-180px) scale(1.05);
       opacity: 0;
     }
+  }
+}
+
+/* Handys: der driftende Aurora-Verlauf ist auf schwächeren GPUs spürbar
+   ruckelig (der gemeldete „hängt ein bisschen“-Eindruck). Bild bleibt,
+   Bewegung nicht. */
+@media (max-width: 767px) {
+  body::before {
+    animation: none;
   }
 }
 

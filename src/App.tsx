@@ -97,6 +97,39 @@ function Sidebar() {
   );
 }
 
+/**
+ * Mobile-Kopfleiste: die Sidebar (samt Logo) ist unter `md` komplett
+ * ausgeblendet, wodurch auf dem Handy sowohl das Logo als auch der einzige
+ * Weg zur Suche/zum Hinzufügen-Flow verschwanden. Diese schmale, sticky
+ * Leiste bringt beides zurück, ohne die Bottom-Tab-Bar zu überladen.
+ */
+function MobileHeader() {
+  const openSearch = useSearchOverlay((s) => s.open);
+  const t = useT();
+  return (
+    <header className="sticky top-0 z-sticky flex items-center justify-between border-b border-line bg-bg/90 px-4 py-2.5 backdrop-blur md:hidden">
+      <NavLink to="/" className="flex items-center gap-2" aria-label="Tsugi-Anitracker — Home">
+        <img
+          src={`${import.meta.env.BASE_URL}logo.png`}
+          alt=""
+          width={26}
+          height={26}
+          className="h-[26px] w-[26px] rounded-ctl shadow-glow-purple"
+        />
+        <span className="font-display text-[15px] font-semibold tracking-tight text-ink">Tsugi</span>
+      </NavLink>
+      <button
+        type="button"
+        onClick={openSearch}
+        aria-label={t('search')}
+        className="grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-ink-dim transition-colors duration-150 active:border-accent active:text-ink"
+      >
+        <IconSearch className="h-[18px] w-[18px]" />
+      </button>
+    </header>
+  );
+}
+
 function BottomBar() {
   const t = useT();
   return (
@@ -234,6 +267,7 @@ export function App() {
       <GlobalHotkeys />
       <Sidebar />
       <main className="min-h-screen pb-24 md:pb-10 md:pl-16 lg:pl-52">
+        <MobileHeader />
         <div className="mx-auto max-w-[1200px] px-4 pt-5 sm:px-6 md:pt-8">
           <ViewFrame />
         </div>

@@ -94,10 +94,14 @@ interface Particle {
  */
 function GenreStage({ genre }: { genre: Genre | null }) {
   const theme = genre ? GENRE_THEME[genre] : null;
+  // Handys: weniger Partikel und ein leiseres Farbbad — auf kleinen Screens
+  // wirkte der volle Effekt wie ein Overlay, das den eigentlichen Inhalt
+  // (Genre-Filter, Karten) erschlägt, und kostete spürbar Performance.
+  const isNarrow = typeof window !== 'undefined' && window.innerWidth < 768;
 
   const particles = useMemo<Particle[]>(() => {
     if (!theme) return [];
-    return Array.from({ length: 22 }, (_, i) => ({
+    return Array.from({ length: isNarrow ? 8 : 22 }, (_, i) => ({
       left: 3 + ((i * 41) % 94),
       bottom: (i * 27) % 96,
       delay: -((i * 1.3) % 10),
@@ -111,7 +115,11 @@ function GenreStage({ genre }: { genre: Genre | null }) {
     <div
       aria-hidden
       className="pointer-events-none fixed inset-0 overflow-hidden transition-[background,opacity] duration-700 ease-out"
-      style={{ zIndex: -1, background: theme?.bg ?? 'transparent', opacity: theme ? 1 : 0 }}
+      style={{
+        zIndex: -1,
+        background: theme?.bg ?? 'transparent',
+        opacity: theme ? (isNarrow ? 0.55 : 1) : 0,
+      }}
     >
       {particles.map((p, i) => (
         <span
@@ -146,7 +154,7 @@ function Spotlight({ media }: { media: MediaCard }) {
   const entry = findEntryFor(entries, media.id);
 
   return (
-    <section className="relative mb-10 overflow-hidden rounded-card border border-line">
+    <section className="relative mb-6 overflow-hidden rounded-card border border-line sm:mb-10">
       <div className="absolute inset-0">
         {img && (
           <img
@@ -157,26 +165,26 @@ function Spotlight({ media }: { media: MediaCard }) {
         )}
         <div className="absolute inset-0 bg-gradient-to-r from-bg/95 via-bg/70 to-bg/40" />
       </div>
-      <div className="relative flex items-center gap-6 p-6 sm:p-8">
+      <div className="relative flex items-center gap-6 p-4 sm:p-8">
         <div className="hidden w-[132px] shrink-0 overflow-hidden rounded-card shadow-2xl sm:block">
           {img && <img src={img} alt="" className="aspect-[2/3] w-full object-cover" />}
         </div>
         <div className="min-w-0">
-          <p className="text-[13px] font-medium text-accent">{t('spotlightKicker')}</p>
-          <h2 className="mt-1.5 font-display text-2xl font-semibold leading-tight text-ink sm:text-3xl">
+          <p className="text-[12px] font-medium text-accent sm:text-[13px]">{t('spotlightKicker')}</p>
+          <h2 className="mt-1 line-clamp-2 font-display text-lg font-semibold leading-tight text-ink sm:mt-1.5 sm:line-clamp-none sm:text-3xl">
             <Link to={`/anime/${media.id}`} className="hover:underline">
               {bestTitle(media)}
             </Link>
           </h2>
-          <p className="mt-1.5 line-clamp-1 text-sm text-ink-dim">{media.genres.slice(0, 4).join(' · ')}</p>
-          <div className="mt-4">
+          <p className="mt-1.5 line-clamp-1 text-xs text-ink-dim sm:text-sm">{media.genres.slice(0, 4).join(' · ')}</p>
+          <div className="mt-3 sm:mt-4">
             {entry ? (
               <StatusMenu rootId={entry.rootId} />
             ) : (
               <button
                 type="button"
                 onClick={() => navigate(`/anime/${media.id}`)}
-                className="inline-flex items-center gap-2 rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter] duration-150 hover:brightness-110"
+                className="inline-flex items-center gap-2 rounded-ctl bg-accent px-3.5 py-2 text-[13px] font-bold text-bg shadow-glow-accent transition-[filter] duration-150 hover:brightness-110 sm:px-4 sm:py-2.5 sm:text-sm"
               >
                 <IconPlus className="h-4 w-4" />
                 {t('add')}
