@@ -306,12 +306,31 @@ async function fetchRemoteEntries(userId: string): Promise<LibraryEntry[]> {
   return (data ?? []).map((row) => rowToEntry(row as EntryRow));
 }
 
+// WICHTIG: supabase-js-Query-Builder sind "lazy thenables" — der eigentliche
+// Netzwerk-Request feuert erst in `.then()`/`await`, nicht beim Aufbau der
+// Query. `void supabase.from(...).upsert(...)` OHNE `.then()`/`await` baut
+// die Query nur auf und verwirft sie sofort wieder, OHNE sie je abzuschicken.
+// Das war der Bug hinter "Einträge kommen auf einem neuen Gerät nicht an":
+// jedes Speichern sah durch den lokalen IndexedDB-Cache korrekt aus, kam bei
+// Supabase aber nie an. Deshalb hier immer `.then()` mit Fehler-Logging.
 function upsertRemote(e: LibraryEntry, userId: string): void {
-  void supabase.from('tsugi_entries').upsert(entryToRow(e, userId));
+  void supabase
+    .from('tsugi_entries')
+    .upsert(entryToRow(e, userId))
+    .then(({ error }) => {
+      if (error) console.error('Tsugi: Sync nach Supabase fehlgeschlagen (upsertRemote)', error);
+    });
 }
 
 function deleteRemote(rootId: number, userId: string): void {
-  void supabase.from('tsugi_entries').delete().eq('user_id', userId).eq('root_id', rootId);
+  void supabase
+    .from('tsugi_entries')
+    .delete()
+    .eq('user_id', userId)
+    .eq('root_id', rootId)
+    .then(({ error }) => {
+      if (error) console.error('Tsugi: Sync nach Supabase fehlgeschlagen (deleteRemote)', error);
+    });
 }
 
 async function fetchRemoteCompletedOrder(userId: string): Promise<number[]> {
@@ -325,7 +344,12 @@ async function fetchRemoteCompletedOrder(userId: string): Promise<number[]> {
 }
 
 function upsertRemoteCompletedOrder(userId: string, order: number[]): void {
-  void supabase.from('tsugi_settings').upsert({ user_id: userId, completed_order: order });
+  void supabase
+    .from('tsugi_settings')
+    .upsert({ user_id: userId, completed_order: order })
+    .then(({ error }) => {
+      if (error) console.error('Tsugi: Sync nach Supabase fehlgeschlagen (completedOrder)', error);
+    });
 }
 
 let realtimeChannel: RealtimeChannel | null = null;
