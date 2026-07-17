@@ -104,6 +104,7 @@ const DICT = {
   },
   emptyHomeCta: { de: 'Ersten Anime suchen', en: 'Search your first anime' },
   epShort: { de: 'Ep.', en: 'Ep.' },
+  newBadge: { de: 'NEU', en: 'NEW' },
 
   // Discover
   discoverTitle: { de: 'Entdecken', en: 'Discover' },
@@ -176,6 +177,8 @@ const DICT = {
     en: 'That didn’t work. AniList is probably briefly unavailable.',
   },
   retry: { de: 'Nochmal versuchen', en: 'Try again' },
+  entriesCount: { de: '{n} Einträge', en: '{n} entries' },
+  openEntry: { de: 'Eintrag öffnen', en: 'Open entry' },
 
   // Bibliothek
   libraryTitle: { de: 'Bibliothek', en: 'Library' },
@@ -194,9 +197,17 @@ const DICT = {
   seasonProgress: { de: 'Staffel {s} · Ep. {p}/{t}', en: 'Season {s} · Ep. {p}/{t}' },
   seasonsDone: { de: '{n} Staffeln', en: '{n} seasons' },
   seasonOne: { de: '1 Staffel', en: '1 season' },
-  waitingForSequel: { de: 'Wartet auf die Fortsetzung', en: 'Waiting for the sequel' },
+  waitingForSequel: { de: 'Datum unbekannt', en: 'Release date unknown' },
   announcedFor: { de: 'Angekündigt · {when}', en: 'Announced · {when}' },
+  dragToReorder: { de: 'Ziehen zum Umsortieren', en: 'Drag to reorder' },
+  continuationComing: { de: 'Fortsetzung · {when}', en: 'Continuation · {when}' },
+  continuationComingSoon: { de: 'Fortsetzung angekündigt', en: 'Continuation announced' },
+  randomPickBtn: { de: 'Für mich entscheiden', en: 'Pick for me' },
+  randomPickCta: { de: 'Jetzt ansehen', en: 'View now' },
   yourRatingShort: { de: 'deine Wertung {n}/10', en: 'your rating {n}/10' },
+  watchedUpToTitle: { de: 'Bis „{t}“ geschaut', en: 'Watched up to “{t}”' },
+  pausedAtEp: { de: 'Pausiert bei Episode {n}/{t}', en: 'Paused at episode {n}/{t}' },
+  resumeBtn: { de: 'Fortsetzen', en: 'Resume' },
 
   // Statistik
   statsTitle: { de: 'Statistik', en: 'Stats' },

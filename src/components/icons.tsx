@@ -133,3 +133,47 @@ export const IconArrowRight = (p: P) => (
     <path d="M4.5 12h15m0 0-5.5-5.5M19.5 12 14 17.5" />
   </svg>
 );
+
+export const IconPause = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M8 5.5v13M16 5.5v13" />
+  </svg>
+);
+
+export const IconFilm = (p: P) => (
+  <svg {...base} {...p}>
+    <rect x="4" y="5" width="16" height="14" rx="2" />
+    <path d="M4 9h16M4 15h16M9 5v4M9 15v4" />
+  </svg>
+);
+
+export const IconSparkle = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M12 4.5c.6 3 2 4.4 5 5-3 .6-4.4 2-5 5-.6-3-2-4.4-5-5 3-.6 4.4-2 5-5Z" />
+    <path d="M19 15c.3 1.4.9 2 2.3 2.3-1.4.3-2 .9-2.3 2.3-.3-1.4-.9-2-2.3-2.3 1.4-.3 2-.9 2.3-2.3Z" />
+  </svg>
+);
+
+/** Greifpunkt-Icon für Drag-Handles — sechs Punkte, keine Striche. */
+export const IconGrip = (p: P) => (
+  <svg {...base} {...p} stroke="none" fill="currentColor">
+    <circle cx="9" cy="6" r="1.4" />
+    <circle cx="15" cy="6" r="1.4" />
+    <circle cx="9" cy="12" r="1.4" />
+    <circle cx="15" cy="12" r="1.4" />
+    <circle cx="9" cy="18" r="1.4" />
+    <circle cx="15" cy="18" r="1.4" />
+  </svg>
+);
+
+/** Würfel-Icon für den Zufallsroller. */
+export const IconDice = (p: P) => (
+  <svg {...base} {...p}>
+    <rect x="4" y="4" width="16" height="16" rx="4" />
+    <circle cx="8.3" cy="8.3" r="1.15" fill="currentColor" stroke="none" />
+    <circle cx="15.7" cy="8.3" r="1.15" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="12" r="1.15" fill="currentColor" stroke="none" />
+    <circle cx="8.3" cy="15.7" r="1.15" fill="currentColor" stroke="none" />
+    <circle cx="15.7" cy="15.7" r="1.15" fill="currentColor" stroke="none" />
+  </svg>
+);

@@ -20,6 +20,7 @@ export default {
         green: '#2ecc71',
         amber: '#f5a524',
         rose: '#ff4757',
+        gold: '#ffcf4d',
       },
       fontFamily: {
         display: ['"Fraunces Variable"', 'Georgia', 'serif'],
@@ -33,6 +34,10 @@ export default {
         'glow-accent': '0 0 20px rgba(0,245,212,0.35)',
         'glow-purple': '0 0 20px rgba(138,43,226,0.45)',
         'glow-pink': '0 0 22px rgba(255,0,85,0.4)',
+        'glow-blue': '0 0 20px rgba(58,134,255,0.4)',
+        'glow-green': '0 0 20px rgba(46,204,113,0.4)',
+        'glow-amber': '0 0 20px rgba(245,165,36,0.35)',
+        'glow-gold': '0 0 20px rgba(255,207,77,0.45)',
       },
       transitionTimingFunction: {
         out: 'cubic-bezier(0.22, 1, 0.36, 1)',

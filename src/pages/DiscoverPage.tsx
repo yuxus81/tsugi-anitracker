@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchDiscover, fetchGenre } from '@/api/anilist';
@@ -28,6 +29,113 @@ const GENRE_LABEL_DE: Record<Genre, string> = {
   Comedy: 'Comedy',
   Thriller: 'Thriller',
 };
+
+/**
+ * Jedes Genre färbt die Bühne über den Filtern ein — eigener Verlauf, eigene
+ * treibende Partikel, eigene Akzentfarbe für den aktiven Filter-Chip.
+ */
+const GENRE_THEME: Record<Genre, { bg: string; glyphs: string[]; color: string }> = {
+  Action: {
+    bg: 'radial-gradient(70vw 60vh at 20% 0%, rgba(255,90,45,0.34), transparent 62%), radial-gradient(60vw 55vh at 90% 100%, rgba(255,138,61,0.26), transparent 64%)',
+    glyphs: ['✦', '✷'],
+    color: '#ff8a3d',
+  },
+  Adventure: {
+    bg: 'radial-gradient(70vw 60vh at 15% 5%, rgba(245,165,36,0.3), transparent 62%), radial-gradient(60vw 55vh at 95% 90%, rgba(245,197,106,0.22), transparent 64%)',
+    glyphs: ['✧', '➤'],
+    color: '#f5c56a',
+  },
+  Fantasy: {
+    bg: 'radial-gradient(70vw 60vh at 18% 0%, rgba(155,92,240,0.36), transparent 62%), radial-gradient(60vw 55vh at 88% 96%, rgba(58,134,255,0.22), transparent 64%)',
+    glyphs: ['✧', '✦', '❋'],
+    color: '#b28cff',
+  },
+  Romance: {
+    bg: 'radial-gradient(70vw 60vh at 25% 4%, rgba(255,46,119,0.36), transparent 60%), radial-gradient(58vw 52vh at 85% 92%, rgba(255,106,158,0.26), transparent 64%)',
+    glyphs: ['♥', '❤'],
+    color: '#ff6a9e',
+  },
+  Drama: {
+    bg: 'radial-gradient(70vw 60vh at 20% 0%, rgba(58,134,255,0.3), transparent 62%), radial-gradient(60vw 55vh at 90% 96%, rgba(127,168,255,0.2), transparent 64%)',
+    glyphs: ['❖', '✷'],
+    color: '#7fa8ff',
+  },
+  Sports: {
+    bg: 'radial-gradient(70vw 60vh at 18% 4%, rgba(0,245,212,0.3), transparent 62%), radial-gradient(60vw 55vh at 92% 92%, rgba(79,224,208,0.22), transparent 64%)',
+    glyphs: ['➤', '✦'],
+    color: '#4fe0d0',
+  },
+  Comedy: {
+    bg: 'radial-gradient(70vw 60vh at 22% 0%, rgba(255,207,77,0.34), transparent 62%), radial-gradient(58vw 52vh at 88% 94%, rgba(255,215,106,0.22), transparent 64%)',
+    glyphs: ['✺', '✦', '☺'],
+    color: '#ffd76a',
+  },
+  Thriller: {
+    bg: 'radial-gradient(70vw 60vh at 20% 0%, rgba(46,204,113,0.26), transparent 64%), radial-gradient(60vw 55vh at 90% 96%, rgba(95,214,138,0.2), transparent 66%)',
+    glyphs: ['●', '◆'],
+    color: '#5fd68a',
+  },
+};
+
+interface Particle {
+  left: number;
+  bottom: number;
+  delay: number;
+  dur: number;
+  size: number;
+  glyph: string;
+}
+
+/**
+ * Genre-Bühne: der Farbnebel + treibende Symbole liegen als fester Layer über
+ * dem GANZEN Viewport (per Portal an <body>, damit kein transformierter
+ * Seiten-Container sie auf die Inhaltsbreite beschneidet — das war der Grund,
+ * warum der Effekt vorher nur oben in einem schmalen Kasten sichtbar war).
+ */
+function GenreStage({ genre }: { genre: Genre | null }) {
+  const theme = genre ? GENRE_THEME[genre] : null;
+
+  const particles = useMemo<Particle[]>(() => {
+    if (!theme) return [];
+    return Array.from({ length: 22 }, (_, i) => ({
+      left: 3 + ((i * 41) % 94),
+      bottom: (i * 27) % 96,
+      delay: -((i * 1.3) % 10),
+      dur: 9 + ((i * 2.3) % 8),
+      size: 12 + ((i * 5) % 18),
+      glyph: theme.glyphs[i % theme.glyphs.length],
+    }));
+  }, [theme]);
+
+  return createPortal(
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 overflow-hidden transition-[background,opacity] duration-700 ease-out"
+      style={{ zIndex: -1, background: theme?.bg ?? 'transparent', opacity: theme ? 1 : 0 }}
+    >
+      {particles.map((p, i) => (
+        <span
+          key={i}
+          className="genre-particle"
+          style={{
+            left: `${p.left}%`,
+            bottom: `${p.bottom}%`,
+            fontSize: p.size,
+            color: theme?.color,
+            animationName: 'particle-float',
+            animationDuration: `${p.dur}s`,
+            animationDelay: `${p.delay}s`,
+            animationTimingFunction: 'linear',
+            animationIterationCount: 'infinite',
+          }}
+        >
+          {p.glyph}
+        </span>
+      ))}
+    </div>,
+    document.body,
+  );
+}
 
 /** Editorial spotlight: the #1 trending title as a wide banner, not a card. */
 function Spotlight({ media }: { media: MediaCard }) {
@@ -110,7 +218,9 @@ export function DiscoverPage() {
   });
 
   return (
-    <div>
+    <div className="relative">
+      <GenreStage genre={genre} />
+
       <PageTitle title={t('discoverTitle')} sub={t('discoverSub')} />
 
       <div
@@ -131,22 +241,34 @@ export function DiscoverPage() {
         >
           {t('filterAll')}
         </button>
-        {GENRES.map((g) => (
-          <button
-            key={g}
-            type="button"
-            role="tab"
-            aria-selected={genre === g}
-            onClick={() => setGenre(genre === g ? null : g)}
-            className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors duration-150 ${
-              genre === g
-                ? 'border-accent bg-accent/10 text-accent'
-                : 'border-line bg-surface text-ink-dim hover:text-ink'
-            }`}
-          >
-            {genreLabel(g)}
-          </button>
-        ))}
+        {GENRES.map((g) => {
+          const active = genre === g;
+          const theme = GENRE_THEME[g];
+          return (
+            <button
+              key={g}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setGenre(genre === g ? null : g)}
+              style={
+                active
+                  ? {
+                      borderColor: theme.color,
+                      background: `${theme.color}22`,
+                      color: theme.color,
+                      boxShadow: `0 0 16px -4px ${theme.color}`,
+                    }
+                  : undefined
+              }
+              className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors duration-150 ${
+                active ? '' : 'border-line bg-surface text-ink-dim hover:text-ink'
+              }`}
+            >
+              {genreLabel(g)}
+            </button>
+          );
+        })}
       </div>
 
       {genre === null ? (

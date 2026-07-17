@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { dbGetAll, dbPut, dbDelete, dbClear } from '@/lib/db';
-import type { MediaCard, MediaFormat, MediaStatus } from '@/api/types';
+import type { FuzzyDate, MediaCard, MediaFormat, MediaSeason, MediaStatus } from '@/api/types';
 import { bestTitle, cover } from '@/api/types';
 import { translate, useSettings, type DictKey } from '@/i18n';
 import { useToasts } from '@/store/toast';
@@ -40,8 +40,13 @@ export const STATUS_ORDER: WatchStatus[] = [
 /** Bibliothek zeigt genau diese vier Kategorien, in dieser Reihenfolge. */
 export const LIBRARY_TABS: WatchStatus[] = ['completed', 'paused', 'continuation', 'nextup'];
 
-/** Beim Hinzufügen wählbare Status (Rest wird abgeleitet). */
-export const ADD_STATUSES: WatchStatus[] = ['watching', 'planned', 'nextup', 'paused', 'completed'];
+/**
+ * Beim Hinzufügen wählbare Status. „Noch zu schauen“ ist bewusst NICHT dabei
+ * — der Status ist rein abgeleitet (siehe `deriveStatus`): eine bereits
+ * veröffentlichte, aber noch nicht begonnene Folgestaffel landet automatisch
+ * dort, nie durch manuelle Auswahl.
+ */
+export const ADD_STATUSES: WatchStatus[] = ['watching', 'planned', 'paused', 'completed'];
 
 function statusLabelNow(s: WatchStatus): string {
   return translate(useSettings.getState().lang, STATUS_KEY[s]);
@@ -54,7 +59,9 @@ export interface SeasonSnap {
   coverUrl: string | null;
   format: MediaFormat | null;
   episodes: number | null;
+  season: MediaSeason | null;
   seasonYear: number | null;
+  startDate: FuzzyDate | null;
   airStatus: MediaStatus | null;
   averageScore: number | null;
   duration: number | null;
@@ -67,11 +74,45 @@ export function seasonSnapFrom(card: MediaCard): SeasonSnap {
     coverUrl: cover(card),
     format: card.format,
     episodes: card.episodes,
+    season: card.season,
     seasonYear: card.seasonYear,
+    startDate: card.startDate,
     airStatus: card.status,
     averageScore: card.averageScore,
     duration: card.duration,
   };
+}
+
+/**
+ * Release-Label für eine (noch) nicht geschaute Staffel/Film: bevorzugt das
+ * exakte AniList-Startdatum (Monat + Jahr); ist nur die Season bekannt
+ * (Sommer/Herbst/…), wird sie auf ihren üblichen Startmonat abgebildet — genau
+ * so, wie Anime-Seasons ohnehin benannt werden ("Herbst 2026" ≈ Oktober 2026).
+ * Ist wirklich gar nichts bekannt, gibt es `null` (→ „Datum unbekannt“).
+ */
+const SEASON_START_MONTH: Record<MediaSeason, number> = {
+  WINTER: 1,
+  SPRING: 4,
+  SUMMER: 7,
+  FALL: 10,
+};
+
+export function releaseLabel(
+  s: Pick<SeasonSnap, 'startDate' | 'season' | 'seasonYear'>,
+  locale: string,
+): string | null {
+  const monthYear = (year: number, month: number): string =>
+    new Date(Date.UTC(year, month - 1, 1)).toLocaleDateString(locale, {
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'UTC',
+    });
+
+  if (s.startDate?.year && s.startDate.month) return monthYear(s.startDate.year, s.startDate.month);
+  if (s.season && s.seasonYear) return monthYear(s.seasonYear, SEASON_START_MONTH[s.season]);
+  if (s.seasonYear) return String(s.seasonYear);
+  if (s.startDate?.year) return String(s.startDate.year);
+  return null;
 }
 
 export function isReleased(s: SeasonSnap): boolean {
@@ -101,6 +142,19 @@ export function entryTitle(e: LibraryEntry): string {
 
 export function currentSeason(e: LibraryEntry): SeasonSnap | undefined {
   return e.seasons[e.seasonIndex];
+}
+
+/**
+ * Die zuletzt tatsächlich fertig geschaute Staffel. Bei „Fortsetzung folgt“
+ * zeigt der Zeiger (seasonIndex) schon auf die kommende, unveröffentlichte
+ * Staffel — hier interessiert aber, was wirklich geschaut wurde. Gibt
+ * `undefined` zurück, wenn noch gar nichts abgeschlossen wurde.
+ */
+export function lastWatchedSeason(e: LibraryEntry): SeasonSnap | undefined {
+  if (e.status === 'continuation') {
+    return e.seasonIndex > 0 ? e.seasons[e.seasonIndex - 1] : undefined;
+  }
+  return currentSeason(e);
 }
 
 export function entryCover(e: LibraryEntry): string | null {
@@ -164,6 +218,16 @@ function deriveStatus(
     };
   }
 
+  // Vorherige Staffel(n) fertig geschaut, aber die aktuelle (veröffentlichte)
+  // Staffel noch bei 0 Episoden — z. B. beim Hinzufügen „bis Staffel 1
+  // geschaut“, obwohl Staffel 2 schon da ist. „Schaue ich“ würde das fälschlich
+  // sofort in „Weiter schauen“ stecken; korrekt ist „Noch zu schauen“, von wo
+  // aus man es bewusst per Klick in „Weiter schauen“ holt. Ein bewusst
+  // gewählter anderer Status (Pausiert/Watchlist/Abgeschlossen) bleibt unangetastet.
+  if (chosen === 'watching' && idx > 0 && progress === 0 && cur && isReleased(cur)) {
+    return { status: 'nextup', seasonIndex: idx, progress, releaseNote: null };
+  }
+
   return { status: chosen, seasonIndex: idx, progress, releaseNote: null };
 }
 
@@ -177,9 +241,26 @@ interface AddFranchiseArgs {
   watchedThrough: number;
 }
 
+// ---- Manuelle Reihenfolge „Abgeschlossen“ ----------------------------------------
+// Per Drag & Drop sortierbar; leichtgewichtig in localStorage, getrennt vom
+// IndexedDB-Bibliotheksspeicher (kein eigener „Datensatz“, nur eine ID-Liste).
+
+const COMPLETED_ORDER_KEY = 'tsugi.completedOrder';
+
+function loadCompletedOrder(): number[] {
+  try {
+    const raw = localStorage.getItem(COMPLETED_ORDER_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((n) => typeof n === 'number') : [];
+  } catch {
+    return [];
+  }
+}
+
 interface LibraryState {
   entries: Record<number, LibraryEntry>;
   hydrated: boolean;
+  completedOrder: number[];
   hydrate: () => Promise<void>;
   addFranchise: (args: AddFranchiseArgs) => LibraryEntry | null;
   setStatus: (rootId: number, status: WatchStatus) => void;
@@ -187,6 +268,7 @@ interface LibraryState {
   setWatchedThrough: (rootId: number, watchedThrough: number) => void;
   setRating: (rootId: number, rating: number | null) => void;
   setNotes: (rootId: number, notes: string) => void;
+  setCompletedOrder: (rootIds: number[]) => void;
   applyScan: (rootId: number, patch: Partial<LibraryEntry>) => void;
   remove: (rootId: number) => void;
   importAll: (entries: LibraryEntry[]) => Promise<void>;
@@ -195,6 +277,7 @@ interface LibraryState {
 export const useLibrary = create<LibraryState>((set, get) => ({
   entries: {},
   hydrated: false,
+  completedOrder: loadCompletedOrder(),
 
   hydrate: async () => {
     const rows = await dbGetAll<LibraryEntry>();
@@ -345,6 +428,15 @@ export const useLibrary = create<LibraryState>((set, get) => ({
     const next = { ...cur, notes, updatedAt: Date.now() };
     set((s) => ({ entries: { ...s.entries, [rootId]: next } }));
     void dbPut(next);
+  },
+
+  setCompletedOrder: (rootIds) => {
+    set({ completedOrder: rootIds });
+    try {
+      localStorage.setItem(COMPLETED_ORDER_KEY, JSON.stringify(rootIds));
+    } catch {
+      /* privater Modus / voller Speicher — Reihenfolge lebt dann nur für die Session */
+    }
   },
 
   /** Scan-Ergebnisse einspielen (neue Staffeln, aktualisierte Air-Status, Statuswechsel). */

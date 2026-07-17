@@ -14,7 +14,48 @@ html {
 }
 
 body {
-  @apply bg-bg font-sans text-[15px] leading-relaxed text-ink antialiased;
+  /* Hintergrundfarbe bewusst NICHT hier: body ist ein normaler In-Flow-Block
+     und sein eigener Hintergrund wird nach den fixed/negativ-z-indizierten
+     Kindern gemalt (CSS-Maleregeln) — er würde die Aurora & die
+     Entdecken-Genre-Bühne komplett übermalen. <html> trägt die Grundfarbe
+     (malt zuerst, Schritt 1), body bleibt transparent, damit das darunter
+     durchscheint. */
+  background: transparent;
+  @apply font-sans text-[15px] leading-relaxed text-ink antialiased;
+}
+
+/* Ambient-Hintergrund für die ganze App: drei weiche, langsam driftende
+   Farbnebel plus ein feines Vignetten-Dimmen an den Rändern. Liegt hinter
+   allem (negatives z), fest im Viewport. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -20vh -20vw;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(38vw 38vw at 12% 8%, rgba(0, 245, 212, 0.15), transparent 60%),
+    radial-gradient(42vw 42vw at 88% 4%, rgba(58, 134, 255, 0.13), transparent 62%),
+    radial-gradient(46vw 46vw at 78% 92%, rgba(138, 43, 226, 0.14), transparent 64%);
+  filter: saturate(1.1);
+  animation: aurora-drift 46s ease-in-out infinite alternate;
+}
+@keyframes aurora-drift {
+  from {
+    transform: translate3d(-2%, -1.5%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(2.5%, 2%, 0) scale(1.08);
+  }
+}
+/* Feines Rausch-/Vignetten-Overlay: nimmt Farbverläufen das „Banding“. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background: radial-gradient(120% 120% at 50% 30%, transparent 55%, rgba(6, 8, 14, 0.55) 100%);
 }
 
 h1,
@@ -172,6 +213,75 @@ h3 {
       transform: translateY(-3px) scale(1.015);
     }
   }
+
+  /* Play-Button auf der „Weiter schauen“-Kinoreihe: ruhiges Atmen, kein Dauerblinken. */
+  .pulse-play {
+    animation: pulse-play 2.6s ease-in-out infinite;
+  }
+  @keyframes pulse-play {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(0, 245, 212, 0.45), 0 0 20px -2px rgba(0, 245, 212, 0.8);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(0, 245, 212, 0), 0 0 20px -2px rgba(0, 245, 212, 0.8);
+    }
+  }
+
+  /* Blinkender Punkt vor Release-Daten (Fortsetzung folgt). */
+  .blink-dot {
+    animation: blink-dot 1.8s ease-in-out infinite;
+  }
+  @keyframes blink-dot {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.25;
+    }
+  }
+
+  /* Neuheiten-Regal (Home „Noch zu schauen“): leichtes 3D-Kippen beim Hover. */
+  @media (hover: hover) and (pointer: fine) {
+    .tilt-card {
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
+    }
+    .tilt-card:hover {
+      transform: perspective(700px) rotateY(-6deg) rotateX(3deg) translateY(-4px);
+    }
+  }
+
+  /* Pausiert-Zeilen: Cover entsättigt, wird beim Hover wieder farbig. */
+  .desat-hover {
+    filter: saturate(0.35) brightness(0.85);
+    transition: filter 0.25s ease;
+  }
+  .desat-hover:hover,
+  .row-hover:hover .desat-hover {
+    filter: saturate(0.95) brightness(1);
+  }
+
+  /* Genre-reaktive Entdecken-Bühne: treibende Partikel (Herzen, Funken, …). */
+  .genre-particle {
+    position: absolute;
+    pointer-events: none;
+    will-change: transform, opacity;
+    animation: particle-float linear forwards;
+  }
+  @keyframes particle-float {
+    from {
+      transform: translateY(16px) scale(0.85);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    to {
+      transform: translateY(-180px) scale(1.05);
+      opacity: 0;
+    }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -183,9 +293,18 @@ h3 {
   .unfold,
   .stagger-in,
   .pop-in,
-  .panel-in {
+  .panel-in,
+  .pulse-play,
+  .blink-dot,
+  .genre-particle {
     animation-duration: 0.01ms;
     animation-delay: 0ms;
+  }
+  .genre-particle {
+    display: none;
+  }
+  .tilt-card:hover {
+    transform: none;
   }
   *,
   *::before,

@@ -41,6 +41,7 @@ export interface MediaCard {
   genres: string[];
   isAdult: boolean;
   nextAiringEpisode: { episode: number; airingAt: number } | null;
+  startDate: FuzzyDate | null;
 }
 
 /** Full detail payload. */
@@ -48,7 +49,6 @@ export interface MediaDetail extends MediaCard {
   bannerImage: string | null;
   description: string | null;
   studios: { nodes: Array<{ name: string; isAnimationStudio: boolean }> };
-  startDate: FuzzyDate | null;
   endDate: FuzzyDate | null;
   trailer: { id: string | null; site: string | null } | null;
   relations: {

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Franchise } from '@/api/anilist';
-import type { MediaDetail } from '@/api/types';
+import type { MediaDetail, MediaFormat } from '@/api/types';
 import { formatLabel, seasonLabel } from '@/api/types';
 import {
   ADD_STATUSES,
@@ -13,7 +13,14 @@ import {
 import { STATUS_DOT } from './TrackControls';
 import { useToasts } from '@/store/toast';
 import { useSettings, useT } from '@/i18n';
-import { IconCheck, IconX } from './icons';
+import { IconCheck, IconFilm, IconSparkle, IconStack, IconX } from './icons';
+
+/** Typ-Icon je Format — macht den Zeitstrahl auf einen Blick lesbar. */
+function typeIcon(format: MediaFormat | null) {
+  if (format === 'MOVIE') return IconFilm;
+  if (format === 'SPECIAL' || format === 'OVA' || format === 'MUSIC') return IconSparkle;
+  return IconStack;
+}
 
 /**
  * Der Hinzufügen-Flow (V1-Prinzip): oben Status-Chips wie die Entdecken-Filter,
@@ -41,10 +48,27 @@ export function AddPanel({
 
   const seasons = useMemo(() => {
     const main = franchise?.mainline ?? [];
-    // Fallback: solange der Zeitstrahl lädt oder leer ist, gilt die aktuelle
-    // Seite als einziges Glied der Hauptlinie.
-    const cards = main.length > 0 ? main : [detail];
-    return cards.map(seasonSnapFrom);
+    // Filme sind oft die eigentliche Fortsetzung (Haikyū, Chainsaw Man …), landen
+    // aber je nach AniList-Verknüpfung nur in den „Extras“ statt in der Hauptlinie.
+    // Damit „Abgeschlossen“ sie nicht stillschweigend überspringt, mischen wir
+    // Kinofilme in den Zeitstrahl — chronologisch einsortiert. Reine
+    // Zusammenfassungs-/Recap-Filme und Spin-offs bleiben außen vor.
+    const movieExtras = (franchise?.extras ?? [])
+      .filter(
+        (x) => x.media.format === 'MOVIE' && x.relation !== 'Zusammenfassung' && x.relation !== 'Spin-off',
+      )
+      .map((x) => x.media);
+
+    const base = main.length > 0 ? [...main, ...movieExtras] : [detail];
+
+    // Chronologisch nach Jahr, aber die ursprüngliche Reihenfolge als stabiler
+    // Tiebreaker (Hauptlinie zuerst), dann Duplikate raus.
+    const withOrder = base.map((c, i) => ({ c, i }));
+    withOrder.sort((a, b) => (a.c.seasonYear ?? 9999) - (b.c.seasonYear ?? 9999) || a.i - b.i);
+    const seen = new Set<number>();
+    const ordered = withOrder.map((w) => w.c).filter((m) => (seen.has(m.id) ? false : seen.add(m.id)));
+
+    return ordered.map(seasonSnapFrom);
   }, [franchise, detail]);
 
   const releasedCount = seasons.filter(isReleased).length;
@@ -138,34 +162,42 @@ export function AddPanel({
               const released = isReleased(s);
               const watched = released && i < effectiveThrough;
               const isMark = released && i === effectiveThrough - 1;
+              const disabled = !released || status === 'completed';
+              const TypeIcon = typeIcon(s.format);
               return (
-                <li key={s.id} className="relative pb-2.5 last:pb-0" style={{ ['--i' as string]: i + 1 }}>
+                <li key={s.id} className="relative pb-3 last:pb-0" style={{ ['--i' as string]: i + 1 }}>
                   <span
                     aria-hidden
-                    className={`absolute -left-5 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 ${
-                      watched ? 'border-accent bg-accent' : 'border-line bg-bg'
+                    className={`absolute -left-5 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-colors duration-200 ${
+                      watched ? 'border-accent bg-accent shadow-glow-accent' : 'border-line bg-bg'
                     }`}
                   />
                   <button
                     type="button"
-                    disabled={!released || status === 'completed'}
+                    disabled={disabled}
                     onClick={() => setThrough(i + 1)}
-                    className={`stagger-in flex w-full items-center gap-3 rounded-ctl border px-3 py-2 text-left transition-colors duration-150 ${
+                    className={`stagger-in flex w-full items-center gap-4 rounded-card border p-2.5 text-left transition-all duration-200 ${
                       watched
-                        ? 'border-accent/50 bg-accent/5'
+                        ? 'border-accent/50 bg-gradient-to-r from-accent/10 to-surface shadow-[0_14px_28px_-18px_rgba(0,245,212,0.6)]'
                         : 'border-line bg-raised hover:border-accent/40'
-                    } ${!released || status === 'completed' ? 'opacity-50' : ''}`}
+                    } ${disabled ? 'opacity-50' : ''}`}
                   >
-                    <span className="block h-11 w-8 shrink-0 overflow-hidden rounded-[4px] bg-bg">
+                    <span
+                      className={`block h-[92px] w-16 shrink-0 overflow-hidden rounded-[10px] bg-bg transition-shadow duration-200 ${
+                        watched ? 'shadow-[0_0_0_2px_rgba(0,245,212,0.5)]' : ''
+                      }`}
+                    >
                       {s.coverUrl && (
                         <img src={s.coverUrl} alt="" className="h-full w-full object-cover" />
                       )}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className={`block truncate text-sm ${watched ? 'font-medium text-ink' : 'text-ink-dim'}`}>
+                      <span
+                        className={`block truncate font-display text-[15px] ${watched ? 'font-semibold text-ink' : 'text-ink-dim'}`}
+                      >
                         {s.title}
                       </span>
-                      <span className="block text-xs text-ink-faint">
+                      <span className="mt-1 block text-xs text-ink-faint">
                         {[
                           s.format ? formatLabel(s.format, lang) : null,
                           seasonLabel({ season: null, seasonYear: s.seasonYear }, lang),
@@ -175,13 +207,20 @@ export function AddPanel({
                           .filter(Boolean)
                           .join(' · ')}
                       </span>
+                      {isMark && (
+                        <span className="mt-2 inline-flex shrink-0 items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-semibold text-accent">
+                          <IconCheck className="h-3 w-3" />
+                          {t('addUpTo')}
+                        </span>
+                      )}
                     </span>
-                    {isMark && (
-                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-semibold text-accent">
-                        <IconCheck className="h-3 w-3" />
-                        {t('addUpTo')}
-                      </span>
-                    )}
+                    <span
+                      className={`grid h-9 w-9 shrink-0 place-items-center rounded-[10px] ${
+                        watched ? 'bg-accent/15 text-accent' : 'bg-bg text-ink-faint'
+                      }`}
+                    >
+                      <TypeIcon className="h-4 w-4" />
+                    </span>
                   </button>
                 </li>
               );

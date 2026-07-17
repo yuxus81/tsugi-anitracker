@@ -65,6 +65,7 @@ export const CARD_FIELDS = `
   coverImage { extraLarge large color }
   format status episodes duration averageScore season seasonYear genres isAdult
   nextAiringEpisode { episode airingAt }
+  startDate { year month day }
 `;
 
 const CARD_PAGE = (alias: string, args: string) => `
@@ -155,7 +156,6 @@ const DETAIL_QUERY = `query ($id: Int) {
     ${CARD_FIELDS}
     bannerImage
     description(asHtml: false)
-    startDate { year month day }
     endDate { year month day }
     trailer { id site }
     studios { nodes { name isAnimationStudio } }
@@ -238,12 +238,22 @@ function pick(
   // Main-line walk: only TV/Movie continuations count, so specials/OVAs never
   // masquerade as a "season" on the timeline (V1's Einordnungs-bug).
   for (const t of types) {
-    const edge = slice.relations.edges.find(
-      (e) =>
-        e.relationType === t &&
-        e.node.type === 'ANIME' &&
-        (e.node.format === 'TV' || e.node.format === 'MOVIE' || e.node.format === 'ONA'),
-    );
+    const edge = slice.relations.edges.find((e) => {
+      if (e.relationType !== t) return false;
+      if (e.node.type !== 'ANIME') return false;
+      if (e.node.format !== 'TV' && e.node.format !== 'MOVIE' && e.node.format !== 'ONA') return false;
+      // Chronology guard: a prequel/parent can't start after the current node
+      // and a sequel can't start before it — rejects spurious edges like ONE
+      // PIECE's (id 21) PREQUEL link to a 2024 crossover ONA (AniList #167404)
+      // that itself points a SEQUEL edge back to ONE PIECE.
+      const currentYear = slice.card.seasonYear;
+      const candidateYear = e.node.seasonYear;
+      if (currentYear != null && candidateYear != null) {
+        if ((t === 'PREQUEL' || t === 'PARENT') && candidateYear > currentYear) return false;
+        if (t === 'SEQUEL' && candidateYear < currentYear) return false;
+      }
+      return true;
+    });
     if (edge) return edge.node.id;
   }
   return null;

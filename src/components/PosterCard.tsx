@@ -2,7 +2,10 @@ import { Link } from 'react-router-dom';
 import type { MediaCard } from '@/api/types';
 import { bestTitle, cover, formatLabel, seasonLabel } from '@/api/types';
 import { findEntryFor, isReleased, useLibrary } from '@/store/library';
+import { cardQuery } from '@/api/tmdb';
+import { useDisplayTitle } from '@/store/titles';
 import { useSettings } from '@/i18n';
+import { IconStar } from '@/components/icons';
 
 /**
  * The workhorse card: cover, title, one meta line. Tracked franchises carry an
@@ -14,6 +17,7 @@ export function PosterCard({ media, sizes }: { media: MediaCard; sizes?: string 
   const lang = useSettings((s) => s.lang);
   const entry = findEntryFor(entries, media.id);
   const src = cover(media);
+  const title = useDisplayTitle(cardQuery(media), bestTitle(media));
 
   // Fortschritt dieser Staffel innerhalb des Franchise-Eintrags.
   let progress: number | null = null;
@@ -34,7 +38,7 @@ export function PosterCard({ media, sizes }: { media: MediaCard; sizes?: string 
     <Link
       to={`/anime/${media.id}`}
       className="group block w-full"
-      aria-label={bestTitle(media)}
+      aria-label={title}
     >
       <div className="hover-lift relative aspect-[2/3] w-full overflow-hidden rounded-card bg-surface">
         {src && (
@@ -47,7 +51,8 @@ export function PosterCard({ media, sizes }: { media: MediaCard; sizes?: string 
           />
         )}
         {media.averageScore != null && (
-          <span className="absolute right-1.5 top-1.5 rounded bg-bg/85 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-ink">
+          <span className="absolute right-1.5 top-1.5 inline-flex items-center gap-1 rounded-full bg-gradient-to-br from-[#ffe27a] to-gold px-2 py-0.5 text-[11px] font-extrabold tabular-nums text-[#402700] shadow-[0_3px_10px_-2px_rgba(255,207,77,0.7)]">
+            <IconStar className="h-2.5 w-2.5" fill="currentColor" strokeWidth={0} />
             {(media.averageScore / 10).toFixed(1)}
           </span>
         )}
@@ -66,7 +71,7 @@ export function PosterCard({ media, sizes }: { media: MediaCard; sizes?: string 
         )}
       </div>
       <p className="mt-2 line-clamp-2 text-[13.5px] font-medium leading-snug text-ink">
-        {bestTitle(media)}
+        {title}
       </p>
       <p className="mt-0.5 text-xs text-ink-dim">
         {[media.format ? formatLabel(media.format, lang) : null, seasonLabel(media, lang)]
