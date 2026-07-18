@@ -52,14 +52,6 @@ export const STATUS_ORDER: WatchStatus[] = [
 /** Bibliothek zeigt genau diese vier Kategorien, in dieser Reihenfolge. */
 export const LIBRARY_TABS: WatchStatus[] = ['completed', 'paused', 'continuation', 'nextup'];
 
-/**
- * Beim Hinzufügen wählbare Status. „Noch zu schauen“ ist bewusst NICHT dabei
- * — der Status ist rein abgeleitet (siehe `deriveStatus`): eine bereits
- * veröffentlichte, aber noch nicht begonnene Folgestaffel landet automatisch
- * dort, nie durch manuelle Auswahl.
- */
-export const ADD_STATUSES: WatchStatus[] = ['watching', 'planned', 'paused', 'completed'];
-
 function statusLabelNow(s: WatchStatus): string {
   return translate(useSettings.getState().lang, STATUS_KEY[s]);
 }

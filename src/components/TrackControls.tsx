@@ -1,14 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   currentSeason,
   STATUS_KEY,
-  STATUS_ORDER,
   useLibrary,
   type WatchStatus,
 } from '@/store/library';
 import { useToasts } from '@/store/toast';
 import { useT } from '@/i18n';
-import { IconCheck, IconChevronDown, IconMinus, IconPlus, IconTrash } from './icons';
+import { IconCheck, IconMinus, IconPause, IconPlay, IconPlus, IconTrash } from './icons';
 
 /** Statusfarben — Palette aus V1: Neon, Purple, Pink, Blau, Grün, Amber. */
 export const STATUS_DOT: Record<WatchStatus, string> = {
@@ -20,85 +19,92 @@ export const STATUS_DOT: Record<WatchStatus, string> = {
   paused: 'bg-amber',
 };
 
-/** Status-Dropdown für bereits getrackte Franchises (inkl. Entfernen). */
-export function StatusMenu({ rootId }: { rootId: number }) {
+/**
+ * Kontextsensitive Shortcut-Leiste für bereits getrackte Franchises — statt
+ * eines Dropdowns mit allen sechs Status (inkl. sinnfreier Sprünge wie
+ * "Schaue ich" → "Watchlist") gibt es nur die Aktionen, die vom aktuellen
+ * Status aus tatsächlich Sinn ergeben, direkt als antippbare Buttons.
+ */
+export function QuickActions({ rootId }: { rootId: number }) {
   const entry = useLibrary((s) => s.entries[rootId]);
   const setStatus = useLibrary((s) => s.setStatus);
   const remove = useLibrary((s) => s.remove);
   const push = useToasts((s) => s.push);
   const t = useT();
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    window.addEventListener('pointerdown', onDown);
-    window.addEventListener('keydown', onEsc);
-    return () => {
-      window.removeEventListener('pointerdown', onDown);
-      window.removeEventListener('keydown', onEsc);
-    };
-  }, [open]);
 
   if (!entry) return null;
 
+  type Action = { key: string; label: string; Icon: typeof IconPlay; onClick: () => void; hoverCls: string };
+  const actions: Action[] = [];
+  if (entry.status === 'watching') {
+    actions.push({
+      key: 'pause',
+      label: t('pauseBtn'),
+      Icon: IconPause,
+      onClick: () => setStatus(rootId, 'paused'),
+      hoverCls: 'hover:border-amber/50 hover:text-amber',
+    });
+    actions.push({
+      key: 'complete',
+      label: t('markCompleteBtn'),
+      Icon: IconCheck,
+      onClick: () => setStatus(rootId, 'completed'),
+      hoverCls: 'hover:border-green/50 hover:text-green',
+    });
+  } else if (entry.status === 'paused') {
+    actions.push({
+      key: 'resume',
+      label: t('resumeBtn'),
+      Icon: IconPlay,
+      onClick: () => setStatus(rootId, 'watching'),
+      hoverCls: 'hover:border-accent/50 hover:text-accent',
+    });
+    actions.push({
+      key: 'complete',
+      label: t('markCompleteBtn'),
+      Icon: IconCheck,
+      onClick: () => setStatus(rootId, 'completed'),
+      hoverCls: 'hover:border-green/50 hover:text-green',
+    });
+  } else if (entry.status === 'planned' || entry.status === 'nextup') {
+    actions.push({
+      key: 'watch',
+      label: t('watchNowBtn'),
+      Icon: IconPlay,
+      onClick: () => setStatus(rootId, 'watching'),
+      hoverCls: 'hover:border-accent/50 hover:text-accent',
+    });
+  }
+
   return (
-    <div ref={rootRef} className="relative inline-block">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        className="inline-flex items-center gap-2 rounded-ctl border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink transition-colors duration-150 hover:border-accent"
-      >
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-ctl border border-line bg-surface px-3.5 py-2.5 text-sm font-semibold text-ink-dim">
         <span className={`h-2 w-2 rounded-full ${STATUS_DOT[entry.status]}`} />
         {t(STATUS_KEY[entry.status])}
-        <IconChevronDown className="h-4 w-4 opacity-70" />
-      </button>
-
-      {open && (
-        <div
-          role="menu"
-          className="unfold absolute left-0 top-full z-overlay mt-1.5 w-60 overflow-hidden rounded-card border border-line bg-raised py-1.5 shadow-xl"
+      </span>
+      {actions.map((a) => (
+        <button
+          key={a.key}
+          type="button"
+          onClick={a.onClick}
+          className={`inline-flex shrink-0 items-center gap-2 rounded-ctl border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink transition-colors duration-150 ${a.hoverCls}`}
         >
-          {STATUS_ORDER.map((s) => (
-            <button
-              key={s}
-              role="menuitem"
-              type="button"
-              onClick={() => {
-                setStatus(rootId, s);
-                setOpen(false);
-              }}
-              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-ink transition-colors duration-150 hover:bg-surface"
-            >
-              <span className={`h-2 w-2 rounded-full ${STATUS_DOT[s]}`} />
-              {t(STATUS_KEY[s])}
-              {entry.status === s && <IconCheck className="ml-auto h-4 w-4 text-accent" />}
-            </button>
-          ))}
-          <div className="mx-3.5 my-1.5 border-t border-line" />
-          <button
-            role="menuitem"
-            type="button"
-            onClick={() => {
-              remove(rootId);
-              push(t('removedToast'));
-              setOpen(false);
-            }}
-            className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-rose transition-colors duration-150 hover:bg-surface"
-          >
-            <IconTrash className="h-4 w-4" />
-            {t('remove')}
-          </button>
-        </div>
-      )}
+          <a.Icon className="h-4 w-4" />
+          {a.label}
+        </button>
+      ))}
+      <button
+        type="button"
+        aria-label={t('remove')}
+        title={t('remove')}
+        onClick={() => {
+          remove(rootId);
+          push(t('removedToast'));
+        }}
+        className="inline-flex shrink-0 items-center justify-center rounded-ctl border border-line bg-surface p-2.5 text-ink-faint transition-colors duration-150 hover:border-rose/50 hover:text-rose"
+      >
+        <IconTrash className="h-4 w-4" />
+      </button>
     </div>
   );
 }

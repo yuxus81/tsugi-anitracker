@@ -2,18 +2,18 @@ import { useMemo, useState } from 'react';
 import type { Franchise } from '@/api/anilist';
 import type { MediaDetail, MediaFormat } from '@/api/types';
 import { formatLabel } from '@/api/types';
-import {
-  ADD_STATUSES,
-  seasonSnapFrom,
-  isReleased,
-  STATUS_KEY,
-  useLibrary,
-  type WatchStatus,
-} from '@/store/library';
-import { STATUS_DOT } from './TrackControls';
+import { seasonSnapFrom, isReleased, STATUS_KEY, useLibrary } from '@/store/library';
 import { useToasts } from '@/store/toast';
 import { useSettings, useT } from '@/i18n';
-import { IconCheck, IconFilm, IconSparkle, IconStack, IconX } from './icons';
+import {
+  IconCheck,
+  IconChevronLeft,
+  IconFilm,
+  IconPlay,
+  IconSparkle,
+  IconStack,
+  IconX,
+} from './icons';
 
 /** Typ-Icon je Format — macht den Zeitstrahl auf einen Blick lesbar. */
 function typeIcon(format: MediaFormat | null) {
@@ -22,10 +22,16 @@ function typeIcon(format: MediaFormat | null) {
   return IconStack;
 }
 
+type Step = 'choose' | 'seasons';
+
 /**
- * Der Hinzufügen-Flow (V1-Prinzip): oben Status-Chips wie die Entdecken-Filter,
- * darunter klappt der Franchise-Zeitstrahl auf — antippen, bis wohin geschaut
- * wurde. Ergebnis: EIN Bibliothekseintrag fürs ganze Franchise.
+ * Der Hinzufügen-Flow (V2-Prinzip): zwei große Entscheidungs-Kacheln statt
+ * eines Chip-Reglers mit vier Status. „Watchlist“ fügt sofort hinzu — Fragen
+ * nach bereits geschauten Staffeln ergeben dort keinen Sinn. Die zweite
+ * Kachel öffnet den Franchise-Zeitstrahl zum Antippen, bis wohin geschaut
+ * wurde; der tatsächliche Status (Weiter schauen/Noch zu schauen/Fortsetzung
+ * folgt/Geschaut) wird danach automatisch abgeleitet (siehe `deriveStatus`
+ * im Store) — keine manuelle Status-Wahl mehr nötig.
  */
 export function AddPanel({
   detail,
@@ -43,14 +49,14 @@ export function AddPanel({
   const addFranchise = useLibrary((s) => s.addFranchise);
   const push = useToasts((s) => s.push);
 
-  const [status, setStatus] = useState<WatchStatus>('watching');
+  const [step, setStep] = useState<Step>('choose');
   const [through, setThrough] = useState(0);
 
   const seasons = useMemo(() => {
     const main = franchise?.mainline ?? [];
     // Filme sind oft die eigentliche Fortsetzung (Haikyū, Chainsaw Man …), landen
     // aber je nach AniList-Verknüpfung nur in den „Extras“ statt in der Hauptlinie.
-    // Damit „Abgeschlossen“ sie nicht stillschweigend überspringt, mischen wir
+    // Damit „Geschaut“ sie nicht stillschweigend überspringt, mischen wir
     // Kinofilme in den Zeitstrahl — chronologisch einsortiert. Reine
     // Zusammenfassungs-/Recap-Filme und Spin-offs bleiben außen vor.
     const movieExtras = (franchise?.extras ?? [])
@@ -72,18 +78,24 @@ export function AddPanel({
   }, [franchise, detail]);
 
   const releasedCount = seasons.filter(isReleased).length;
-  const effectiveThrough = status === 'completed' ? releasedCount : Math.min(through, releasedCount);
+  const effectiveThrough = Math.min(through, releasedCount);
 
-  const confirm = () => {
+  function confirmWatchlist() {
+    const entry = addFranchise({ seasons, genres: detail.genres, status: 'planned', watchedThrough: 0 });
+    if (entry) push(t('addedToast', { s: t(STATUS_KEY[entry.status]) }));
+    onClose();
+  }
+
+  function confirmTracked() {
     const entry = addFranchise({
       seasons,
       genres: detail.genres,
-      status,
+      status: 'watching',
       watchedThrough: effectiveThrough,
     });
     if (entry) push(t('addedToast', { s: t(STATUS_KEY[entry.status]) }));
     onClose();
-  };
+  }
 
   return (
     <section
@@ -102,58 +114,50 @@ export function AddPanel({
         </button>
       </div>
 
-      {/* Status-Chips — dieselbe Sprache wie die Entdecken-Filter. */}
-      <div className="flex gap-2 overflow-x-auto px-4 pb-1 pt-4 sm:px-5" role="radiogroup">
-        {ADD_STATUSES.map((s) => {
-          const active = s === status;
-          return (
-            <button
-              key={s}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => setStatus(s)}
-              className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium transition-all duration-150 ${
-                active
-                  ? 'border-accent bg-accent/10 text-accent shadow-glow-accent'
-                  : 'border-line bg-raised text-ink-dim hover:text-ink'
-              }`}
-            >
-              <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[s]}`} />
-              {t(STATUS_KEY[s])}
-            </button>
-          );
-        })}
-      </div>
+      {step === 'choose' ? (
+        <div className="grid grid-cols-2 gap-3 p-4 sm:p-5">
+          <button
+            type="button"
+            onClick={confirmWatchlist}
+            className="pop-in flex flex-col items-start gap-2.5 rounded-card border border-purple/30 bg-purple/[0.06] p-4 text-left transition-colors duration-150 hover:border-purple/60 hover:bg-purple/[0.1]"
+          >
+            <span className="grid h-10 w-10 place-items-center rounded-[10px] bg-purple/15 text-purple">
+              <IconStack className="h-5 w-5" />
+            </span>
+            <span className="font-display text-base font-semibold text-ink">{t('stPlanned')}</span>
+            <span className="text-[13px] leading-snug text-ink-dim">{t('addWatchlistHint')}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setStep('seasons')}
+            className="pop-in flex flex-col items-start gap-2.5 rounded-card border border-amber/30 bg-amber/[0.06] p-4 text-left transition-colors duration-150 hover:border-amber/60 hover:bg-amber/[0.1]"
+          >
+            <span className="grid h-10 w-10 place-items-center rounded-[10px] bg-amber/15 text-amber">
+              <IconPlay className="h-5 w-5" />
+            </span>
+            <span className="font-display text-base font-semibold text-ink">{t('stPaused')}</span>
+            <span className="text-[13px] leading-snug text-ink-dim">{t('addTrackHint')}</span>
+          </button>
+        </div>
+      ) : (
+        <div className="px-4 py-4 sm:px-5">
+          <button
+            type="button"
+            onClick={() => setStep('choose')}
+            className="mb-3 inline-flex items-center gap-1 text-[13px] font-medium text-ink-dim transition-colors duration-150 hover:text-ink"
+          >
+            <IconChevronLeft className="h-3.5 w-3.5" />
+            {t('addBack')}
+          </button>
+          <p className="mb-3 text-[13px] font-medium text-ink-dim">{t('addHowFar')}</p>
 
-      {/* Zeitstrahl: bis wohin geschaut? */}
-      <div className="px-4 py-4 sm:px-5">
-        <p className="mb-3 text-[13px] font-medium text-ink-dim">{t('addHowFar')}</p>
-
-        {loading ? (
-          <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="skeleton aspect-[2/3] w-full" />
-            ))}
-          </div>
-        ) : (
-          <>
-            {/* Ganzes Franchise auf einen Blick als Karten-Raster statt eines
-                langen, einspaltigen Zeitstrahls — auf dem Handy sonst extrem
-                scrolllastig bei Franchises mit vielen Staffeln/Filmen. */}
-            <button
-              type="button"
-              disabled={status === 'completed'}
-              onClick={() => setThrough(0)}
-              className={`mb-2.5 w-full rounded-ctl border px-3 py-2 text-left text-sm transition-colors duration-150 ${
-                effectiveThrough === 0
-                  ? 'border-accent/50 bg-accent/5 font-medium text-ink'
-                  : 'border-line bg-raised text-ink-dim hover:border-accent/40 hover:text-ink'
-              } disabled:opacity-50`}
-            >
-              {t('addNotStarted')}
-            </button>
-
+          {loading ? (
+            <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="skeleton aspect-[2/3] w-full" />
+              ))}
+            </div>
+          ) : (
             <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-6">
               {(() => {
                 let tvIndex = 0;
@@ -164,7 +168,7 @@ export function AddPanel({
                   const released = isReleased(s);
                   const watched = released && i < effectiveThrough;
                   const isMark = released && i === effectiveThrough - 1;
-                  const disabled = !released || status === 'completed';
+                  const disabled = !released;
                   const TypeIcon = typeIcon(s.format);
                   return (
                     <button
@@ -210,27 +214,27 @@ export function AddPanel({
                 });
               })()}
             </div>
-          </>
-        )}
+          )}
 
-        <div className="mt-4 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={confirm}
-            className="pop-in inline-flex items-center gap-2 rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter,transform] duration-150 hover:brightness-110 active:scale-[0.98]"
-          >
-            <IconCheck className="h-4 w-4" />
-            {t('addConfirm')}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-sm font-medium text-ink-dim transition-colors duration-150 hover:text-ink"
-          >
-            {t('cancel')}
-          </button>
+          <div className="mt-4 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={confirmTracked}
+              className="pop-in inline-flex items-center gap-2 rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter,transform] duration-150 hover:brightness-110 active:scale-[0.98]"
+            >
+              <IconCheck className="h-4 w-4" />
+              {t('addConfirm')}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-sm font-medium text-ink-dim transition-colors duration-150 hover:text-ink"
+            >
+              {t('cancel')}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </section>
   );
 }

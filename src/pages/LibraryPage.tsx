@@ -383,6 +383,7 @@ export function LibraryPage() {
   const openSearch = useSearchOverlay((s) => s.open);
   const t = useT();
   const [tab, setTab] = useState<WatchStatus>('completed');
+  const [geschautFilter, setGeschautFilter] = useState<'all' | 'continuation'>('all');
 
   const byStatus = useMemo(() => entriesByStatus(entries), [entries]);
   const total = Object.keys(entries).length;
@@ -416,7 +417,20 @@ export function LibraryPage() {
 
   // Nie auf einem leeren Tab öffnen, wenn woanders etwas liegt.
   const activeTab = counts[tab] > 0 ? tab : (LIBRARY_TABS.find((s) => counts[s] > 0) ?? tab);
-  const list = activeTab === 'completed' ? completedList : byStatus[activeTab];
+
+  // Innerhalb von „Geschaut“: „Abgeschlossen“ zeigt alles (inkl. der mit
+  // Fortsetzung), „Fortsetzung“ blendet gezielt nur die mit angekündigter
+  // bzw. bereits erschienener, aber noch nicht begonnener Folge ein.
+  const continuationCount = useMemo(
+    () => completedList.filter((e) => e.status === 'continuation' || e.status === 'nextup').length,
+    [completedList],
+  );
+  const filteredCompletedList = useMemo(() => {
+    if (geschautFilter === 'all') return completedList;
+    return completedList.filter((e) => e.status === 'continuation' || e.status === 'nextup');
+  }, [completedList, geschautFilter]);
+
+  const list = activeTab === 'completed' ? filteredCompletedList : byStatus[activeTab];
 
   if (hydrated && total === 0) {
     return (
@@ -471,6 +485,33 @@ export function LibraryPage() {
           );
         })}
       </div>
+
+      {activeTab === 'completed' && (
+        <div className="-mt-3 mb-6 flex gap-2" role="tablist" aria-label={t('stCompleted')}>
+          {(['all', 'continuation'] as const).map((f) => {
+            const active = f === geschautFilter;
+            const label = f === 'all' ? t('geschautFilterAll') : t('geschautFilterContinuation');
+            const n = f === 'all' ? completedList.length : continuationCount;
+            return (
+              <button
+                key={f}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setGeschautFilter(f)}
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-[12.5px] font-medium transition-colors duration-150 ${
+                  active
+                    ? 'border-gold/60 bg-gold/10 text-gold'
+                    : 'border-line bg-surface text-ink-faint hover:text-ink-dim'
+                }`}
+              >
+                {label}
+                <span className="tabular-nums opacity-70">{n}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {list.length === 0 ? (
         <EmptyState

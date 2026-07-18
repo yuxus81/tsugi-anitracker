@@ -11,7 +11,7 @@ import {
   useLibrary,
   type LibraryEntry,
 } from '@/store/library';
-import { EpisodeStepper, RatingStrip, StatusMenu } from '@/components/TrackControls';
+import { EpisodeStepper, QuickActions, RatingStrip } from '@/components/TrackControls';
 import { AddPanel } from '@/components/AddPanel';
 import { PosterRow } from '@/components/PosterCard';
 import { ErrorBox, SectionHead } from '@/components/ui';
@@ -180,49 +180,46 @@ function FranchiseAccordion({
                     className={`h-4 w-4 shrink-0 text-ink-faint transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
                   />
                 </button>
-                {/* Card-Reihe scrollt horizontal — die Höhe bleibt bei jeder
-                    Eintragszahl gleich (Karten sind fix breit, nicht hoch),
-                    ein fester Deckel ist hier also nie ein Rateweit. */}
-                <div
-                  className={`overflow-hidden transition-[max-height] duration-300 ease-out ${
-                    open ? 'max-h-[240px]' : 'max-h-0'
-                  }`}
-                >
-                  <div className="flex gap-3 overflow-x-auto px-4 pb-4">
-                      {items.map((it, i) => {
-                        const isSel = it.media.id === selectedId;
-                        return (
-                          <button
-                            key={it.media.id}
-                            type="button"
-                            onClick={() => setSelectedId(it.media.id)}
-                            style={{ ['--i' as string]: i }}
-                            className={`stagger-in w-24 shrink-0 rounded-[12px] border-2 p-1.5 text-left transition-colors duration-150 ${
-                              isSel ? 'border-accent bg-accent/5' : 'border-transparent hover:border-line'
-                            }`}
-                          >
-                            <span className="relative block aspect-[2/3] w-full overflow-hidden rounded-[8px] bg-raised">
-                              {cover(it.media) && (
-                                <img src={cover(it.media)!} alt="" className="h-full w-full object-cover" />
-                              )}
-                            </span>
-                            <span
-                              className={`mt-1.5 block truncate text-[11.5px] ${isSel ? 'font-semibold text-ink' : 'text-ink-dim'}`}
-                            >
-                              {k === 'seasons'
-                                ? t('seasonN', { n: groups.seasons.indexOf(it) + 1 })
-                                : bestTitle(it.media)}
-                            </span>
-                            {it.relationLabel && (
-                              <span className="block truncate text-[10px] text-ink-faint">
-                                {it.relationLabel}
-                              </span>
+                {/* Auf dem Handy ein umbrechendes Raster statt einer
+                    horizontal scrollenden Reihe — bei vielen Einträgen
+                    (Staffeln, Filme, Specials) sonst nicht mehr vollständig
+                    erreichbar. Ab `sm:` bleibt die kompakte Scroll-Reihe. */}
+                {open && (
+                  <div className="unfold grid grid-cols-3 gap-2.5 px-4 pb-4 sm:flex sm:gap-3 sm:overflow-x-auto">
+                    {items.map((it, i) => {
+                      const isSel = it.media.id === selectedId;
+                      return (
+                        <button
+                          key={it.media.id}
+                          type="button"
+                          onClick={() => setSelectedId(it.media.id)}
+                          style={{ ['--i' as string]: Math.min(i, 12) }}
+                          className={`stagger-in w-full rounded-[12px] border-2 p-1.5 text-left transition-colors duration-150 sm:w-24 sm:shrink-0 ${
+                            isSel ? 'border-accent bg-accent/5' : 'border-transparent hover:border-line'
+                          }`}
+                        >
+                          <span className="relative block aspect-[2/3] w-full overflow-hidden rounded-[8px] bg-raised">
+                            {cover(it.media) && (
+                              <img src={cover(it.media)!} alt="" className="h-full w-full object-cover" />
                             )}
-                          </button>
-                        );
-                      })}
+                          </span>
+                          <span
+                            className={`mt-1.5 block truncate text-[11.5px] ${isSel ? 'font-semibold text-ink' : 'text-ink-dim'}`}
+                          >
+                            {k === 'seasons'
+                              ? t('seasonN', { n: groups.seasons.indexOf(it) + 1 })
+                              : bestTitle(it.media)}
+                          </span>
+                          {it.relationLabel && (
+                            <span className="block truncate text-[10px] text-ink-faint">
+                              {it.relationLabel}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
-                </div>
+                )}
               </div>
             );
           })}
@@ -425,7 +422,7 @@ export function DetailPage() {
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
             {entry ? (
-              <StatusMenu rootId={entry.rootId} />
+              <QuickActions rootId={entry.rootId} />
             ) : (
               <button
                 type="button"
@@ -472,7 +469,7 @@ export function DetailPage() {
       <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_280px]">
         <div className="order-2 min-w-0 lg:order-1">
           {displayDescription && (
-            <section className="mb-10">
+            <section className="mb-10 hidden lg:block">
               <SectionHead title={t('aboutTitle')} />
               <p
                 className="max-w-[70ch] whitespace-pre-line text-[15px] leading-7 text-ink-dim"

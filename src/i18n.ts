@@ -88,8 +88,11 @@ const DICT = {
   stPlanned: { de: 'Watchlist', en: 'Watchlist' },
   stNextup: { de: 'Noch zu schauen', en: 'Ready to watch' },
   stContinuation: { de: 'Fortsetzung folgt', en: 'Sequel coming' },
-  stCompleted: { de: 'Abgeschlossen', en: 'Completed' },
+  stCompleted: { de: 'Geschaut', en: 'Watched' },
   stPaused: { de: 'Pausiert', en: 'Paused' },
+  pauseBtn: { de: 'Pausieren', en: 'Pause' },
+  geschautFilterAll: { de: 'Abgeschlossen', en: 'Completed' },
+  geschautFilterContinuation: { de: 'Fortsetzung', en: 'Sequel' },
 
   // Home
   homeGreetingLate: { de: 'Späte Session?', en: 'Late-night session?' },
@@ -191,6 +194,9 @@ const DICT = {
   addNotStarted: { de: 'Noch nicht angefangen', en: 'Not started yet' },
   addUpTo: { de: 'Bis hier geschaut', en: 'Watched up to here' },
   addConfirm: { de: 'Zur Bibliothek hinzufügen', en: 'Add to library' },
+  addWatchlistHint: { de: 'Einfach vormerken, später schauen', en: 'Just save it, watch later' },
+  addTrackHint: { de: 'Sag uns, bis wohin du schon bist', en: 'Tell us how far you got' },
+  addBack: { de: 'Zurück', en: 'Back' },
   cancel: { de: 'Abbrechen', en: 'Cancel' },
   addedToast: { de: 'Zu „{s}“ hinzugefügt', en: 'Added to “{s}”' },
   removedToast: { de: 'Aus der Bibliothek entfernt', en: 'Removed from library' },

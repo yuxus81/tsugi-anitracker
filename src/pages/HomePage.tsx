@@ -83,8 +83,21 @@ function ContinueCard({ entry }: { entry: LibraryEntry }) {
         to={`/anime/${season?.id ?? entry.rootId}`}
         className="relative flex min-w-0 flex-1 items-center gap-4 p-4 sm:gap-5 sm:p-5"
       >
-        <span className="block h-[132px] w-[94px] shrink-0 overflow-hidden rounded-[12px] bg-raised shadow-[0_14px_34px_-10px_rgba(0,0,0,0.65),0_0_0_2px_rgba(0,245,212,0.28)]">
+        <span className="relative block h-[132px] w-[94px] shrink-0 overflow-hidden rounded-[12px] bg-raised shadow-[0_14px_34px_-10px_rgba(0,0,0,0.65),0_0_0_2px_rgba(0,245,212,0.28)]">
           {cov && <img src={cov} alt="" className="h-full w-full object-cover" />}
+          <button
+            type="button"
+            aria-label={t('markCompleteBtn')}
+            title={t('markCompleteBtn')}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setStatus(entry.rootId, 'completed');
+            }}
+            className="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-bg/70 text-ink-dim backdrop-blur-sm transition-colors duration-150 hover:bg-green hover:text-bg active:scale-95"
+          >
+            <IconCheck className="h-3.5 w-3.5" />
+          </button>
         </span>
         <span className="min-w-0 flex-1">
           <span className="mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-accent/12 px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-accent">
@@ -99,18 +112,6 @@ function ContinueCard({ entry }: { entry: LibraryEntry }) {
               ? t('continueWithEp', { n: Math.min(entry.progress + 1, season.episodes) })
               : t('episodesSeen', { n: entry.progress })}
           </span>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setStatus(entry.rootId, 'completed');
-            }}
-            className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-line bg-bg/40 px-2.5 py-1 text-[11px] font-semibold text-ink-dim transition-colors duration-150 hover:border-green/50 hover:text-green"
-          >
-            <IconCheck className="h-3 w-3" />
-            {t('markCompleteBtn')}
-          </button>
         </span>
       </Link>
       <div className="relative flex shrink-0 items-center gap-3 pr-4 sm:gap-4 sm:pr-5">
@@ -177,6 +178,19 @@ function NextupCard({ entry }: { entry: LibraryEntry }) {
         >
           {t('newBadge')}
         </span>
+        <button
+          type="button"
+          aria-label={t('watchNowBtn')}
+          title={t('watchNowBtn')}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setStatus(entry.rootId, 'watching');
+          }}
+          className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-pink text-ink shadow-glow-pink transition-transform duration-150 active:scale-90"
+        >
+          <IconPlay className="h-3.5 w-3.5 translate-x-[1px]" />
+        </button>
       </span>
       <span className="mt-2.5 block line-clamp-2 text-[14px] font-semibold leading-snug text-ink">
         {title}
@@ -198,18 +212,6 @@ function NextupCard({ entry }: { entry: LibraryEntry }) {
           {t('newSeasonReady')}
         </span>
       </span>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setStatus(entry.rootId, 'watching');
-        }}
-        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-ctl bg-pink px-3 py-1.5 text-[12px] font-bold text-ink shadow-glow-pink transition-transform duration-150 active:scale-[0.98]"
-      >
-        <IconPlay className="h-3 w-3 translate-x-[1px]" />
-        {t('watchNowBtn')}
-      </button>
     </Link>
   );
 }

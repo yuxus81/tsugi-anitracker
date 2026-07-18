@@ -6,7 +6,7 @@ import { fetchDiscover, fetchGenre } from '@/api/anilist';
 import { bestTitle, cover, type MediaCard } from '@/api/types';
 import { PosterRow, PosterRowSkeleton } from '@/components/PosterCard';
 import { ErrorBox, PageTitle, SectionHead } from '@/components/ui';
-import { StatusMenu } from '@/components/TrackControls';
+import { QuickActions } from '@/components/TrackControls';
 import { findEntryFor, useLibrary } from '@/store/library';
 import { useSettings, useT } from '@/i18n';
 import { IconPlus } from '@/components/icons';
@@ -179,7 +179,7 @@ function Spotlight({ media }: { media: MediaCard }) {
           <p className="mt-1.5 line-clamp-1 text-xs text-ink-dim sm:text-sm">{media.genres.slice(0, 4).join(' · ')}</p>
           <div className="mt-3 sm:mt-4">
             {entry ? (
-              <StatusMenu rootId={entry.rootId} />
+              <QuickActions rootId={entry.rootId} />
             ) : (
               <button
                 type="button"
