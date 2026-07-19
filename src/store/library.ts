@@ -28,8 +28,7 @@ export type WatchStatus =
   | 'planned' // Watchlist
   | 'nextup' // Noch zu schauen (neue Staffel verfügbar / bereit)
   | 'continuation' // Fortsetzung folgt (angekündigt / erwartet)
-  | 'completed' // Abgeschlossen
-  | 'paused'; // Pausiert
+  | 'completed'; // Abgeschlossen
 
 export const STATUS_KEY: Record<WatchStatus, DictKey> = {
   watching: 'stWatching',
@@ -37,20 +36,12 @@ export const STATUS_KEY: Record<WatchStatus, DictKey> = {
   nextup: 'stNextup',
   continuation: 'stContinuation',
   completed: 'stCompleted',
-  paused: 'stPaused',
 };
 
-export const STATUS_ORDER: WatchStatus[] = [
-  'watching',
-  'nextup',
-  'planned',
-  'continuation',
-  'paused',
-  'completed',
-];
+export const STATUS_ORDER: WatchStatus[] = ['watching', 'nextup', 'planned', 'continuation', 'completed'];
 
-/** Bibliothek zeigt genau diese vier Kategorien, in dieser Reihenfolge. */
-export const LIBRARY_TABS: WatchStatus[] = ['completed', 'paused', 'continuation', 'nextup'];
+/** Bibliothek zeigt genau diese drei Kategorien, in dieser Reihenfolge. */
+export const LIBRARY_TABS: WatchStatus[] = ['completed', 'continuation', 'nextup'];
 
 function statusLabelNow(s: WatchStatus): string {
   return translate(useSettings.getState().lang, STATUS_KEY[s]);
@@ -326,14 +317,24 @@ function deleteRemote(rootId: number, userId: string): void {
     });
 }
 
-async function fetchRemoteCompletedOrder(userId: string): Promise<number[]> {
+interface RemoteSettings {
+  completedOrder: number[];
+  username: string | null;
+  usernameChangedAt: number | null;
+}
+
+async function fetchRemoteSettings(userId: string): Promise<RemoteSettings> {
   const { data, error } = await supabase
     .from('tsugi_settings')
-    .select('completed_order')
+    .select('completed_order, username, username_changed_at')
     .eq('user_id', userId)
     .maybeSingle();
   if (error) throw error;
-  return (data?.completed_order as number[] | undefined) ?? [];
+  return {
+    completedOrder: (data?.completed_order as number[] | undefined) ?? [],
+    username: (data?.username as string | undefined) ?? null,
+    usernameChangedAt: (data?.username_changed_at as number | undefined) ?? null,
+  };
 }
 
 function upsertRemoteCompletedOrder(userId: string, order: number[]): void {
@@ -342,6 +343,15 @@ function upsertRemoteCompletedOrder(userId: string, order: number[]): void {
     .upsert({ user_id: userId, completed_order: order })
     .then(({ error }) => {
       if (error) console.error('Tsugi: Sync nach Supabase fehlgeschlagen (completedOrder)', error);
+    });
+}
+
+function upsertRemoteUsername(userId: string, username: string, changedAt: number): void {
+  void supabase
+    .from('tsugi_settings')
+    .upsert({ user_id: userId, username, username_changed_at: changedAt })
+    .then(({ error }) => {
+      if (error) console.error('Tsugi: Sync nach Supabase fehlgeschlagen (username)', error);
     });
 }
 
@@ -375,13 +385,24 @@ function subscribeRealtime(userId: string): void {
       'postgres_changes',
       { event: '*', schema: 'public', table: 'tsugi_settings', filter: `user_id=eq.${userId}` },
       (payload) => {
-        const order = (payload.new as { completed_order?: number[] } | null)?.completed_order;
-        if (!order) return;
-        useLibrary.setState({ completedOrder: order });
-        try {
-          localStorage.setItem(COMPLETED_ORDER_KEY, JSON.stringify(order));
-        } catch {
-          /* ignore */
+        const row = payload.new as { completed_order?: number[]; username?: string; username_changed_at?: number } | null;
+        if (!row) return;
+        if (row.completed_order) {
+          useLibrary.setState({ completedOrder: row.completed_order });
+          try {
+            localStorage.setItem(COMPLETED_ORDER_KEY, JSON.stringify(row.completed_order));
+          } catch {
+            /* ignore */
+          }
+        }
+        if (row.username) {
+          useLibrary.setState({ username: row.username, usernameChangedAt: row.username_changed_at ?? null });
+          try {
+            localStorage.setItem(USERNAME_KEY, row.username);
+            if (row.username_changed_at) localStorage.setItem(USERNAME_CHANGED_KEY, String(row.username_changed_at));
+          } catch {
+            /* ignore */
+          }
         }
       },
     )
@@ -427,10 +448,61 @@ function loadCompletedOrder(): number[] {
   }
 }
 
+// ---- Username ---------------------------------------------------------------
+// Rein clientseitig angezeigt ("Hey, {name}" auf Home) + per Supabase
+// synchronisiert wie die Abgeschlossen-Reihenfolge; 7-Tage-Sperre verhindert
+// zu häufiges Ändern (siehe SettingsPage).
+
+const USERNAME_KEY = 'tsugi.username';
+const USERNAME_CHANGED_KEY = 'tsugi.usernameChangedAt';
+
+function loadUsername(): string | null {
+  try {
+    return localStorage.getItem(USERNAME_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function loadUsernameChangedAt(): number | null {
+  try {
+    const raw = localStorage.getItem(USERNAME_CHANGED_KEY);
+    return raw ? Number(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Alte 'paused'-Einträge (Kategorie wurde entfernt) still zu 'watching'
+ * migrieren — sowohl im State als auch persistent (lokal + Supabase), damit
+ * sie nicht bei jedem Hydrate/Sync erneut als Karteileiche auftauchen.
+ */
+function migrateLegacyStatuses(
+  entries: Record<number, LibraryEntry>,
+  uid: string | null,
+): Record<number, LibraryEntry> {
+  const out: Record<number, LibraryEntry> = {};
+  for (const [key, e] of Object.entries(entries)) {
+    const raw = e.status as unknown as string;
+    if (raw === 'paused') {
+      const fixed: LibraryEntry = { ...e, status: 'watching', updatedAt: Date.now() };
+      out[Number(key)] = fixed;
+      void dbPut(fixed);
+      if (uid) upsertRemote(fixed, uid);
+    } else {
+      out[Number(key)] = e;
+    }
+  }
+  return out;
+}
+
 interface LibraryState {
   entries: Record<number, LibraryEntry>;
   hydrated: boolean;
   completedOrder: number[];
+  username: string | null;
+  usernameChangedAt: number | null;
   hydrate: () => Promise<void>;
   /** Nach Login: mit Supabase abgleichen, ggf. lokale Erstdaten hochladen, Realtime starten. */
   syncFromRemote: (userId: string) => Promise<void>;
@@ -443,6 +515,7 @@ interface LibraryState {
   setRating: (rootId: number, rating: number | null) => void;
   setNotes: (rootId: number, notes: string) => void;
   setCompletedOrder: (rootIds: number[]) => void;
+  setUsername: (name: string) => void;
   applyScan: (rootId: number, patch: Partial<LibraryEntry>) => void;
   remove: (rootId: number) => void;
   importAll: (entries: LibraryEntry[]) => Promise<void>;
@@ -452,23 +525,27 @@ export const useLibrary = create<LibraryState>((set, get) => ({
   entries: {},
   hydrated: false,
   completedOrder: loadCompletedOrder(),
+  username: loadUsername(),
+  usernameChangedAt: loadUsernameChangedAt(),
 
   hydrate: async () => {
     const rows = await dbGetAll<LibraryEntry>();
     const valid = rows.filter((r) => typeof r.rootId === 'number' && Array.isArray(r.seasons));
     set({
-      entries: Object.fromEntries(valid.map((r) => [r.rootId, r])),
+      entries: migrateLegacyStatuses(Object.fromEntries(valid.map((r) => [r.rootId, r])), null),
       hydrated: true,
     });
   },
 
   syncFromRemote: async (userId) => {
     try {
-      const [remote, remoteOrder] = await Promise.all([
+      const [remote, remoteSettings] = await Promise.all([
         fetchRemoteEntries(userId),
-        fetchRemoteCompletedOrder(userId),
+        fetchRemoteSettings(userId),
       ]);
       const localEntries = Object.values(get().entries);
+      const localUsername = get().username;
+      const localUsernameChangedAt = get().usernameChangedAt;
 
       if (remote.length === 0 && localEntries.length > 0) {
         // Erste Anmeldung mit bereits vorhandenen lokalen Daten (z. B. aus der
@@ -476,20 +553,39 @@ export const useLibrary = create<LibraryState>((set, get) => ({
         // verwerfen. Ab jetzt ist die Cloud die Quelle der Wahrheit.
         for (const e of localEntries) upsertRemote(e, userId);
         const localOrder = get().completedOrder;
-        if (localOrder.length > 0) upsertRemoteCompletedOrder(userId, localOrder);
+        if (remoteSettings.completedOrder.length === 0 && localOrder.length > 0) {
+          upsertRemoteCompletedOrder(userId, localOrder);
+        }
       } else {
         set({
-          entries: Object.fromEntries(remote.map((r) => [r.rootId, r])),
-          completedOrder: remoteOrder,
+          entries: migrateLegacyStatuses(Object.fromEntries(remote.map((r) => [r.rootId, r])), userId),
+          completedOrder: remoteSettings.completedOrder,
         });
         await dbClear();
         for (const r of remote) await dbPut(r);
         try {
-          localStorage.setItem(COMPLETED_ORDER_KEY, JSON.stringify(remoteOrder));
+          localStorage.setItem(COMPLETED_ORDER_KEY, JSON.stringify(remoteSettings.completedOrder));
         } catch {
           /* ignore */
         }
       }
+
+      // Username: unabhängig vom Entries-Zweig — Cloud gewinnt, sofern gesetzt,
+      // sonst wird ein rein lokaler Name einmalig hochgeladen.
+      if (remoteSettings.username) {
+        set({ username: remoteSettings.username, usernameChangedAt: remoteSettings.usernameChangedAt });
+        try {
+          localStorage.setItem(USERNAME_KEY, remoteSettings.username);
+          if (remoteSettings.usernameChangedAt) {
+            localStorage.setItem(USERNAME_CHANGED_KEY, String(remoteSettings.usernameChangedAt));
+          }
+        } catch {
+          /* ignore */
+        }
+      } else if (localUsername) {
+        upsertRemoteUsername(userId, localUsername, localUsernameChangedAt ?? Date.now());
+      }
+
       subscribeRealtime(userId);
     } catch {
       // Offline oder Netzwerkfehler: lokaler Cache bleibt gültig, der nächste
@@ -667,6 +763,21 @@ export const useLibrary = create<LibraryState>((set, get) => ({
     if (uid) upsertRemoteCompletedOrder(uid, rootIds);
   },
 
+  setUsername: (name) => {
+    const trimmed = name.trim().slice(0, 24);
+    if (!trimmed) return;
+    const now = Date.now();
+    set({ username: trimmed, usernameChangedAt: now });
+    try {
+      localStorage.setItem(USERNAME_KEY, trimmed);
+      localStorage.setItem(USERNAME_CHANGED_KEY, String(now));
+    } catch {
+      /* privater Modus / voller Speicher — Name lebt dann nur für die Session */
+    }
+    const uid = currentUserId();
+    if (uid) upsertRemoteUsername(uid, trimmed, now);
+  },
+
   /** Scan-Ergebnisse einspielen (neue Staffeln, aktualisierte Air-Status, Statuswechsel). */
   applyScan: (rootId, patch) => {
     const cur = get().entries[rootId];
@@ -717,7 +828,6 @@ export function entriesByStatus(
     nextup: [],
     continuation: [],
     completed: [],
-    paused: [],
   };
   for (const e of Object.values(entries)) out[e.status].push(e);
   for (const k of STATUS_ORDER) out[k].sort((a, b) => b.updatedAt - a.updatedAt);

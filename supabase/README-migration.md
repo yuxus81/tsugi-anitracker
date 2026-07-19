@@ -62,6 +62,14 @@ where relname in ('tsugi_entries', 'tsugi_settings');
 
 ---
 
+## 5. Nachtrag: Username (Migration 0002)
+
+Für die Home-Begrüßung mit Namen führst du zusätzlich `migrations/0002_username.sql`
+im SQL Editor aus — ergänzt `username` und `username_changed_at` auf
+`tsugi_settings` (additiv, kein Backup nötig).
+
+---
+
 ## Spaltenüberblick
 
 | Spalte (`tsugi_entries`) | Typ | Bedeutung |

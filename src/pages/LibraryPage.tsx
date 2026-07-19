@@ -23,7 +23,6 @@ import {
   IconCheck,
   IconFilm,
   IconGrip,
-  IconPause,
   IconPlay,
   IconSearch,
   IconSparkle,
@@ -205,72 +204,6 @@ function CompletedList({ list }: { list: LibraryEntry[] }) {
         </li>
       ))}
     </ul>
-  );
-}
-
-/**
- * Pausiert — „Eingefroren“: entsättigtes Cover mit Frost-Overlay und Pause-Glyph,
- * ein Fortschrittsbalken zeigt, wo man stehen geblieben ist. Beim Hover taut das
- * Cover auf und „Fortsetzen“ erscheint.
- */
-function PausedRow({ entry, index }: { entry: LibraryEntry; index: number }) {
-  const t = useT();
-  const setStatus = useLibrary((s) => s.setStatus);
-  const season = currentSeason(entry);
-  const linkId = season?.id ?? entry.rootId;
-  const cov = entryCover(entry);
-  const pct = season?.episodes ? Math.min(100, Math.round((entry.progress / season.episodes) * 100)) : 0;
-  const title = useDisplayTitle(entryQuery(entry), entryTitle(entry));
-
-  return (
-    <li className="stagger-in" style={{ ['--i' as string]: Math.min(index, 12) }}>
-      <Link
-        to={`/anime/${linkId}`}
-        className="group flex items-center gap-4 rounded-card border border-dashed border-amber/40 bg-surface px-3 py-3.5 transition-colors duration-150 hover:border-amber/70 sm:px-4"
-      >
-        <span className="relative block h-[88px] w-[62px] shrink-0 overflow-hidden rounded-[9px] bg-raised">
-          {cov && (
-            <img
-              src={cov}
-              alt=""
-              className="h-full w-full object-cover saturate-[0.3] brightness-[0.8] transition-[filter] duration-300 group-hover:saturate-100 group-hover:brightness-100"
-            />
-          )}
-          <span className="absolute inset-0 grid place-items-center bg-bg/25 transition-opacity duration-300 group-hover:opacity-0">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-bg/70 text-amber backdrop-blur-sm">
-              <IconPause className="h-3.5 w-3.5" />
-            </span>
-          </span>
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-semibold text-ink-dim">{title}</p>
-          <p className="mt-0.5 truncate text-xs text-ink-faint">
-            {season?.episodes
-              ? t('pausedAtEp', { n: entry.progress, t: season.episodes })
-              : t('episodesSeen', { n: entry.progress })}
-          </p>
-          <div className="mt-2 flex items-center gap-2">
-            <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-raised">
-              <span
-                className="block h-full rounded-full bg-gradient-to-r from-amber to-gold"
-                style={{ width: `${pct}%` }}
-              />
-            </span>
-            <span className="text-[11px] font-semibold tabular-nums text-amber">{pct}%</span>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            setStatus(entry.rootId, 'watching');
-          }}
-          className="inline-block shrink-0 rounded-full border border-amber/40 px-3 py-1.5 text-[12px] font-semibold text-amber transition-opacity duration-150 sm:opacity-0 sm:group-hover:opacity-100"
-        >
-          {t('resumeBtn')}
-        </button>
-      </Link>
-    </li>
   );
 }
 
@@ -495,6 +428,7 @@ export function LibraryPage() {
           >
             {onlyFullyDone && <IconCheck className="h-3 w-3" />}
             {t('geschautFilterAll')}
+            {onlyFullyDone && <span className="tabular-nums opacity-70">({filteredCompletedList.length})</span>}
           </button>
         </div>
       )}
@@ -514,8 +448,6 @@ export function LibraryPage() {
         <CompletedList key={activeTab} list={list} />
       ) : (
         <ul key={activeTab} className="space-y-3">
-          {activeTab === 'paused' &&
-            list.map((e, i) => <PausedRow key={e.rootId} entry={e} index={i} />)}
           {activeTab === 'nextup' &&
             list.map((e, i) => <NextupRow key={e.rootId} entry={e} index={i} />)}
         </ul>

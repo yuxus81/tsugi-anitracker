@@ -1,10 +1,12 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLibrary, type LibraryEntry } from '@/store/library';
 import { signOut, useAuth } from '@/store/auth';
 import { useToasts } from '@/store/toast';
 import { PageTitle, SectionHead } from '@/components/ui';
 import { useSettings, useT, type Lang } from '@/i18n';
 import { IconCheck, IconDownload, IconTrash, IconUpload } from '@/components/icons';
+
+const USERNAME_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 
 interface BackupFile {
   app: 'tsugi';
@@ -16,6 +18,9 @@ interface BackupFile {
 export function SettingsPage() {
   const entries = useLibrary((s) => s.entries);
   const importAll = useLibrary((s) => s.importAll);
+  const username = useLibrary((s) => s.username);
+  const usernameChangedAt = useLibrary((s) => s.usernameChangedAt);
+  const setUsername = useLibrary((s) => s.setUsername);
   const user = useAuth((s) => s.user);
   const push = useToasts((s) => s.push);
   const t = useT();
@@ -23,8 +28,24 @@ export function SettingsPage() {
   const setLang = useSettings((s) => s.setLang);
   const fileRef = useRef<HTMLInputElement>(null);
   const [confirmWipe, setConfirmWipe] = useState(false);
+  const [nameDraft, setNameDraft] = useState(username ?? '');
+
+  useEffect(() => setNameDraft(username ?? ''), [username]);
 
   const count = Object.keys(entries).length;
+
+  const msSinceNameChange = usernameChangedAt ? Date.now() - usernameChangedAt : Infinity;
+  const nameLocked = msSinceNameChange < USERNAME_COOLDOWN_MS;
+  const nameLockedDays = nameLocked
+    ? Math.max(1, Math.ceil((USERNAME_COOLDOWN_MS - msSinceNameChange) / 86_400_000))
+    : 0;
+
+  const saveUsername = () => {
+    const trimmed = nameDraft.trim();
+    if (!trimmed || nameLocked) return;
+    setUsername(trimmed);
+    push(t('profileSavedToast'));
+  };
 
   const doExport = () => {
     const payload: BackupFile = {
@@ -73,6 +94,40 @@ export function SettingsPage() {
   return (
     <div className="max-w-2xl">
       <PageTitle title={t('settingsTitle')} sub={t('settingsSub')} />
+
+      <section className="mb-9">
+        <SectionHead title={t('profileTitle')} />
+        <div className="rounded-card border border-line bg-surface p-5">
+          {nameLocked ? (
+            <p className="text-sm leading-6 text-ink-dim">
+              {t('profileLockedHint', { name: username ?? '', days: nameLockedDays })}
+            </p>
+          ) : (
+            <>
+              <label className="block max-w-xs">
+                <span className="mb-1.5 block text-xs text-ink-faint">{t('profileLabel')}</span>
+                <input
+                  value={nameDraft}
+                  maxLength={24}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  placeholder={t('profilePlaceholder')}
+                  className="w-full rounded-ctl border border-line bg-raised px-3.5 py-2.5 text-sm text-ink outline-none transition-colors duration-150 focus:border-accent"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={saveUsername}
+                disabled={!nameDraft.trim() || nameDraft.trim() === username}
+                className="mt-3 inline-flex items-center gap-2 rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg transition-[filter] duration-150 hover:brightness-110 disabled:opacity-40"
+              >
+                <IconCheck className="h-4 w-4" />
+                {t('profileSaveBtn')}
+              </button>
+              {username && <p className="mt-3 text-xs text-ink-faint">{t('profileChangeNote')}</p>}
+            </>
+          )}
+        </div>
+      </section>
 
       <section className="mb-9">
         <SectionHead title={t('accountTitle')} />

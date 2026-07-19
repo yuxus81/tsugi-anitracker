@@ -61,6 +61,65 @@ export function EmptyState({
   );
 }
 
+/**
+ * Zentriertes Bestätigungs-Popup (statt Inline-Texterweiterung) — für
+ * destruktive Aktionen wie Löschen. Backdrop-Klick und Escape schließen wie
+ * abbrechen.
+ */
+export function ConfirmDialog({
+  title,
+  message,
+  confirmLabel,
+  cancelLabel,
+  danger,
+  onConfirm,
+  onCancel,
+}: {
+  title: string;
+  message?: string;
+  confirmLabel: string;
+  cancelLabel: string;
+  danger?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-modal grid place-items-center bg-bg/70 p-4 backdrop-blur-sm"
+      onClick={onCancel}
+    >
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        aria-label={title}
+        onClick={(e) => e.stopPropagation()}
+        className="pop-in w-full max-w-sm rounded-card border border-line bg-raised p-5 shadow-2xl"
+      >
+        <p className="text-[15px] font-semibold text-ink">{title}</p>
+        {message && <p className="mt-1.5 text-sm leading-6 text-ink-dim">{message}</p>}
+        <div className="mt-5 flex justify-end gap-2.5">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-ctl border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink transition-colors duration-150 hover:border-ink-faint"
+          >
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className={`rounded-ctl px-3.5 py-2 text-sm font-semibold text-bg transition-[filter] duration-150 hover:brightness-110 ${
+              danger ? 'bg-rose' : 'bg-accent'
+            }`}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LinkishButton({
   onClick,
   children,

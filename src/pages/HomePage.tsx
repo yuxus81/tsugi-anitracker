@@ -300,6 +300,7 @@ function PlannedCard({
 export function HomePage() {
   const entries = useLibrary((s) => s.entries);
   const hydrated = useLibrary((s) => s.hydrated);
+  const username = useLibrary((s) => s.username);
   const openSearch = useSearchOverlay((s) => s.open);
   const t = useT();
   const locale = useLocale();
@@ -412,7 +413,7 @@ export function HomePage() {
   return (
     <div>
       <PageTitle
-        title={greeting}
+        title={username ? `${greeting}, ${username}` : greeting}
         sub={
           watching.length > 0
             ? t('homeSubWatching', {

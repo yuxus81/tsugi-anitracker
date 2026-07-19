@@ -22,7 +22,6 @@ const STATUS_FILL: Record<WatchStatus, string> = {
   nextup: '#ff0055',
   planned: '#8a2be2',
   continuation: '#3a86ff',
-  paused: '#f5a524',
   completed: '#2ecc71',
 };
 

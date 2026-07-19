@@ -83,7 +83,6 @@ export function AddPanel({
   const push = useToasts((s) => s.push);
 
   const [through, setThrough] = useState(0);
-  const [cutMode, setCutMode] = useState(false);
   const [cutoff, setCutoff] = useState<number | null>(null);
   const [watchingIdx, setWatchingIdx] = useState<number | null>(null);
   const [episode, setEpisode] = useState(1);
@@ -260,35 +259,11 @@ export function AddPanel({
           </>
         ) : (
           <>
-            <p className="mb-3 text-[13px] font-medium text-ink-dim">{t('addHowFar')}</p>
+            <p className="mb-1.5 text-[13px] font-medium text-ink-dim">{t('addHowFar')}</p>
+            <p className="mb-3 text-[12px] leading-5 text-ink-faint">{t('addCutoffHint')}</p>
 
-            <div className="mb-3 flex flex-wrap items-center gap-2.5">
-              <div className="inline-flex rounded-ctl border border-line bg-raised p-1" role="radiogroup">
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={!cutMode}
-                  onClick={() => setCutMode(false)}
-                  className={`rounded-[6px] px-3 py-1.5 text-[12.5px] font-semibold transition-colors duration-150 ${
-                    !cutMode ? 'bg-accent/15 text-accent' : 'text-ink-faint hover:text-ink-dim'
-                  }`}
-                >
-                  {t('addModeWatched')}
-                </button>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={cutMode}
-                  onClick={() => setCutMode(true)}
-                  className={`inline-flex items-center gap-1.5 rounded-[6px] px-3 py-1.5 text-[12.5px] font-semibold transition-colors duration-150 ${
-                    cutMode ? 'bg-rose/15 text-rose' : 'text-ink-faint hover:text-ink-dim'
-                  }`}
-                >
-                  <IconScissors className="h-3 w-3" />
-                  {t('addModeCutoff')}
-                </button>
-              </div>
-              {cutoff !== null && (
+            {cutoff !== null && (
+              <div className="mb-3 flex">
                 <span className="inline-flex items-center gap-1.5 text-[12px] text-rose">
                   <IconScissors className="h-3 w-3" />
                   {t('addCutoffActive', { t: seasons[cutoff]?.title ?? '' })}
@@ -300,9 +275,8 @@ export function AddPanel({
                     {t('addCutoffClear')}
                   </button>
                 </span>
-              )}
-            </div>
-            {cutMode && <p className="mb-3 text-[12px] leading-5 text-ink-faint">{t('addCutoffHint')}</p>}
+              </div>
+            )}
 
             {loading ? (
               <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-6">
@@ -322,17 +296,28 @@ export function AddPanel({
                     const excluded = cutoff !== null && i > cutoff;
                     const watched = released && i < effectiveThrough && !excluded;
                     const isMark = released && i === effectiveThrough - 1 && !excluded;
-                    const disabled = cutMode ? false : !released || excluded;
+                    const disabled = !released || excluded;
                     const TypeIcon = typeIcon(s.format);
                     return (
-                      <button
+                      <div
                         key={s.id}
-                        type="button"
-                        disabled={disabled}
-                        onClick={() => (cutMode ? setCutoff((prev) => (prev === i ? null : i)) : setThrough(i + 1))}
+                        role="button"
+                        tabIndex={disabled ? -1 : 0}
+                        aria-disabled={disabled}
+                        onClick={() => {
+                          if (!disabled) setThrough(i + 1);
+                        }}
+                        onKeyDown={(e) => {
+                          if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
+                            e.preventDefault();
+                            setThrough(i + 1);
+                          }
+                        }}
                         title={s.title}
                         style={{ ['--i' as string]: Math.min(i, 12) }}
                         className={`stagger-in group relative block aspect-[2/3] overflow-hidden rounded-card border-2 bg-bg text-left transition-all duration-200 ${
+                          disabled ? '' : 'cursor-pointer'
+                        } ${
                           cutoff === i
                             ? 'border-rose shadow-[0_0_0_3px_rgba(244,63,94,0.22)]'
                             : watched
@@ -356,37 +341,50 @@ export function AddPanel({
                           </span>
                         </span>
                         {!released && !excluded && (
-                          <>
-                            <span className="absolute inset-0 grid place-items-center">
-                              <span className="grid h-7 w-7 place-items-center rounded-full bg-bg/70 text-ink-dim backdrop-blur-sm">
-                                <IconClock className="h-3.5 w-3.5" />
-                              </span>
+                          <span className="absolute inset-0 grid place-items-center">
+                            <span className="grid h-7 w-7 place-items-center rounded-full bg-bg/70 text-ink-dim backdrop-blur-sm">
+                              <IconClock className="h-3.5 w-3.5" />
                             </span>
-                            <span className="absolute left-1 top-1 rounded-full bg-bg/80 px-1.5 py-0.5 text-[9px] font-semibold text-ink-faint backdrop-blur-sm">
-                              {t('statusNotYet')}
-                            </span>
-                          </>
+                          </span>
                         )}
                         {excluded && (
                           <span className="absolute left-1 top-1 rounded-full bg-bg/80 px-1.5 py-0.5 text-[9px] font-semibold text-rose backdrop-blur-sm">
                             {t('addExcluded')}
                           </span>
                         )}
-                        {watched && (
-                          <span
-                            className={`absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full ${
-                              isMark ? 'bg-accent text-bg' : 'bg-bg/70 text-accent backdrop-blur-sm'
+                        {!released && !excluded && (
+                          <span className="absolute left-1 top-1 rounded-full bg-bg/80 px-1.5 py-0.5 text-[9px] font-semibold text-ink-faint backdrop-blur-sm">
+                            {t('statusNotYet')}
+                          </span>
+                        )}
+                        <span className="absolute right-1 top-1 flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCutoff((prev) => (prev === i ? null : i));
+                            }}
+                            aria-label={t('addCutoffToggle')}
+                            title={t('addCutoffToggle')}
+                            className={`grid h-5 w-5 place-items-center rounded-full backdrop-blur-sm transition-colors duration-150 ${
+                              cutoff === i
+                                ? 'bg-rose text-bg'
+                                : 'bg-bg/70 text-ink-faint hover:text-rose'
                             }`}
                           >
-                            <IconCheck className="h-3 w-3" />
-                          </span>
-                        )}
-                        {cutoff === i && (
-                          <span className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-rose text-bg">
                             <IconScissors className="h-2.5 w-2.5" />
-                          </span>
-                        )}
-                      </button>
+                          </button>
+                          {watched && (
+                            <span
+                              className={`grid h-5 w-5 place-items-center rounded-full ${
+                                isMark ? 'bg-accent text-bg' : 'bg-bg/70 text-accent backdrop-blur-sm'
+                              }`}
+                            >
+                              <IconCheck className="h-3 w-3" />
+                            </span>
+                          )}
+                        </span>
+                      </div>
                     );
                   });
                 })()}

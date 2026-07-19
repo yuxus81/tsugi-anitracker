@@ -29,7 +29,7 @@ const NAV: Array<{ to: string; label: DictKey; Icon: typeof IconHome; end: boole
   { to: '/entdecken', label: 'navDiscover', Icon: IconCompass, end: false },
   { to: '/bibliothek', label: 'navLibrary', Icon: IconStack, end: false },
   { to: '/statistik', label: 'navStats', Icon: IconChart, end: false },
-  { to: '/einstellungen', label: 'navMore', Icon: IconGear, end: false },
+  { to: '/einstellungen', label: 'navSettings', Icon: IconGear, end: false },
 ];
 
 function Wordmark() {

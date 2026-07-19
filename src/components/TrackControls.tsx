@@ -8,16 +8,16 @@ import {
 } from '@/store/library';
 import { useToasts } from '@/store/toast';
 import { useT } from '@/i18n';
-import { IconCheck, IconMinus, IconMore, IconPause, IconPlay, IconPlus, IconTrash } from './icons';
+import { ConfirmDialog } from './ui';
+import { IconCheck, IconMinus, IconMore, IconPlay, IconPlus, IconTrash } from './icons';
 
-/** Statusfarben — Palette aus V1: Neon, Purple, Pink, Blau, Grün, Amber. */
+/** Statusfarben — Palette aus V1: Neon, Purple, Pink, Blau, Grün. */
 export const STATUS_DOT: Record<WatchStatus, string> = {
   watching: 'bg-accent',
   planned: 'bg-purple',
   nextup: 'bg-pink',
   continuation: 'bg-blue',
   completed: 'bg-green',
-  paused: 'bg-amber',
 };
 
 /** Aktiv-Stil je Status im „Manuell verschieben“-Raster — dieselbe Farbwelt. */
@@ -27,7 +27,6 @@ const STATUS_ACTIVE_CLS: Record<WatchStatus, string> = {
   nextup: 'border-pink/60 bg-pink/10 text-pink',
   continuation: 'border-blue/60 bg-blue/10 text-blue',
   completed: 'border-green/60 bg-green/10 text-green',
-  paused: 'border-amber/60 bg-amber/10 text-amber',
 };
 
 /**
@@ -146,28 +145,6 @@ export function QuickActions({ rootId }: { rootId: number }) {
   const actions: Action[] = [];
   if (entry.status === 'watching') {
     actions.push({
-      key: 'pause',
-      label: t('pauseBtn'),
-      Icon: IconPause,
-      onClick: () => setStatus(rootId, 'paused'),
-      hoverCls: 'hover:border-amber/50 hover:text-amber',
-    });
-    actions.push({
-      key: 'complete',
-      label: t('markCompleteBtn'),
-      Icon: IconCheck,
-      onClick: () => setStatus(rootId, 'completed'),
-      hoverCls: 'hover:border-green/50 hover:text-green',
-    });
-  } else if (entry.status === 'paused') {
-    actions.push({
-      key: 'resume',
-      label: t('resumeBtn'),
-      Icon: IconPlay,
-      onClick: () => setStatus(rootId, 'watching'),
-      hoverCls: 'hover:border-accent/50 hover:text-accent',
-    });
-    actions.push({
       key: 'complete',
       label: t('markCompleteBtn'),
       Icon: IconCheck,
@@ -202,37 +179,28 @@ export function QuickActions({ rootId }: { rootId: number }) {
         </button>
       ))}
       <MoveToMenu rootId={rootId} currentStatus={entry.status} />
-      {confirmDelete ? (
-        <span className="inline-flex shrink-0 items-center gap-2 rounded-ctl border border-rose/40 bg-rose/10 px-3 py-2 text-[12.5px] font-medium text-rose">
-          {t('removeConfirm')}
-          <button
-            type="button"
-            onClick={() => {
-              remove(rootId);
-              push(t('removedToast'));
-            }}
-            className="font-bold underline underline-offset-2 transition-opacity duration-150 hover:opacity-80"
-          >
-            {t('removeConfirmYes')}
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(false)}
-            className="text-ink-faint transition-colors duration-150 hover:text-ink-dim"
-          >
-            {t('cancel')}
-          </button>
-        </span>
-      ) : (
-        <button
-          type="button"
-          aria-label={t('remove')}
-          title={t('remove')}
-          onClick={() => setConfirmDelete(true)}
-          className="inline-flex shrink-0 items-center justify-center rounded-ctl border border-line bg-surface p-2.5 text-ink-faint transition-colors duration-150 hover:border-rose/50 hover:text-rose"
-        >
-          <IconTrash className="h-4 w-4" />
-        </button>
+      <button
+        type="button"
+        aria-label={t('remove')}
+        title={t('remove')}
+        onClick={() => setConfirmDelete(true)}
+        className="inline-flex shrink-0 items-center justify-center rounded-ctl border border-line bg-surface p-2.5 text-ink-faint transition-colors duration-150 hover:border-rose/50 hover:text-rose"
+      >
+        <IconTrash className="h-4 w-4" />
+      </button>
+      {confirmDelete && (
+        <ConfirmDialog
+          title={t('removeConfirm')}
+          confirmLabel={t('removeConfirmYes')}
+          cancelLabel={t('cancel')}
+          danger
+          onConfirm={() => {
+            remove(rootId);
+            push(t('removedToast'));
+            setConfirmDelete(false);
+          }}
+          onCancel={() => setConfirmDelete(false)}
+        />
       )}
     </div>
   );

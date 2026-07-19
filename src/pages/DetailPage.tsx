@@ -242,6 +242,49 @@ function FranchiseAccordion({
               </div>
             );
           })}
+
+          {/* Mobile: die Aside daneben ist ab `lg` ausgeblendet — hier die
+              gleichen Infos zur getippten Kachel, direkt unter dem Raster. */}
+          {selected && (
+            <div key={selected.media.id} className="unfold mt-3 rounded-card border border-line bg-surface p-4 lg:hidden">
+              <div className="flex gap-3.5">
+                <span className="block aspect-[2/3] w-20 shrink-0 overflow-hidden rounded-card bg-raised">
+                  {cover(selected.media) && (
+                    <img src={cover(selected.media)!} alt="" className="h-full w-full object-cover" />
+                  )}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-display text-[15px] font-semibold leading-snug text-ink">
+                    {bestTitle(selected.media)}
+                  </h4>
+                  <p className="mt-1 text-xs leading-5 text-ink-dim">
+                    {[
+                      selected.media.format ? formatLabel(selected.media.format, lang) : null,
+                      seasonLabel(selected.media, lang),
+                      selected.media.episodes ? `${selected.media.episodes} Ep.` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                    {selected.media.averageScore != null && (
+                      <>
+                        <br />Ø {(selected.media.averageScore / 10).toFixed(1)} / 10
+                      </>
+                    )}
+                  </p>
+                  <div className="mt-2">{badgeFor(selected.media)}</div>
+                </div>
+              </div>
+              {selected.media.id !== currentId && (
+                <Link
+                  to={`/anime/${selected.media.id}`}
+                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-opacity duration-150 hover:opacity-80"
+                >
+                  {t('openEntry')}
+                  <IconArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              )}
+            </div>
+          )}
         </div>
 
         {selected && (
@@ -392,8 +435,8 @@ export function DetailPage() {
     m.trailer?.site === 'youtube' && m.trailer.id
       ? `https://www.youtube.com/watch?v=${m.trailer.id}`
       : null;
-  const showStepper =
-    entry && (entry.status === 'watching' || entry.status === 'paused' || entry.status === 'nextup');
+  const showStepper = entry && (entry.status === 'watching' || entry.status === 'nextup');
+  const hideTrailer = entry && (entry.status === 'watching' || entry.status === 'completed');
 
   function confirmWatchlist() {
     const seasons = buildFranchiseSeasons(m, franchise.data);
@@ -449,7 +492,7 @@ export function DetailPage() {
           {/* Zwei getrennte Zeilen statt einer einzigen flex-wrap-Reihe:
               Hinzufügen/Status-Aktionen und Wiedergabe-Kontrollen wandern
               sonst unvorhersehbar durcheinander, sobald es eng wird. */}
-          <div className="mt-5 flex flex-wrap items-center gap-2.5">
+          <div className="mt-5 flex items-center gap-1.5 sm:gap-2.5">
             {entry ? (
               <QuickActions rootId={entry.rootId} />
             ) : (
@@ -457,37 +500,37 @@ export function DetailPage() {
                 <button
                   type="button"
                   onClick={confirmWatchlist}
-                  className="inline-flex items-center gap-2 rounded-ctl border border-purple/40 bg-purple/10 px-4 py-2.5 text-sm font-bold text-purple transition-colors duration-150 hover:bg-purple/20 active:scale-[0.98]"
+                  className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-ctl border border-purple/40 bg-purple/10 px-2.5 py-2 text-[11.5px] font-bold text-purple transition-colors duration-150 hover:bg-purple/20 active:scale-[0.98] sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm"
                 >
-                  <IconStack className="h-4 w-4" />
+                  <IconStack className="h-3 w-3 sm:h-4 sm:w-4" />
                   {t('stPlanned')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setAddMode((v) => (v === 'watching' ? null : 'watching'))}
                   aria-expanded={addMode === 'watching'}
-                  className="inline-flex items-center gap-2 rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter,transform] duration-150 hover:brightness-110 active:scale-[0.98]"
+                  className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-ctl bg-accent px-2.5 py-2 text-[11.5px] font-bold text-bg shadow-glow-accent transition-[filter,transform] duration-150 hover:brightness-110 active:scale-[0.98] sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm"
                 >
-                  <IconPlay className="h-4 w-4" />
+                  <IconPlay className="h-3 w-3 sm:h-4 sm:w-4" />
                   {t('addWatchingBtn')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setAddMode((v) => (v === 'completed' ? null : 'completed'))}
                   aria-expanded={addMode === 'completed'}
-                  className="inline-flex items-center gap-2 rounded-ctl border border-green/40 bg-green/10 px-4 py-2.5 text-sm font-bold text-green transition-colors duration-150 hover:bg-green/20 active:scale-[0.98]"
+                  className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-ctl border border-green/40 bg-green/10 px-2.5 py-2 text-[11.5px] font-bold text-green transition-colors duration-150 hover:bg-green/20 active:scale-[0.98] sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm"
                 >
-                  <IconCheck className="h-4 w-4" />
+                  <IconCheck className="h-3 w-3 sm:h-4 sm:w-4" />
                   {t('stCompleted')}
                 </button>
               </>
             )}
           </div>
 
-          {(showStepper || trailerUrl) && (
+          {(showStepper || (trailerUrl && !hideTrailer)) && (
             <div className="mt-3 flex flex-wrap items-center gap-3">
               {showStepper && <EpisodeStepper rootId={entry.rootId} />}
-              {trailerUrl && (
+              {trailerUrl && !hideTrailer && (
                 <a
                   href={trailerUrl}
                   target="_blank"
