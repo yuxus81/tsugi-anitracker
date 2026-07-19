@@ -166,6 +166,24 @@ export const IconGrip = (p: P) => (
   </svg>
 );
 
+/** Scheren-Icon fürs Abschneiden des Franchise-Zeitstrahls beim Hinzufügen. */
+export const IconScissors = (p: P) => (
+  <svg {...base} {...p}>
+    <circle cx="7" cy="7" r="2.4" />
+    <circle cx="7" cy="17" r="2.4" />
+    <path d="M9 8.5 20 18M9 15.5 20 6" />
+  </svg>
+);
+
+/** Drei-Punkte-Icon für „weitere Aktionen“ (manuelles Verschieben). */
+export const IconMore = (p: P) => (
+  <svg {...base} {...p} stroke="none" fill="currentColor">
+    <circle cx="5" cy="12" r="1.6" />
+    <circle cx="12" cy="12" r="1.6" />
+    <circle cx="19" cy="12" r="1.6" />
+  </svg>
+);
+
 /** Würfel-Icon für den Zufallsroller. */
 export const IconDice = (p: P) => (
   <svg {...base} {...p}>

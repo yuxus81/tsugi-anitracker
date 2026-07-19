@@ -188,6 +188,7 @@ function FranchiseAccordion({
                   <div className="unfold grid grid-cols-3 gap-2.5 px-4 pb-4 sm:flex sm:gap-3 sm:overflow-x-auto">
                     {items.map((it, i) => {
                       const isSel = it.media.id === selectedId;
+                      const released = it.media.status === 'FINISHED' || it.media.status === 'RELEASING';
                       return (
                         <button
                           key={it.media.id}
@@ -200,11 +201,20 @@ function FranchiseAccordion({
                         >
                           <span className="relative block aspect-[2/3] w-full overflow-hidden rounded-[8px] bg-raised">
                             {cover(it.media) && (
-                              <img src={cover(it.media)!} alt="" className="h-full w-full object-cover" />
+                              <img
+                                src={cover(it.media)!}
+                                alt=""
+                                className={`h-full w-full object-cover ${released ? '' : 'opacity-40 grayscale'}`}
+                              />
+                            )}
+                            {!released && (
+                              <span className="absolute left-1 top-1 rounded-full bg-bg/85 px-1.5 py-0.5 text-[8.5px] font-semibold text-ink-faint backdrop-blur-sm">
+                                {t('statusNotYet')}
+                              </span>
                             )}
                           </span>
                           <span
-                            className={`mt-1.5 block truncate text-[11.5px] ${isSel ? 'font-semibold text-ink' : 'text-ink-dim'}`}
+                            className={`mt-1.5 block truncate text-[11.5px] ${isSel ? 'font-semibold text-ink' : released ? 'text-ink-dim' : 'text-ink-faint'}`}
                           >
                             {k === 'seasons'
                               ? t('seasonN', { n: groups.seasons.indexOf(it) + 1 })
@@ -367,7 +377,6 @@ export function DetailPage() {
 
   const m = q.data;
   const img = cover(m);
-  const studios = [...new Set(m.studios.nodes.filter((s) => s.isAnimationStudio).map((s) => s.name))];
   const trailerUrl =
     m.trailer?.site === 'youtube' && m.trailer.id
       ? `https://www.youtube.com/watch?v=${m.trailer.id}`
@@ -535,35 +544,6 @@ export function DetailPage() {
             </div>
           )}
 
-          {/* Staffel-bezogene Box. */}
-          <div className="rounded-card border border-line bg-surface p-5">
-            <p className="mb-3.5 text-[13px] font-semibold uppercase tracking-wide text-ink-faint">
-              {t('thisSeasonBox')}
-            </p>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-4 lg:grid-cols-1">
-              <Fact
-                label={t('communityScore')}
-                value={m.averageScore != null ? `${(m.averageScore / 10).toFixed(1)} / 10` : null}
-              />
-              <Fact label={t('studio')} value={studios.length ? studios.join(', ') : null} />
-              <Fact label={t('epLength')} value={m.duration ? `${m.duration} min` : null} />
-              <Fact
-                label={t('period')}
-                value={
-                  m.startDate?.year
-                    ? `${m.startDate.year}${m.endDate?.year && m.endDate.year !== m.startDate.year ? ` – ${m.endDate.year}` : ''}`
-                    : null
-                }
-              />
-              <Fact label={t('genres')} value={m.genres.length ? m.genres.join(', ') : null} />
-              {m.nextAiringEpisode && (
-                <Fact
-                  label={t('nextEpisode')}
-                  value={`${t('epShort')} ${m.nextAiringEpisode.episode} · ${new Date(m.nextAiringEpisode.airingAt * 1000).toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' })}`}
-                />
-              )}
-            </dl>
-          </div>
         </aside>
       </div>
     </div>

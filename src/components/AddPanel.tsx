@@ -9,7 +9,8 @@ import {
   IconCheck,
   IconChevronLeft,
   IconFilm,
-  IconPlay,
+  IconPlus,
+  IconScissors,
   IconSparkle,
   IconStack,
   IconX,
@@ -31,7 +32,9 @@ type Step = 'choose' | 'seasons';
  * Kachel öffnet den Franchise-Zeitstrahl zum Antippen, bis wohin geschaut
  * wurde; der tatsächliche Status (Weiter schauen/Noch zu schauen/Fortsetzung
  * folgt/Geschaut) wird danach automatisch abgeleitet (siehe `deriveStatus`
- * im Store) — keine manuelle Status-Wahl mehr nötig.
+ * im Store) — keine manuelle Status-Wahl mehr nötig. Zusätzlich lässt sich
+ * das Franchise (wie in V1) an einer beliebigen Stelle „abschneiden“ — alles
+ * danach wird dem Eintrag gar nicht erst hinzugefügt.
  */
 export function AddPanel({
   detail,
@@ -51,6 +54,8 @@ export function AddPanel({
 
   const [step, setStep] = useState<Step>('choose');
   const [through, setThrough] = useState(0);
+  const [cutMode, setCutMode] = useState(false);
+  const [cutoff, setCutoff] = useState<number | null>(null);
 
   const seasons = useMemo(() => {
     const main = franchise?.mainline ?? [];
@@ -87,11 +92,13 @@ export function AddPanel({
   }
 
   function confirmTracked() {
+    const cutSeasons = cutoff !== null ? seasons.slice(0, cutoff + 1) : seasons;
+    const cutThrough = Math.min(effectiveThrough, cutSeasons.length);
     const entry = addFranchise({
-      seasons,
+      seasons: cutSeasons,
       genres: detail.genres,
       status: 'watching',
-      watchedThrough: effectiveThrough,
+      watchedThrough: cutThrough,
     });
     if (entry) push(t('addedToast', { s: t(STATUS_KEY[entry.status]) }));
     onClose();
@@ -130,12 +137,12 @@ export function AddPanel({
           <button
             type="button"
             onClick={() => setStep('seasons')}
-            className="pop-in flex flex-col items-start gap-2.5 rounded-card border border-amber/30 bg-amber/[0.06] p-4 text-left transition-colors duration-150 hover:border-amber/60 hover:bg-amber/[0.1]"
+            className="pop-in flex flex-col items-start gap-2.5 rounded-card border border-accent/30 bg-accent/[0.06] p-4 text-left transition-colors duration-150 hover:border-accent/60 hover:bg-accent/[0.1]"
           >
-            <span className="grid h-10 w-10 place-items-center rounded-[10px] bg-amber/15 text-amber">
-              <IconPlay className="h-5 w-5" />
+            <span className="grid h-10 w-10 place-items-center rounded-[10px] bg-accent/15 text-accent">
+              <IconPlus className="h-5 w-5" />
             </span>
-            <span className="font-display text-base font-semibold text-ink">{t('stPaused')}</span>
+            <span className="font-display text-base font-semibold text-ink">{t('add')}</span>
             <span className="text-[13px] leading-snug text-ink-dim">{t('addTrackHint')}</span>
           </button>
         </div>
@@ -150,6 +157,48 @@ export function AddPanel({
             {t('addBack')}
           </button>
           <p className="mb-3 text-[13px] font-medium text-ink-dim">{t('addHowFar')}</p>
+
+          <div className="mb-3 flex flex-wrap items-center gap-2.5">
+            <div className="inline-flex rounded-ctl border border-line bg-raised p-1" role="radiogroup">
+              <button
+                type="button"
+                role="radio"
+                aria-checked={!cutMode}
+                onClick={() => setCutMode(false)}
+                className={`rounded-[6px] px-3 py-1.5 text-[12.5px] font-semibold transition-colors duration-150 ${
+                  !cutMode ? 'bg-accent/15 text-accent' : 'text-ink-faint hover:text-ink-dim'
+                }`}
+              >
+                {t('addModeWatched')}
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={cutMode}
+                onClick={() => setCutMode(true)}
+                className={`inline-flex items-center gap-1.5 rounded-[6px] px-3 py-1.5 text-[12.5px] font-semibold transition-colors duration-150 ${
+                  cutMode ? 'bg-rose/15 text-rose' : 'text-ink-faint hover:text-ink-dim'
+                }`}
+              >
+                <IconScissors className="h-3 w-3" />
+                {t('addModeCutoff')}
+              </button>
+            </div>
+            {cutoff !== null && (
+              <span className="inline-flex items-center gap-1.5 text-[12px] text-rose">
+                <IconScissors className="h-3 w-3" />
+                {t('addCutoffActive', { t: seasons[cutoff]?.title ?? '' })}
+                <button
+                  type="button"
+                  onClick={() => setCutoff(null)}
+                  className="font-semibold underline underline-offset-2 transition-opacity duration-150 hover:opacity-70"
+                >
+                  {t('addCutoffClear')}
+                </button>
+              </span>
+            )}
+          </div>
+          {cutMode && <p className="mb-3 text-[12px] leading-5 text-ink-faint">{t('addCutoffHint')}</p>}
 
           {loading ? (
             <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-6">
@@ -166,23 +215,26 @@ export function AddPanel({
                   if (isTv) tvIndex += 1;
                   const shortLabel = isTv ? t('seasonN', { n: tvIndex }) : formatLabel(s.format ?? 'TV', lang);
                   const released = isReleased(s);
-                  const watched = released && i < effectiveThrough;
-                  const isMark = released && i === effectiveThrough - 1;
-                  const disabled = !released;
+                  const excluded = cutoff !== null && i > cutoff;
+                  const watched = released && i < effectiveThrough && !excluded;
+                  const isMark = released && i === effectiveThrough - 1 && !excluded;
+                  const disabled = cutMode ? false : !released || excluded;
                   const TypeIcon = typeIcon(s.format);
                   return (
                     <button
                       key={s.id}
                       type="button"
                       disabled={disabled}
-                      onClick={() => setThrough(i + 1)}
+                      onClick={() => (cutMode ? setCutoff((prev) => (prev === i ? null : i)) : setThrough(i + 1))}
                       title={s.title}
                       style={{ ['--i' as string]: Math.min(i, 12) }}
                       className={`stagger-in group relative block aspect-[2/3] overflow-hidden rounded-card border-2 bg-bg text-left transition-all duration-200 ${
-                        watched
-                          ? 'border-accent shadow-[0_0_0_3px_rgba(0,245,212,0.22)]'
-                          : 'border-line hover:border-accent/40'
-                      } ${disabled ? 'opacity-50' : ''}`}
+                        cutoff === i
+                          ? 'border-rose shadow-[0_0_0_3px_rgba(244,63,94,0.22)]'
+                          : watched
+                            ? 'border-accent shadow-[0_0_0_3px_rgba(0,245,212,0.22)]'
+                            : 'border-line hover:border-accent/40'
+                      } ${excluded ? 'opacity-30 grayscale' : disabled ? 'opacity-50' : ''}`}
                     >
                       {s.coverUrl && (
                         <img src={s.coverUrl} alt="" className="h-full w-full object-cover" />
@@ -195,9 +247,14 @@ export function AddPanel({
                           <span className="truncate">{shortLabel}</span>
                         </span>
                       </span>
-                      {!released && (
+                      {!released && !excluded && (
                         <span className="absolute left-1 top-1 rounded-full bg-bg/80 px-1.5 py-0.5 text-[9px] font-semibold text-ink-faint backdrop-blur-sm">
                           {t('statusNotYet')}
+                        </span>
+                      )}
+                      {excluded && (
+                        <span className="absolute left-1 top-1 rounded-full bg-bg/80 px-1.5 py-0.5 text-[9px] font-semibold text-rose backdrop-blur-sm">
+                          {t('addExcluded')}
                         </span>
                       )}
                       {watched && (
@@ -207,6 +264,11 @@ export function AddPanel({
                           }`}
                         >
                           <IconCheck className="h-3 w-3" />
+                        </span>
+                      )}
+                      {cutoff === i && (
+                        <span className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-rose text-bg">
+                          <IconScissors className="h-2.5 w-2.5" />
                         </span>
                       )}
                     </button>

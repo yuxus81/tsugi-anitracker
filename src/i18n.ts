@@ -91,8 +91,7 @@ const DICT = {
   stCompleted: { de: 'Geschaut', en: 'Watched' },
   stPaused: { de: 'Pausiert', en: 'Paused' },
   pauseBtn: { de: 'Pausieren', en: 'Pause' },
-  geschautFilterAll: { de: 'Abgeschlossen', en: 'Completed' },
-  geschautFilterContinuation: { de: 'Fortsetzung', en: 'Sequel' },
+  moveTo: { de: 'Manuell verschieben', en: 'Move manually' },
 
   // Home
   homeGreetingLate: { de: 'Späte Session?', en: 'Late-night session?' },
@@ -197,6 +196,15 @@ const DICT = {
   addWatchlistHint: { de: 'Einfach vormerken, später schauen', en: 'Just save it, watch later' },
   addTrackHint: { de: 'Sag uns, bis wohin du schon bist', en: 'Tell us how far you got' },
   addBack: { de: 'Zurück', en: 'Back' },
+  addModeWatched: { de: 'Geschaut markieren', en: 'Mark watched' },
+  addModeCutoff: { de: 'Abschneiden', en: 'Cut off' },
+  addCutoffHint: {
+    de: 'Tippe eine Staffel/einen Film an, um das Franchise dort abzuschneiden — alles danach wird nicht hinzugefügt.',
+    en: "Tap a season/movie to cut the franchise there — everything after won't be added.",
+  },
+  addCutoffActive: { de: 'Abgeschnitten nach „{t}“', en: 'Cut off after “{t}”' },
+  addCutoffClear: { de: 'Aufheben', en: 'Clear' },
+  addExcluded: { de: 'Nicht verfolgt', en: 'Not tracked' },
   cancel: { de: 'Abbrechen', en: 'Cancel' },
   addedToast: { de: 'Zu „{s}“ hinzugefügt', en: 'Added to “{s}”' },
   removedToast: { de: 'Aus der Bibliothek entfernt', en: 'Removed from library' },
@@ -312,11 +320,6 @@ const DICT = {
   },
   wipeYes: { de: 'Ja, alles löschen', en: 'Yes, delete everything' },
   wipedToast: { de: 'Archiv geleert', en: 'Archive wiped' },
-  aboutTitleSettings: { de: 'Über die App', en: 'About' },
-  aboutText: {
-    de: 'つぎ („als Nächstes“) — AniTracker Version 2, entworfen und gebaut von Claude auf Basis von V1. Daten: AniList. Kein Account, kein Tracking, dein Archiv gehört dir.',
-    en: 'つぎ (“next”) — AniTracker version 2, designed and built by Claude on the foundation of V1. Data: AniList. No account, no tracking, your archive is yours.',
-  },
 
   // Scan / Toasts
   scanNewSeason: { de: 'Neue Staffel verfügbar: {t}', en: 'New season available: {t}' },

@@ -494,13 +494,9 @@ export function HomePage() {
                 ))}
               </div>
             ) : panel === 'nextup' ? (
-              <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6">
-                {byStatus.nextup.slice(0, 12).map((e, i) => (
-                  <div
-                    key={e.rootId}
-                    className="stagger-in w-[168px] shrink-0 snap-start"
-                    style={{ ['--i' as string]: i }}
-                  >
+              <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
+                {byStatus.nextup.slice(0, 20).map((e, i) => (
+                  <div key={e.rootId} className="stagger-in" style={{ ['--i' as string]: Math.min(i, 12) }}>
                     <NextupCard entry={e} />
                   </div>
                 ))}

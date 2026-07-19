@@ -197,16 +197,6 @@ export function SettingsPage() {
           )}
         </div>
       </section>
-
-      <section>
-        <SectionHead title={t('aboutTitleSettings')} />
-        <div className="rounded-card border border-line bg-surface p-5 text-sm leading-6 text-ink-dim">
-          <p>
-            <span className="font-display text-base text-ink">Tsugi-Anitracker</span> —{' '}
-            {t('aboutText')}
-          </p>
-        </div>
-      </section>
     </div>
   );
 }

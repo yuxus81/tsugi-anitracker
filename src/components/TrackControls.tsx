@@ -1,13 +1,14 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   currentSeason,
   STATUS_KEY,
+  STATUS_ORDER,
   useLibrary,
   type WatchStatus,
 } from '@/store/library';
 import { useToasts } from '@/store/toast';
 import { useT } from '@/i18n';
-import { IconCheck, IconMinus, IconPause, IconPlay, IconPlus, IconTrash } from './icons';
+import { IconCheck, IconMinus, IconMore, IconPause, IconPlay, IconPlus, IconTrash } from './icons';
 
 /** Statusfarben — Palette aus V1: Neon, Purple, Pink, Blau, Grün, Amber. */
 export const STATUS_DOT: Record<WatchStatus, string> = {
@@ -18,6 +19,95 @@ export const STATUS_DOT: Record<WatchStatus, string> = {
   completed: 'bg-green',
   paused: 'bg-amber',
 };
+
+/** Aktiv-Stil je Status im „Manuell verschieben“-Raster — dieselbe Farbwelt. */
+const STATUS_ACTIVE_CLS: Record<WatchStatus, string> = {
+  watching: 'border-accent/60 bg-accent/10 text-accent',
+  planned: 'border-purple/60 bg-purple/10 text-purple',
+  nextup: 'border-pink/60 bg-pink/10 text-pink',
+  continuation: 'border-blue/60 bg-blue/10 text-blue',
+  completed: 'border-green/60 bg-green/10 text-green',
+  paused: 'border-amber/60 bg-amber/10 text-amber',
+};
+
+/**
+ * „Manuell verschieben“ — ein kompaktes Popover mit allen sechs Status als
+ * farbiges Kachel-Raster (statt der alten schmucklosen Liste). Ergänzt die
+ * kontextuellen Shortcut-Buttons für den Fall, dass jemand doch bewusst in
+ * eine „unpassende“ Kategorie wechseln will.
+ */
+function MoveToMenu({ rootId, currentStatus }: { rootId: number; currentStatus: WatchStatus }) {
+  const setStatus = useLibrary((s) => s.setStatus);
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('pointerdown', onDown);
+    window.addEventListener('keydown', onEsc);
+    return () => {
+      window.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('keydown', onEsc);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label={t('moveTo')}
+        title={t('moveTo')}
+        className="inline-flex shrink-0 items-center justify-center rounded-ctl border border-line bg-surface p-2.5 text-ink-faint transition-colors duration-150 hover:border-ink-faint hover:text-ink-dim"
+      >
+        <IconMore className="h-4 w-4" />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="unfold absolute right-0 top-full z-overlay mt-1.5 w-64 rounded-card border border-line bg-raised p-3 shadow-xl"
+        >
+          <p className="mb-2.5 px-0.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+            {t('moveTo')}
+          </p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {STATUS_ORDER.map((s) => {
+              const active = s === currentStatus;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={active}
+                  onClick={() => {
+                    setStatus(rootId, s);
+                    setOpen(false);
+                  }}
+                  className={`flex items-center gap-2 rounded-ctl border px-2.5 py-2 text-left text-[12.5px] font-medium transition-colors duration-150 ${
+                    active ? STATUS_ACTIVE_CLS[s] : 'border-line text-ink-dim hover:border-ink-faint hover:text-ink'
+                  }`}
+                >
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${STATUS_DOT[s]}`} />
+                  <span className="truncate">{t(STATUS_KEY[s])}</span>
+                  {active && <IconCheck className="ml-auto h-3.5 w-3.5 shrink-0" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * Kontextsensitive Shortcut-Leiste für bereits getrackte Franchises — statt
@@ -93,6 +183,7 @@ export function QuickActions({ rootId }: { rootId: number }) {
           {a.label}
         </button>
       ))}
+      <MoveToMenu rootId={rootId} currentStatus={entry.status} />
       <button
         type="button"
         aria-label={t('remove')}
