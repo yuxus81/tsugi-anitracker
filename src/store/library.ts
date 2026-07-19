@@ -402,6 +402,13 @@ interface AddFranchiseArgs {
   status: WatchStatus;
   /** Anzahl komplett geschauter Staffeln (0 = noch nicht angefangen). */
   watchedThrough: number;
+  /**
+   * Episode innerhalb der Staffel an Position `watchedThrough` — für den
+   * „Gerade am Schauen“-Flow, der nicht nur ganze Staffeln, sondern eine
+   * konkrete Folge kennt. Ohne Angabe wie bisher 0 (Staffel noch nicht
+   * begonnen).
+   */
+  currentEpisode?: number;
 }
 
 // ---- Manuelle Reihenfolge „Abgeschlossen“ ----------------------------------------
@@ -495,7 +502,7 @@ export const useLibrary = create<LibraryState>((set, get) => ({
     set({ entries: {}, completedOrder: [], hydrated: false });
   },
 
-  addFranchise: ({ seasons, genres, status, watchedThrough }) => {
+  addFranchise: ({ seasons, genres, status, watchedThrough, currentEpisode }) => {
     if (seasons.length === 0) return null;
     const rootId = seasons[0].id;
     const now = Date.now();
@@ -512,7 +519,7 @@ export const useLibrary = create<LibraryState>((set, get) => ({
       progress = seasons[seasonIndex].episodes ?? 0;
     } else {
       seasonIndex = through;
-      progress = 0;
+      progress = currentEpisode ?? 0;
     }
 
     const derived = deriveStatus(status, seasons, seasonIndex, progress);

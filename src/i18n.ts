@@ -92,6 +92,9 @@ const DICT = {
   stPaused: { de: 'Pausiert', en: 'Paused' },
   pauseBtn: { de: 'Pausieren', en: 'Pause' },
   moveTo: { de: 'Manuell verschieben', en: 'Move manually' },
+  geschautFilterAll: { de: 'Abgeschlossen', en: 'Completed' },
+  removeConfirm: { de: 'Wirklich löschen?', en: 'Really delete?' },
+  removeConfirmYes: { de: 'Ja, löschen', en: 'Yes, delete' },
 
   // Home
   homeGreetingLate: { de: 'Späte Session?', en: 'Late-night session?' },
@@ -196,6 +199,12 @@ const DICT = {
   addWatchlistHint: { de: 'Einfach vormerken, später schauen', en: 'Just save it, watch later' },
   addTrackHint: { de: 'Sag uns, bis wohin du schon bist', en: 'Tell us how far you got' },
   addBack: { de: 'Zurück', en: 'Back' },
+  addWatchingBtn: { de: 'Gerade am Schauen', en: 'Currently watching' },
+  addWatchingSeasonPrompt: {
+    de: 'Welche Staffel schaust du gerade?',
+    en: 'Which season are you currently watching?',
+  },
+  addWatchingEpisodePrompt: { de: 'Bei welcher Folge bist du?', en: 'Which episode are you on?' },
   addModeWatched: { de: 'Geschaut markieren', en: 'Mark watched' },
   addModeCutoff: { de: 'Abschneiden', en: 'Cut off' },
   addCutoffHint: {

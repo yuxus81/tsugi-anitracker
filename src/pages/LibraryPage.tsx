@@ -20,6 +20,7 @@ import { EmptyState, PageTitle } from '@/components/ui';
 import { useSearchOverlay } from '@/components/searchStore';
 import { useLocale, useSettings, useT } from '@/i18n';
 import {
+  IconCheck,
   IconFilm,
   IconGrip,
   IconPause,
@@ -72,7 +73,7 @@ function CompletedRow({
 
   return (
     <div
-      className={`flex items-stretch gap-1 rounded-card border border-gold/20 bg-gradient-to-r from-gold/[0.06] via-surface to-surface transition-[opacity,border-color] duration-150 hover:border-gold/45 ${
+      className={`hover-lift flex items-stretch gap-1 rounded-card border border-gold/20 bg-gradient-to-r from-gold/[0.06] via-surface to-surface transition-[opacity,border-color,box-shadow] duration-150 hover:border-gold/45 hover:shadow-[0_18px_34px_-22px_rgba(217,164,65,0.55)] ${
         dragProps.dragging ? 'opacity-40' : ''
       } ${dragProps.dragOver ? 'ring-2 ring-gold/60' : ''}`}
     >
@@ -383,21 +384,22 @@ export function LibraryPage() {
   const openSearch = useSearchOverlay((s) => s.open);
   const t = useT();
   const [tab, setTab] = useState<WatchStatus>('completed');
+  const [onlyFullyDone, setOnlyFullyDone] = useState(false);
 
   const byStatus = useMemo(() => entriesByStatus(entries), [entries]);
   const total = Object.keys(entries).length;
 
-  // „Geschaut“ zeigt nur Einträge ohne offenen Posten: normal Abgeschlossene
-  // plus die mit angekündigter Fortsetzung (die haben ja trotzdem alles
-  // bisher Veröffentlichte geschaut). Einträge mit einer bereits erschienenen,
-  // aber noch nicht begonnenen Staffel/einem Film gehören dagegen klar zu
-  // „Noch zu schauen“ und tauchen hier bewusst NICHT zusätzlich auf. Danach
-  // greift die manuelle Drag-&-Drop-Reihenfolge; neue/unsortierte Einträge
-  // fallen ans Ende (nach Aktualität sortiert).
+  // „Geschaut“ zeigt alles, was nichts mehr Unveröffentlichtes offen hat:
+  // normal Abgeschlossene, welche mit angekündigter Fortsetzung UND welche
+  // mit einer bereits erschienenen, aber noch nicht begonnenen Staffel/einem
+  // Film (die haben ja trotzdem alles bisher Veröffentlichte geschaut).
+  // Danach greift die manuelle Drag-&-Drop-Reihenfolge; neue/unsortierte
+  // Einträge fallen ans Ende (nach Aktualität sortiert).
   const completedList = useMemo(() => {
     const merged = [
       ...byStatus.completed,
       ...byStatus.continuation.filter((e) => lastWatchedSeason(e) !== undefined),
+      ...byStatus.nextup.filter((e) => lastWatchedSeason(e) !== undefined),
     ];
     const rank = new Map(completedOrder.map((id, i) => [id, i]));
     return merged.sort((a, b) => {
@@ -408,6 +410,14 @@ export function LibraryPage() {
     });
   }, [byStatus, completedOrder]);
 
+  // Filter „Abgeschlossen“: blendet gezielt die mit noch offenem Posten in
+  // „Noch zu schauen“ aus — der Rest (fertig oder mit angekündigter
+  // Fortsetzung) bleibt.
+  const filteredCompletedList = useMemo(
+    () => (onlyFullyDone ? completedList.filter((e) => e.status !== 'nextup') : completedList),
+    [completedList, onlyFullyDone],
+  );
+
   const counts: Record<WatchStatus, number> = {
     ...Object.fromEntries(Object.keys(byStatus).map((k) => [k, byStatus[k as WatchStatus].length])),
     completed: completedList.length,
@@ -415,7 +425,7 @@ export function LibraryPage() {
 
   // Nie auf einem leeren Tab öffnen, wenn woanders etwas liegt.
   const activeTab = counts[tab] > 0 ? tab : (LIBRARY_TABS.find((s) => counts[s] > 0) ?? tab);
-  const list = activeTab === 'completed' ? completedList : byStatus[activeTab];
+  const list = activeTab === 'completed' ? filteredCompletedList : byStatus[activeTab];
 
   if (hydrated && total === 0) {
     return (
@@ -470,6 +480,24 @@ export function LibraryPage() {
           );
         })}
       </div>
+
+      {activeTab === 'completed' && (
+        <div className="-mt-3 mb-6 flex">
+          <button
+            type="button"
+            aria-pressed={onlyFullyDone}
+            onClick={() => setOnlyFullyDone((v) => !v)}
+            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-[12.5px] font-medium transition-colors duration-150 ${
+              onlyFullyDone
+                ? 'border-gold/60 bg-gold/10 text-gold'
+                : 'border-line bg-surface text-ink-faint hover:text-ink-dim'
+            }`}
+          >
+            {onlyFullyDone && <IconCheck className="h-3 w-3" />}
+            {t('geschautFilterAll')}
+          </button>
+        </div>
+      )}
 
       {list.length === 0 ? (
         <EmptyState

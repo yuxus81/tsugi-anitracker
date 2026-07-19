@@ -121,6 +121,24 @@ export function QuickActions({ rootId }: { rootId: number }) {
   const remove = useLibrary((s) => s.remove);
   const push = useToasts((s) => s.push);
   const t = useT();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!confirmDelete) return;
+    const onDown = (e: PointerEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setConfirmDelete(false);
+    };
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setConfirmDelete(false);
+    };
+    window.addEventListener('pointerdown', onDown);
+    window.addEventListener('keydown', onEsc);
+    return () => {
+      window.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('keydown', onEsc);
+    };
+  }, [confirmDelete]);
 
   if (!entry) return null;
 
@@ -167,7 +185,7 @@ export function QuickActions({ rootId }: { rootId: number }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div ref={rootRef} className="flex flex-wrap items-center gap-2">
       <span className="inline-flex shrink-0 items-center gap-1.5 rounded-ctl border border-line bg-surface px-3.5 py-2.5 text-sm font-semibold text-ink-dim">
         <span className={`h-2 w-2 rounded-full ${STATUS_DOT[entry.status]}`} />
         {t(STATUS_KEY[entry.status])}
@@ -184,18 +202,38 @@ export function QuickActions({ rootId }: { rootId: number }) {
         </button>
       ))}
       <MoveToMenu rootId={rootId} currentStatus={entry.status} />
-      <button
-        type="button"
-        aria-label={t('remove')}
-        title={t('remove')}
-        onClick={() => {
-          remove(rootId);
-          push(t('removedToast'));
-        }}
-        className="inline-flex shrink-0 items-center justify-center rounded-ctl border border-line bg-surface p-2.5 text-ink-faint transition-colors duration-150 hover:border-rose/50 hover:text-rose"
-      >
-        <IconTrash className="h-4 w-4" />
-      </button>
+      {confirmDelete ? (
+        <span className="inline-flex shrink-0 items-center gap-2 rounded-ctl border border-rose/40 bg-rose/10 px-3 py-2 text-[12.5px] font-medium text-rose">
+          {t('removeConfirm')}
+          <button
+            type="button"
+            onClick={() => {
+              remove(rootId);
+              push(t('removedToast'));
+            }}
+            className="font-bold underline underline-offset-2 transition-opacity duration-150 hover:opacity-80"
+          >
+            {t('removeConfirmYes')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(false)}
+            className="text-ink-faint transition-colors duration-150 hover:text-ink-dim"
+          >
+            {t('cancel')}
+          </button>
+        </span>
+      ) : (
+        <button
+          type="button"
+          aria-label={t('remove')}
+          title={t('remove')}
+          onClick={() => setConfirmDelete(true)}
+          className="inline-flex shrink-0 items-center justify-center rounded-ctl border border-line bg-surface p-2.5 text-ink-faint transition-colors duration-150 hover:border-rose/50 hover:text-rose"
+        >
+          <IconTrash className="h-4 w-4" />
+        </button>
+      )}
     </div>
   );
 }

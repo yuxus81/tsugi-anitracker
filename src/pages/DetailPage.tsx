@@ -8,11 +8,13 @@ import { useDisplayDescription, useDisplayTitle } from '@/store/titles';
 import {
   findEntryFor,
   isReleased,
+  STATUS_KEY,
   useLibrary,
   type LibraryEntry,
 } from '@/store/library';
+import { useToasts } from '@/store/toast';
 import { EpisodeStepper, QuickActions, RatingStrip } from '@/components/TrackControls';
-import { AddPanel } from '@/components/AddPanel';
+import { AddPanel, buildFranchiseSeasons } from '@/components/AddPanel';
 import { PosterRow } from '@/components/PosterCard';
 import { ErrorBox, SectionHead } from '@/components/ui';
 import { useLocale, useSettings, useT, type DictKey } from '@/i18n';
@@ -21,9 +23,9 @@ import {
   IconCheck,
   IconChevronDown,
   IconChevronLeft,
+  IconClock,
   IconFilm,
   IconPlay,
-  IconPlus,
   IconSparkle,
   IconStack,
 } from '@/components/icons';
@@ -155,7 +157,7 @@ function FranchiseAccordion({
     <section className="mb-10">
       <SectionHead title={t('franchiseTimeline')} count={allItems.length} />
       <div className="grid gap-5 lg:grid-cols-[1fr_260px]">
-        <div>
+        <div className="min-w-0">
           {(['seasons', 'movies', 'specials'] as FxGroupKey[]).map((k) => {
             const items = groups[k];
             if (!items.length) return null;
@@ -180,12 +182,12 @@ function FranchiseAccordion({
                     className={`h-4 w-4 shrink-0 text-ink-faint transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
                   />
                 </button>
-                {/* Auf dem Handy ein umbrechendes Raster statt einer
-                    horizontal scrollenden Reihe — bei vielen Einträgen
-                    (Staffeln, Filme, Specials) sonst nicht mehr vollständig
-                    erreichbar. Ab `sm:` bleibt die kompakte Scroll-Reihe. */}
+                {/* Immer ein umbrechendes Raster statt einer horizontal
+                    scrollenden Reihe — bei vielen Einträgen (Staffeln, Filme,
+                    Specials) blies eine feste Scroll-Reihe sonst den
+                    Grid-Track auf und überlappte die Franchise-Box daneben. */}
                 {open && (
-                  <div className="unfold grid grid-cols-3 gap-2.5 px-4 pb-4 sm:flex sm:gap-3 sm:overflow-x-auto">
+                  <div className="unfold grid grid-cols-3 gap-2.5 px-4 pb-4 sm:grid-cols-4 lg:grid-cols-5">
                     {items.map((it, i) => {
                       const isSel = it.media.id === selectedId;
                       const released = it.media.status === 'FINISHED' || it.media.status === 'RELEASING';
@@ -195,7 +197,7 @@ function FranchiseAccordion({
                           type="button"
                           onClick={() => setSelectedId(it.media.id)}
                           style={{ ['--i' as string]: Math.min(i, 12) }}
-                          className={`stagger-in w-full rounded-[12px] border-2 p-1.5 text-left transition-colors duration-150 sm:w-24 sm:shrink-0 ${
+                          className={`stagger-in w-full rounded-[12px] border-2 p-1.5 text-left transition-colors duration-150 ${
                             isSel ? 'border-accent bg-accent/5' : 'border-transparent hover:border-line'
                           }`}
                         >
@@ -204,13 +206,20 @@ function FranchiseAccordion({
                               <img
                                 src={cover(it.media)!}
                                 alt=""
-                                className={`h-full w-full object-cover ${released ? '' : 'opacity-40 grayscale'}`}
+                                className={`h-full w-full object-cover ${released ? '' : 'opacity-70 grayscale'}`}
                               />
                             )}
                             {!released && (
-                              <span className="absolute left-1 top-1 rounded-full bg-bg/85 px-1.5 py-0.5 text-[8.5px] font-semibold text-ink-faint backdrop-blur-sm">
-                                {t('statusNotYet')}
-                              </span>
+                              <>
+                                <span className="absolute inset-0 grid place-items-center">
+                                  <span className="grid h-7 w-7 place-items-center rounded-full bg-bg/70 text-ink-dim backdrop-blur-sm">
+                                    <IconClock className="h-3.5 w-3.5" />
+                                  </span>
+                                </span>
+                                <span className="absolute left-1 top-1 rounded-full bg-bg/85 px-1.5 py-0.5 text-[8.5px] font-semibold text-ink-faint backdrop-blur-sm">
+                                  {t('statusNotYet')}
+                                </span>
+                              </>
                             )}
                           </span>
                           <span
@@ -287,7 +296,9 @@ export function DetailPage() {
   const locale = useLocale();
   const entries = useLibrary((s) => s.entries);
   const entry = useMemo(() => findEntryFor(entries, mediaId), [entries, mediaId]);
-  const [addOpen, setAddOpen] = useState(false);
+  const addFranchise = useLibrary((s) => s.addFranchise);
+  const push = useToasts((s) => s.push);
+  const [addMode, setAddMode] = useState<'watching' | 'completed' | null>(null);
 
   const q = useQuery({
     queryKey: ['detail', mediaId],
@@ -384,6 +395,12 @@ export function DetailPage() {
   const showStepper =
     entry && (entry.status === 'watching' || entry.status === 'paused' || entry.status === 'nextup');
 
+  function confirmWatchlist() {
+    const seasons = buildFranchiseSeasons(m, franchise.data);
+    const created = addFranchise({ seasons, genres: m.genres, status: 'planned', watchedThrough: 0 });
+    if (created) push(t('addedToast', { s: t(STATUS_KEY[created.status]) }));
+  }
+
   return (
     <div className="-mt-5 md:-mt-8">
       {/* Banner bleeds to the content edges; content overlaps it. */}
@@ -429,33 +446,60 @@ export function DetailPage() {
               .join(' · ')}
           </p>
 
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+          {/* Zwei getrennte Zeilen statt einer einzigen flex-wrap-Reihe:
+              Hinzufügen/Status-Aktionen und Wiedergabe-Kontrollen wandern
+              sonst unvorhersehbar durcheinander, sobald es eng wird. */}
+          <div className="mt-5 flex flex-wrap items-center gap-2.5">
             {entry ? (
               <QuickActions rootId={entry.rootId} />
             ) : (
-              <button
-                type="button"
-                onClick={() => setAddOpen((v) => !v)}
-                aria-expanded={addOpen}
-                className="inline-flex items-center gap-2 rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter,transform] duration-150 hover:brightness-110 active:scale-[0.98]"
-              >
-                <IconPlus className="h-4 w-4" />
-                {t('add')}
-              </button>
-            )}
-            {showStepper && <EpisodeStepper rootId={entry.rootId} />}
-            {trailerUrl && (
-              <a
-                href={trailerUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-ctl border border-line bg-surface px-4 py-2.5 text-sm font-medium text-ink transition-colors duration-150 hover:border-accent"
-              >
-                <IconPlay className="h-4 w-4" />
-                {t('trailer')}
-              </a>
+              <>
+                <button
+                  type="button"
+                  onClick={confirmWatchlist}
+                  className="inline-flex items-center gap-2 rounded-ctl border border-purple/40 bg-purple/10 px-4 py-2.5 text-sm font-bold text-purple transition-colors duration-150 hover:bg-purple/20 active:scale-[0.98]"
+                >
+                  <IconStack className="h-4 w-4" />
+                  {t('stPlanned')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAddMode((v) => (v === 'watching' ? null : 'watching'))}
+                  aria-expanded={addMode === 'watching'}
+                  className="inline-flex items-center gap-2 rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter,transform] duration-150 hover:brightness-110 active:scale-[0.98]"
+                >
+                  <IconPlay className="h-4 w-4" />
+                  {t('addWatchingBtn')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAddMode((v) => (v === 'completed' ? null : 'completed'))}
+                  aria-expanded={addMode === 'completed'}
+                  className="inline-flex items-center gap-2 rounded-ctl border border-green/40 bg-green/10 px-4 py-2.5 text-sm font-bold text-green transition-colors duration-150 hover:bg-green/20 active:scale-[0.98]"
+                >
+                  <IconCheck className="h-4 w-4" />
+                  {t('stCompleted')}
+                </button>
+              </>
             )}
           </div>
+
+          {(showStepper || trailerUrl) && (
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              {showStepper && <EpisodeStepper rootId={entry.rootId} />}
+              {trailerUrl && (
+                <a
+                  href={trailerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-ctl border border-line bg-surface px-4 py-2.5 text-sm font-medium text-ink transition-colors duration-150 hover:border-accent"
+                >
+                  <IconPlay className="h-4 w-4" />
+                  {t('trailer')}
+                </a>
+              )}
+            </div>
+          )}
 
           {entry && (
             <div className="mt-4 flex items-center gap-3">
@@ -466,12 +510,13 @@ export function DetailPage() {
         </div>
       </div>
 
-      {!entry && addOpen && (
+      {!entry && addMode && (
         <AddPanel
           detail={m}
           franchise={franchise.data}
           loading={franchise.isLoading}
-          onClose={() => setAddOpen(false)}
+          mode={addMode}
+          onClose={() => setAddMode(null)}
         />
       )}
 

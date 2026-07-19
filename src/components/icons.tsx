@@ -166,6 +166,14 @@ export const IconGrip = (p: P) => (
   </svg>
 );
 
+/** Uhr-Icon für noch nicht erschienene Staffeln/Filme. */
+export const IconClock = (p: P) => (
+  <svg {...base} {...p}>
+    <circle cx="12" cy="12" r="8" />
+    <path d="M12 7.5V12l3.2 2" />
+  </svg>
+);
+
 /** Scheren-Icon fürs Abschneiden des Franchise-Zeitstrahls beim Hinzufügen. */
 export const IconScissors = (p: P) => (
   <svg {...base} {...p}>
