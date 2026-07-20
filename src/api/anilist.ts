@@ -19,6 +19,35 @@ export class ApiError extends Error {
   }
 }
 
+// ---- Client-seitiges Rate-Limiting ------------------------------------------------
+// AniList erlaubt nur 30 Requests/Minute. Ein Franchise-Walk (fetchFranchise)
+// braucht für lange Reihen (Naruto, One Piece, …) leicht ein Dutzend
+// sequenzieller Einzel-Requests — mehrere Detailseiten/Suchen kurz
+// hintereinander reißen das Budget dann schnell, und AniList blockt danach
+// 1-2 Minuten komplett (429). Ein gemeinsames Sliding-Window über ALLE
+// gql()-Aufrufe verhindert das strukturell, statt es hinterher zu reparieren.
+const RATE_LIMIT_PER_MIN = 25; // Sicherheitsabstand zum tatsächlichen Limit (30)
+const requestTimestamps: number[] = [];
+let cooldownUntil = 0;
+
+async function waitForSlot(): Promise<void> {
+  for (;;) {
+    const now = Date.now();
+    if (cooldownUntil > now) {
+      await new Promise((r) => setTimeout(r, cooldownUntil - now));
+      continue;
+    }
+    while (requestTimestamps.length && now - requestTimestamps[0] > 60_000) {
+      requestTimestamps.shift();
+    }
+    if (requestTimestamps.length < RATE_LIMIT_PER_MIN) {
+      requestTimestamps.push(now);
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 60_000 - (now - requestTimestamps[0]) + 50));
+  }
+}
+
 async function gql<T>(
   query: string,
   variables: Record<string, unknown> = {},
@@ -26,6 +55,8 @@ async function gql<T>(
 ): Promise<T> {
   let attempt = 0;
   for (;;) {
+    await waitForSlot();
+
     let res: Response;
     try {
       res = await fetch(ENDPOINT, {
@@ -44,9 +75,13 @@ async function gql<T>(
 
     if (res.status === 429 || res.status >= 500) {
       if (attempt >= 2) throw new ApiError(res.status, 'AniList ist gerade überlastet');
-      const retryAfter = Number(res.headers.get('Retry-After')) || attempt + 1;
+      // Echten Retry-After respektieren statt künstlich auf 5s zu kappen —
+      // sonst hämmert der Retry während der laufenden Sperre gleich wieder
+      // dagegen und verlängert sie im schlimmsten Fall. Als gemeinsamer
+      // Cooldown blockiert das auch alle anderen parallel wartenden Calls.
+      const retryAfterSec = Number(res.headers.get('Retry-After')) || (attempt + 1) * 20;
+      if (res.status === 429) cooldownUntil = Date.now() + retryAfterSec * 1000;
       attempt += 1;
-      await new Promise((r) => setTimeout(r, Math.min(retryAfter, 5) * 1000));
       continue;
     }
     if (!res.ok) throw new ApiError(res.status, `AniList-Fehler (${res.status})`);
@@ -248,24 +283,28 @@ export function isMainlineFormat(format: MediaFormat | null): boolean {
   return format === 'TV' || format === 'MOVIE' || format === 'ONA';
 }
 
-function pick(
-  slice: RelationSlice,
-  types: Array<'SEQUEL' | 'PREQUEL' | 'PARENT'>,
-): number | null {
+function pick(slice: RelationSlice, types: Array<'SEQUEL' | 'PREQUEL'>): number | null {
   // Zum WEITERLAUFEN zählt jedes ANIME-Relation-Ziel, unabhängig vom Format —
   // sonst bricht die Kette an einer Brücken-OVA/-Special ab (siehe oben).
+  //
+  // WICHTIG: nur PREQUEL/SEQUEL zählen als echte Staffel-Nachbarn. AniList
+  // benutzt PARENT/CHILD für lose "gehört zum selben Werk/Universum"-Links,
+  // nicht für die tatsächliche Staffel-Chronologie — Steins;Gate hat z. B.
+  // einen PARENT-Link zu Chäos;Head (anderer Anime, nur gleiches "Science
+  // Adventure"-Multiversum), der frühere Versionen fälschlich als Season 1
+  // dieses Franchise auswählte. Bewusst NICHT mitgezählt.
   for (const t of types) {
     const edge = slice.relations.edges.find((e) => {
       if (e.relationType !== t) return false;
       if (e.node.type !== 'ANIME') return false;
-      // Chronology guard: a prequel/parent can't start after the current node
-      // and a sequel can't start before it — rejects spurious edges like ONE
+      // Chronology guard: a prequel can't start after the current node and a
+      // sequel can't start before it — rejects spurious edges like ONE
       // PIECE's (id 21) PREQUEL link to a 2024 crossover ONA (AniList #167404)
       // that itself points a SEQUEL edge back to ONE PIECE.
       const currentYear = slice.card.seasonYear;
       const candidateYear = e.node.seasonYear;
       if (currentYear != null && candidateYear != null) {
-        if ((t === 'PREQUEL' || t === 'PARENT') && candidateYear > currentYear) return false;
+        if (t === 'PREQUEL' && candidateYear > currentYear) return false;
         if (t === 'SEQUEL' && candidateYear < currentYear) return false;
       }
       return true;
@@ -318,7 +357,7 @@ export async function fetchFranchise(startId: number, signal?: AbortSignal): Pro
   for (let i = 0; i < MAX_CHAIN; i++) {
     const slice = slices.get(rootId);
     if (!slice) break;
-    const prev = pick(slice, ['PREQUEL', 'PARENT']);
+    const prev = pick(slice, ['PREQUEL']);
     if (!prev || seenBack.has(prev)) break;
     seenBack.add(prev);
     await ensure([prev]);

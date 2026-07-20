@@ -147,7 +147,7 @@ export function currentSeason(e: LibraryEntry): SeasonSnap | undefined {
  * zurück, wenn noch gar nichts abgeschlossen wurde.
  */
 export function lastWatchedSeason(e: LibraryEntry): SeasonSnap | undefined {
-  if (e.status === 'continuation' || e.status === 'nextup') {
+  if (e.status === 'continuation' || e.status === 'nextup' || e.status === 'watching') {
     return e.seasonIndex > 0 ? e.seasons[e.seasonIndex - 1] : undefined;
   }
   return currentSeason(e);

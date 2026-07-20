@@ -322,17 +322,21 @@ export function LibraryPage() {
   const byStatus = useMemo(() => entriesByStatus(entries), [entries]);
   const total = Object.keys(entries).length;
 
-  // „Geschaut“ zeigt alles, was nichts mehr Unveröffentlichtes offen hat:
-  // normal Abgeschlossene, welche mit angekündigter Fortsetzung UND welche
-  // mit einer bereits erschienenen, aber noch nicht begonnenen Staffel/einem
-  // Film (die haben ja trotzdem alles bisher Veröffentlichte geschaut).
-  // Danach greift die manuelle Drag-&-Drop-Reihenfolge; neue/unsortierte
-  // Einträge fallen ans Ende (nach Aktualität sortiert).
+  // „Geschaut“ zeigt alles, was mindestens eine Staffel komplett fertig
+  // geschaut hat: normal Abgeschlossene, welche mit angekündigter
+  // Fortsetzung, welche mit einer bereits erschienenen, aber noch nicht
+  // begonnenen Staffel/einem Film — UND welche, die gerade eine SPÄTERE
+  // Staffel schauen ("Gerade am Schauen"), aber eine frühere schon
+  // abgeschlossen haben. So landet z. B. Dr. Stone S1 hier, sobald sie fertig
+  // ist, auch wenn S2 parallel noch bei "Gerade am Schauen" läuft. Danach
+  // greift die manuelle Drag-&-Drop-Reihenfolge; neue/unsortierte Einträge
+  // fallen ans Ende (nach Aktualität sortiert).
   const completedList = useMemo(() => {
     const merged = [
       ...byStatus.completed,
       ...byStatus.continuation.filter((e) => lastWatchedSeason(e) !== undefined),
       ...byStatus.nextup.filter((e) => lastWatchedSeason(e) !== undefined),
+      ...byStatus.watching.filter((e) => lastWatchedSeason(e) !== undefined),
     ];
     const rank = new Map(completedOrder.map((id, i) => [id, i]));
     return merged.sort((a, b) => {
@@ -343,11 +347,14 @@ export function LibraryPage() {
     });
   }, [byStatus, completedOrder]);
 
-  // Filter „Abgeschlossen“: blendet gezielt die mit noch offenem Posten in
-  // „Noch zu schauen“ aus — der Rest (fertig oder mit angekündigter
-  // Fortsetzung) bleibt.
+  // Filter „Abgeschlossen“: blendet gezielt die mit noch offenem Posten aus
+  // ("Noch zu schauen" oder gerade aktiv laufendes "Gerade am Schauen") — der
+  // Rest (fertig oder mit angekündigter Fortsetzung) bleibt.
   const filteredCompletedList = useMemo(
-    () => (onlyFullyDone ? completedList.filter((e) => e.status !== 'nextup') : completedList),
+    () =>
+      onlyFullyDone
+        ? completedList.filter((e) => e.status !== 'nextup' && e.status !== 'watching')
+        : completedList,
     [completedList, onlyFullyDone],
   );
 
