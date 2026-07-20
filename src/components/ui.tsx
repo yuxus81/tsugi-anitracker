@@ -93,22 +93,22 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className="pop-in w-full max-w-sm rounded-card border border-line bg-raised p-5 shadow-2xl"
+        className="ios-glass-strong ios-spec pop-in w-full max-w-sm overflow-hidden rounded-sheet border border-white/10 p-5 shadow-glass-lift"
       >
         <p className="text-[15px] font-semibold text-ink">{title}</p>
         {message && <p className="mt-1.5 text-sm leading-6 text-ink-dim">{message}</p>}
-        <div className="mt-5 flex justify-end gap-2.5">
+        <div className="mt-5 flex gap-2.5">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-ctl border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink transition-colors duration-150 hover:border-ink-faint"
+            className="press flex-1 rounded-ctl border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-sm font-medium text-ink"
           >
             {cancelLabel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className={`rounded-ctl px-3.5 py-2 text-sm font-semibold text-bg transition-[filter] duration-150 hover:brightness-110 ${
+            className={`press flex-1 rounded-ctl px-3.5 py-2.5 text-sm font-semibold text-bg transition-[filter] duration-150 hover:brightness-110 ${
               danger ? 'bg-rose' : 'bg-accent'
             }`}
           >

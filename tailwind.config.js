@@ -27,8 +27,11 @@ export default {
         sans: ['"Inter Variable"', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
-        card: '12px',
-        ctl: '8px',
+        // iOS-Maßstab: großzügigere Rundungen fürs „Apple-Glas“-Gefühl.
+        card: '16px',
+        ctl: '12px',
+        pill: '22px',
+        sheet: '28px',
       },
       boxShadow: {
         'glow-accent': '0 0 20px rgba(0,245,212,0.35)',
@@ -38,6 +41,9 @@ export default {
         'glow-green': '0 0 20px rgba(46,204,113,0.4)',
         'glow-amber': '0 0 20px rgba(245,165,36,0.35)',
         'glow-gold': '0 0 20px rgba(255,207,77,0.45)',
+        // Liquid-Glass: weiche Tiefe + heller Spekular-Rand oben.
+        glass: '0 10px 30px -8px rgba(0,0,0,0.55)',
+        'glass-lift': '0 16px 40px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.16)',
       },
       transitionTimingFunction: {
         out: 'cubic-bezier(0.22, 1, 0.36, 1)',

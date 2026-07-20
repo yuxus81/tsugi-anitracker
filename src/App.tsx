@@ -112,7 +112,7 @@ function MobileHeader() {
   return (
     <>
       <header
-        className="fixed inset-x-0 top-0 z-sticky flex items-center justify-between border-b border-line bg-bg/90 px-4 py-2.5 backdrop-blur md:hidden"
+        className="ios-glass-strong fixed inset-x-0 top-0 z-sticky flex items-center justify-between border-b border-white/5 px-4 py-2.5 md:hidden"
         style={{ paddingTop: 'calc(0.625rem + env(safe-area-inset-top))' }}
       >
         <NavLink to="/" className="flex items-center gap-2" aria-label="Tsugi-Anitracker — Home">
@@ -129,7 +129,7 @@ function MobileHeader() {
           type="button"
           onClick={openSearch}
           aria-label={t('search')}
-          className="grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-ink-dim transition-colors duration-150 active:border-accent active:text-ink"
+          className="ios-spec press grid h-10 w-10 place-items-center overflow-hidden rounded-full border border-white/10 bg-white/[0.07] text-accent"
         >
           <IconSearch className="h-[18px] w-[18px]" />
         </button>
@@ -144,8 +144,8 @@ function BottomBar() {
   return (
     <nav
       aria-label="Navigation"
-      className="fixed inset-x-0 bottom-0 z-sticky flex border-t border-line bg-bg/95 backdrop-blur md:hidden"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="ios-glass ios-spec fixed inset-x-3 z-sticky flex h-16 items-stretch overflow-hidden rounded-[26px] shadow-glass-lift md:hidden"
+      style={{ bottom: 'calc(10px + env(safe-area-inset-bottom))' }}
     >
       {NAV.map(({ to, label, Icon, end }) => (
         <NavLink
@@ -153,13 +153,17 @@ function BottomBar() {
           to={to}
           end={end}
           className={({ isActive }) =>
-            `flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors duration-150 ${
-              isActive ? 'text-accent' : 'text-ink-dim'
+            `press flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold tracking-tight transition-colors duration-200 ${
+              isActive ? 'text-accent' : 'text-ink-faint'
             }`
           }
         >
-          <Icon className="h-5 w-5" />
-          {t(label)}
+          {({ isActive }) => (
+            <>
+              <Icon className={`h-[22px] w-[22px] transition-transform duration-200 ${isActive ? '-translate-y-px scale-105' : ''}`} />
+              {t(label)}
+            </>
+          )}
         </NavLink>
       ))}
     </nav>
@@ -169,7 +173,7 @@ function BottomBar() {
 function Toasts() {
   const toasts = useToasts((s) => s.toasts);
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-20 z-toast flex flex-col items-center gap-2 px-4 md:bottom-6">
+    <div className="pointer-events-none fixed inset-x-0 bottom-28 z-toast flex flex-col items-center gap-2 px-4 md:bottom-6">
       {toasts.map((t) => (
         <div
           key={t.id}
@@ -275,7 +279,7 @@ export function App() {
     <HashRouter>
       <GlobalHotkeys />
       <Sidebar />
-      <main className="min-h-screen pb-24 md:pb-10 md:pl-16 lg:pl-52">
+      <main className="min-h-screen pb-[calc(104px+env(safe-area-inset-bottom))] md:pb-10 md:pl-16 lg:pl-52">
         <MobileHeader />
         <div className="mx-auto max-w-[1200px] px-4 pt-5 sm:px-6 md:pt-8">
           <ViewFrame />
