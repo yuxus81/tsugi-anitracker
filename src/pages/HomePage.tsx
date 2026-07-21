@@ -131,8 +131,8 @@ function ContinueCard({ entry }: { entry: LibraryEntry }) {
               className="text-accent transition-[stroke-dashoffset] duration-300 ease-out"
             />
           </svg>
-          <span className="absolute inset-0 grid place-items-center text-[11px] font-bold tabular-nums text-accent">
-            {Math.round(pct)}%
+          <span className="absolute inset-0 grid place-items-center px-1 text-center text-[11px] font-bold tabular-nums leading-tight text-accent">
+            {season?.episodes ? `${entry.progress}/${season.episodes}` : `${Math.round(pct)}%`}
           </span>
         </div>
         <button

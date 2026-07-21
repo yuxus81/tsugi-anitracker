@@ -394,7 +394,7 @@ export function LibraryPage() {
       <PageTitle title={t('libraryTitle')} sub={t('librarySub', { n: total })} />
 
       <div
-        className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6"
+        className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 py-3 sm:-mx-6 sm:px-6"
         role="tablist"
         aria-label="Status"
       >

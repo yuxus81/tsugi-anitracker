@@ -185,18 +185,20 @@ h3 {
     }
   }
 
-  /* View crossfade on route change. */
+  /* View crossfade on route change — bewusst NUR opacity (kein translateY):
+     ein Transform auf dem kompletten (teils schweren) Seiten-Subtree zwingt
+     den Browser, fürs Crossfade eine neue Compositing-Layer fürs ganze
+     Fragment zu bauen, was auf schwächeren Handy-GPUs genau in dem Moment
+     ruckelt, wenn gleichzeitig noch das Highlight in der Tab-Bar gleitet. */
   .view-enter {
-    animation: view-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: view-in 0.16s ease-out both;
   }
   @keyframes view-in {
     from {
       opacity: 0;
-      transform: translateY(6px);
     }
     to {
       opacity: 1;
-      transform: none;
     }
   }
 
@@ -232,8 +234,8 @@ h3 {
 
   /* Gestaffeltes Erscheinen von Listen (Zeitstrahl, Panels). */
   .stagger-in {
-    animation: stagger-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
-    animation-delay: calc(var(--i, 0) * 45ms);
+    animation: stagger-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--i, 0) * 28ms);
   }
   @keyframes stagger-in {
     from {

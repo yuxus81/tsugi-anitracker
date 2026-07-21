@@ -467,8 +467,8 @@ export function DetailPage() {
       </div>
 
       <div className="relative z-10 -mt-16 flex flex-col gap-6 sm:flex-row">
-        <div className="w-[132px] shrink-0 overflow-hidden rounded-card border border-line shadow-2xl sm:w-[176px]">
-          {img && <img src={img} alt="" className="aspect-[2/3] w-full object-cover" />}
+        <div className="relative aspect-[2/3] w-[132px] shrink-0 overflow-hidden rounded-card border border-line shadow-2xl sm:w-[176px]">
+          {img && <img src={img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
         </div>
 
         <div className="min-w-0 flex-1 sm:pt-16">

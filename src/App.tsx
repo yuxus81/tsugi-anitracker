@@ -152,13 +152,13 @@ function BottomBar() {
   return (
     <nav
       aria-label="Navigation"
-      className="ios-glass ios-spec fixed inset-x-3 z-sticky flex h-[62px] items-stretch overflow-hidden rounded-[26px] shadow-glass-lift md:hidden"
+      className="ios-glass ios-spec fixed inset-x-3 z-sticky flex h-[70px] items-stretch overflow-hidden rounded-[28px] shadow-glass-lift md:hidden"
       style={{ bottom: 'calc(4px + env(safe-area-inset-bottom))' }}
     >
       {/* Gleitende Liquid-Glass-Kapsel hinter dem aktiven Tab (iOS 26). */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-y-1.5 left-0 transition-[transform,opacity] duration-[420ms] ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="pointer-events-none absolute inset-y-2 left-0 transition-[transform,opacity] duration-[420ms] ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
           width: `${100 / NAV.length}%`,
           transform: `translateX(${activeIndex * 100}%)`,
@@ -174,7 +174,7 @@ function BottomBar() {
           to={to}
           end={end}
           className={({ isActive }) =>
-            `press relative z-10 flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold tracking-tight transition-colors duration-200 ${
+            `press relative z-10 flex flex-1 flex-col items-center justify-center gap-1 text-[10.5px] font-semibold tracking-tight transition-colors duration-200 ${
               isActive ? 'text-accent' : 'text-ink-faint'
             }`
           }
@@ -182,7 +182,7 @@ function BottomBar() {
           {({ isActive }) => (
             <>
               <Icon
-                className={`h-[22px] w-[22px] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                className={`h-[25px] w-[25px] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
                   isActive ? '-translate-y-px scale-110' : ''
                 }`}
               />
@@ -304,7 +304,7 @@ export function App() {
     <HashRouter>
       <GlobalHotkeys />
       <Sidebar />
-      <main className="min-h-screen pb-[calc(104px+env(safe-area-inset-bottom))] md:pb-10 md:pl-16 lg:pl-52">
+      <main className="min-h-screen pb-[calc(112px+env(safe-area-inset-bottom))] md:pb-10 md:pl-16 lg:pl-52">
         <MobileHeader />
         <div className="mx-auto max-w-[1200px] px-4 pt-5 sm:px-6 md:pt-8">
           <ViewFrame />

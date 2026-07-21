@@ -166,8 +166,8 @@ function Spotlight({ media }: { media: MediaCard }) {
         <div className="absolute inset-0 bg-gradient-to-r from-bg/95 via-bg/70 to-bg/40" />
       </div>
       <div className="relative flex items-center gap-4 p-4 sm:gap-6 sm:p-8">
-        <div className="w-[76px] shrink-0 overflow-hidden rounded-card shadow-2xl sm:w-[132px]">
-          {img && <img src={img} alt="" className="aspect-[2/3] w-full object-cover" />}
+        <div className="relative aspect-[2/3] w-[76px] shrink-0 overflow-hidden rounded-card shadow-2xl sm:w-[132px]">
+          {img && <img src={img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
         </div>
         <div className="min-w-0">
           <p className="text-[12px] font-medium text-accent sm:text-[13px]">{t('spotlightKicker')}</p>
@@ -232,7 +232,7 @@ export function DiscoverPage() {
       <PageTitle title={t('discoverTitle')} sub={t('discoverSub')} />
 
       <div
-        className="-mx-4 mb-8 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6"
+        className="-mx-4 mb-8 flex gap-2 overflow-x-auto px-4 py-3 sm:-mx-6 sm:px-6"
         role="tablist"
         aria-label="Genre"
       >

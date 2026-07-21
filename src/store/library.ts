@@ -683,7 +683,10 @@ export const useLibrary = create<LibraryState>((set, get) => ({
       const lang = useSettings.getState().lang;
       const nextSeason = cur.seasons[cur.seasonIndex + 1];
       if (nextSeason && isReleased(nextSeason)) {
-        next = { ...next, seasonIndex: cur.seasonIndex + 1, progress: 0, status: 'watching', releaseNote: null };
+        // Nicht automatisch weiter "Schaue ich" — die neue Staffel landet
+        // erstmal bei "Noch zu schauen", von wo aus man sie bewusst per Klick
+        // in "Weiter schauen" holt (nicht ungefragt mittendrin weiterlaufen).
+        next = { ...next, seasonIndex: cur.seasonIndex + 1, progress: 0, status: 'nextup', releaseNote: null };
         push(translate(lang, 'seasonCompleteNext', { t: nextSeason.title }));
       } else if (nextSeason) {
         next = {

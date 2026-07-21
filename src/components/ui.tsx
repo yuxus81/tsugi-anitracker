@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useT } from '@/i18n';
 import { IconArrowRight } from './icons';
 
@@ -83,7 +84,19 @@ export function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  return (
+  // Hintergrund darf nicht weiterscrollen, während der Dialog offen ist —
+  // sonst kann es auf iOS Safari wirken, als läge er "unter" dem sichtbaren
+  // Bereich. Portal auf <body>, damit `fixed` garantiert relativ zum
+  // Viewport bleibt, egal wie tief QuickActions gerade im Baum sitzt.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  return createPortal(
     <div
       className="fixed inset-0 z-modal grid place-items-center bg-bg/70 p-4 backdrop-blur-sm"
       onClick={onCancel}
@@ -116,7 +129,8 @@ export function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

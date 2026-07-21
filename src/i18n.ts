@@ -343,8 +343,8 @@ const DICT = {
   scanAnnounced: { de: 'Fortsetzung angekündigt: {t}', en: 'Sequel announced: {t}' },
   scanUpdates: { de: '{n} Update(s) gefunden', en: 'Found {n} update(s)' },
   seasonCompleteNext: {
-    de: 'Staffel geschafft — weiter mit {t}',
-    en: 'Season done — next up: {t}',
+    de: 'Staffel geschafft — {t} ist bereit',
+    en: 'Season done — {t} is ready',
   },
   franchiseComplete: { de: 'Franchise abgeschlossen 🎉', en: 'Franchise completed 🎉' },
 
