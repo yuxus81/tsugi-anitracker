@@ -66,14 +66,14 @@ function MoveToMenu({ rootId, currentStatus }: { rootId: number; currentStatus: 
         aria-haspopup="menu"
         aria-label={t('moveTo')}
         title={t('moveTo')}
-        className="inline-flex shrink-0 items-center justify-center rounded-ctl border border-line bg-surface p-2.5 text-ink-faint transition-colors duration-150 hover:border-ink-faint hover:text-ink-dim"
+        className="press inline-flex shrink-0 items-center justify-center rounded-ctl border border-white/10 bg-white/[0.06] p-2.5 text-ink-faint transition-colors duration-150 hover:text-ink-dim"
       >
         <IconMore className="h-4 w-4" />
       </button>
       {open && (
         <div
           role="menu"
-          className="unfold absolute right-0 top-full z-overlay mt-1.5 w-64 rounded-card border border-line bg-raised p-3 shadow-xl"
+          className="ios-glass-strong unfold absolute right-0 top-full z-overlay mt-1.5 w-64 overflow-hidden rounded-sheet border border-white/10 p-3 shadow-glass-lift"
         >
           <p className="mb-2.5 px-0.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
             {t('moveTo')}
@@ -163,7 +163,7 @@ export function QuickActions({ rootId }: { rootId: number }) {
 
   return (
     <div ref={rootRef} className="flex flex-wrap items-center gap-2">
-      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-ctl border border-line bg-surface px-3.5 py-2.5 text-sm font-semibold text-ink-dim">
+      <span className="ios-glass inline-flex shrink-0 items-center gap-1.5 rounded-ctl px-3.5 py-2.5 text-sm font-semibold text-ink-dim">
         <span className={`h-2 w-2 rounded-full ${STATUS_DOT[entry.status]}`} />
         {t(STATUS_KEY[entry.status])}
       </span>
@@ -172,7 +172,7 @@ export function QuickActions({ rootId }: { rootId: number }) {
           key={a.key}
           type="button"
           onClick={a.onClick}
-          className={`inline-flex shrink-0 items-center gap-2 rounded-ctl border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink transition-colors duration-150 ${a.hoverCls}`}
+          className={`press ios-glass inline-flex shrink-0 items-center gap-2 rounded-ctl px-4 py-2.5 text-sm font-semibold text-ink transition-colors duration-150 ${a.hoverCls}`}
         >
           <a.Icon className="h-4 w-4" />
           {a.label}
@@ -184,7 +184,7 @@ export function QuickActions({ rootId }: { rootId: number }) {
         aria-label={t('remove')}
         title={t('remove')}
         onClick={() => setConfirmDelete(true)}
-        className="inline-flex shrink-0 items-center justify-center rounded-ctl border border-line bg-surface p-2.5 text-ink-faint transition-colors duration-150 hover:border-rose/50 hover:text-rose"
+        className="press ios-glass inline-flex shrink-0 items-center justify-center rounded-ctl p-2.5 text-ink-faint transition-colors duration-150 hover:text-rose"
       >
         <IconTrash className="h-4 w-4" />
       </button>
@@ -230,7 +230,7 @@ export function EpisodeStepper({ rootId }: { rootId: number }) {
   };
 
   return (
-    <div className="inline-flex items-center gap-1 rounded-ctl border border-line bg-surface p-1">
+    <div className="ios-glass inline-flex items-center gap-1 rounded-ctl p-1">
       <button
         type="button"
         aria-label="−1"

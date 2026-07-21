@@ -164,7 +164,7 @@ function FranchiseAccordion({
             const meta = GROUP_META[k];
             const open = openGroups.has(k);
             return (
-              <div key={k} className="mb-2.5 overflow-hidden rounded-card border border-line bg-surface">
+              <div key={k} className="ios-glass mb-2.5 overflow-hidden rounded-card">
                 <button
                   type="button"
                   onClick={() => toggle(k)}
@@ -459,7 +459,7 @@ export function DetailPage() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full bg-bg/70 py-1.5 pl-2 pr-3.5 text-sm font-medium text-ink backdrop-blur transition-colors duration-150 hover:bg-bg"
+          className="press ios-glass ios-spec absolute left-4 top-4 inline-flex items-center gap-1 overflow-hidden rounded-full py-1.5 pl-2 pr-3.5 text-sm font-medium text-ink"
         >
           <IconChevronLeft className="h-4 w-4" />
           {t('back')}

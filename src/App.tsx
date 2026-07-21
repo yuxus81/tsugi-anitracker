@@ -115,15 +115,15 @@ function MobileHeader() {
         className="ios-glass-strong fixed inset-x-0 top-0 z-sticky flex items-center justify-between border-b border-white/5 px-4 py-2.5 md:hidden"
         style={{ paddingTop: 'calc(0.625rem + env(safe-area-inset-top))' }}
       >
-        <NavLink to="/" className="flex items-center gap-2" aria-label="Tsugi-Anitracker — Home">
+        <NavLink to="/" className="flex items-center gap-2.5" aria-label="Tsugi-Anitracker — Home">
           <img
             src={`${import.meta.env.BASE_URL}logo.png`}
             alt=""
-            width={26}
-            height={26}
-            className="h-[26px] w-[26px] rounded-ctl shadow-glow-purple"
+            width={36}
+            height={36}
+            className="h-9 w-9 rounded-[11px] shadow-glow-purple"
           />
-          <span className="font-display text-[15px] font-semibold tracking-tight text-ink">Tsugi</span>
+          <span className="font-display text-[18px] font-semibold tracking-tight text-ink">Tsugi</span>
         </NavLink>
         <button
           type="button"
@@ -141,26 +141,51 @@ function MobileHeader() {
 
 function BottomBar() {
   const t = useT();
+  const { pathname } = useLocation();
+  // Aktives Tab bestimmen — das gleitende Glas-Highlight wandert dorthin.
+  const matchIdx = NAV.findIndex(({ to, end }) =>
+    end ? pathname === to : to !== '/' && (pathname === to || pathname.startsWith(`${to}/`)),
+  );
+  const hasActive = matchIdx !== -1;
+  const activeIndex = hasActive ? matchIdx : 0;
+
   return (
     <nav
       aria-label="Navigation"
-      className="ios-glass ios-spec fixed inset-x-3 z-sticky flex h-16 items-stretch overflow-hidden rounded-[26px] shadow-glass-lift md:hidden"
-      style={{ bottom: 'calc(10px + env(safe-area-inset-bottom))' }}
+      className="ios-glass ios-spec fixed inset-x-3 z-sticky flex h-[62px] items-stretch overflow-hidden rounded-[26px] shadow-glass-lift md:hidden"
+      style={{ bottom: 'calc(4px + env(safe-area-inset-bottom))' }}
     >
+      {/* Gleitende Liquid-Glass-Kapsel hinter dem aktiven Tab (iOS 26). */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-y-1.5 left-0 transition-[transform,opacity] duration-[420ms] ease-[cubic-bezier(0.32,0.72,0,1)]"
+        style={{
+          width: `${100 / NAV.length}%`,
+          transform: `translateX(${activeIndex * 100}%)`,
+          opacity: hasActive ? 1 : 0,
+        }}
+      >
+        <span className="absolute inset-x-[7px] inset-y-0 rounded-[18px] border border-white/15 bg-white/[0.1] shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_4px_14px_-3px_rgba(0,245,212,0.4)]" />
+      </span>
+
       {NAV.map(({ to, label, Icon, end }) => (
         <NavLink
           key={to}
           to={to}
           end={end}
           className={({ isActive }) =>
-            `press flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold tracking-tight transition-colors duration-200 ${
+            `press relative z-10 flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold tracking-tight transition-colors duration-200 ${
               isActive ? 'text-accent' : 'text-ink-faint'
             }`
           }
         >
           {({ isActive }) => (
             <>
-              <Icon className={`h-[22px] w-[22px] transition-transform duration-200 ${isActive ? '-translate-y-px scale-105' : ''}`} />
+              <Icon
+                className={`h-[22px] w-[22px] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                  isActive ? '-translate-y-px scale-110' : ''
+                }`}
+              />
               {t(label)}
             </>
           )}

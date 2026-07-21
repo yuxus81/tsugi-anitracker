@@ -407,10 +407,10 @@ export function LibraryPage() {
               role="tab"
               aria-selected={active}
               onClick={() => setTab(s)}
-              className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors duration-150 ${
+              className={`press ios-spec inline-flex shrink-0 items-center gap-2 overflow-hidden rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 ${
                 active
-                  ? 'border-accent bg-accent/10 text-accent'
-                  : 'border-line bg-surface text-ink-dim hover:text-ink'
+                  ? 'border-accent/40 bg-accent/15 text-accent shadow-[0_2px_14px_-3px_rgba(0,245,212,0.45)]'
+                  : 'border-white/10 bg-white/[0.05] text-ink-dim hover:text-ink'
               }`}
             >
               <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[s]}`} />
@@ -427,10 +427,10 @@ export function LibraryPage() {
             type="button"
             aria-pressed={onlyFullyDone}
             onClick={() => setOnlyFullyDone((v) => !v)}
-            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-[12.5px] font-medium transition-colors duration-150 ${
+            className={`press inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition-all duration-200 ${
               onlyFullyDone
-                ? 'border-gold/60 bg-gold/10 text-gold'
-                : 'border-line bg-surface text-ink-faint hover:text-ink-dim'
+                ? 'border-gold/50 bg-gold/15 text-gold shadow-[0_2px_12px_-3px_rgba(255,207,77,0.5)]'
+                : 'border-white/10 bg-white/[0.05] text-ink-faint hover:text-ink-dim'
             }`}
           >
             {onlyFullyDone && <IconCheck className="h-3 w-3" />}

@@ -122,7 +122,7 @@ export function AddPanel({
 
   return (
     <section
-      className="unfold mt-5 overflow-hidden rounded-card border border-accent/30 bg-surface"
+      className="ios-glass-strong unfold mt-5 overflow-hidden rounded-sheet border border-accent/30"
       aria-label={t('add')}
     >
       <div className="flex items-center justify-between border-b border-line px-4 py-3 sm:px-5">
@@ -211,7 +211,7 @@ export function AddPanel({
             {watchingSeason && (
               <div className="mt-4">
                 <p className="mb-2 text-[13px] font-medium text-ink-dim">{t('addWatchingEpisodePrompt')}</p>
-                <div className="inline-flex items-center gap-1 rounded-ctl border border-line bg-raised p-1">
+                <div className="ios-glass inline-flex items-center gap-1 rounded-ctl p-1">
                   <button
                     type="button"
                     aria-label="−1"
