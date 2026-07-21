@@ -31,48 +31,70 @@ const GENRE_LABEL_DE: Record<Genre, string> = {
 };
 
 /**
+ * Partikel-Formen als gezeichnete SVG-Pfade (24×24-Raster), NICHT als
+ * Textzeichen. Unicode-Symbole wie Herz oder Smiley zieht iOS unaufgefordert auf die
+ * Farb-Emoji-Schrift hoch — dann schweben plötzlich echte Apple-Emojis durchs
+ * Bild. Als Pfad gezeichnet kann das systemweit nicht passieren.
+ */
+type ShapeKey = 'spark4' | 'spark6' | 'burst' | 'arrow' | 'heart' | 'diamond' | 'dot' | 'bloom';
+
+const SHAPE_PATH: Record<ShapeKey, string> = {
+  spark4: 'M12 2 L14 10 L22 12 L14 14 L12 22 L10 14 L2 12 L10 10 Z',
+  spark6: 'M12 2 L13.4 9 L19 5 L15 10.6 L22 12 L15 13.4 L19 19 L13.4 15 L12 22 L10.6 15 L5 19 L9 13.4 L2 12 L9 10.6 L5 5 L10.6 9 Z',
+  burst: 'M12 3 L13.2 8.4 L18 6 L15.6 10.8 L21 12 L15.6 13.2 L18 18 L13.2 15.6 L12 21 L10.8 15.6 L6 18 L8.4 13.2 L3 12 L8.4 10.8 L6 6 L10.8 8.4 Z',
+  arrow: 'M4 12 L18 12 M12 6 L18 12 L12 18',
+  heart: 'M12 20.5 C12 20.5 3.5 15 3.5 9.2 C3.5 6.3 5.7 4.2 8.3 4.2 C10 4.2 11.3 5.1 12 6.2 C12.7 5.1 14 4.2 15.7 4.2 C18.3 4.2 20.5 6.3 20.5 9.2 C20.5 15 12 20.5 12 20.5 Z',
+  diamond: 'M12 2 L19 12 L12 22 L5 12 Z',
+  dot: 'M12 6 A6 6 0 1 1 11.99 6 Z',
+  bloom: 'M12 2 C13.5 7 17 10.5 22 12 C17 13.5 13.5 17 12 22 C10.5 17 7 13.5 2 12 C7 10.5 10.5 7 12 2 Z',
+};
+
+/** Formen, die nur als Kontur sinnvoll sind (sonst wirken sie als Klotz). */
+const STROKE_ONLY: ReadonlySet<ShapeKey> = new Set<ShapeKey>(['arrow']);
+
+/**
  * Jedes Genre färbt die Bühne über den Filtern ein — eigener Verlauf, eigene
  * treibende Partikel, eigene Akzentfarbe für den aktiven Filter-Chip.
  */
-const GENRE_THEME: Record<Genre, { bg: string; glyphs: string[]; color: string }> = {
+const GENRE_THEME: Record<Genre, { bg: string; shapes: ShapeKey[]; color: string }> = {
   Action: {
     bg: 'radial-gradient(70vw 60vh at 20% 0%, rgba(255,90,45,0.34), transparent 62%), radial-gradient(60vw 55vh at 90% 100%, rgba(255,138,61,0.26), transparent 64%)',
-    glyphs: ['✦', '✷'],
+    shapes: ['spark4', 'burst'],
     color: '#ff8a3d',
   },
   Adventure: {
     bg: 'radial-gradient(70vw 60vh at 15% 5%, rgba(245,165,36,0.3), transparent 62%), radial-gradient(60vw 55vh at 95% 90%, rgba(245,197,106,0.22), transparent 64%)',
-    glyphs: ['✧', '➤'],
+    shapes: ['spark4', 'arrow'],
     color: '#f5c56a',
   },
   Fantasy: {
     bg: 'radial-gradient(70vw 60vh at 18% 0%, rgba(155,92,240,0.36), transparent 62%), radial-gradient(60vw 55vh at 88% 96%, rgba(58,134,255,0.22), transparent 64%)',
-    glyphs: ['✧', '✦', '❋'],
+    shapes: ['spark4', 'spark6', 'bloom'],
     color: '#b28cff',
   },
   Romance: {
     bg: 'radial-gradient(70vw 60vh at 25% 4%, rgba(255,46,119,0.36), transparent 60%), radial-gradient(58vw 52vh at 85% 92%, rgba(255,106,158,0.26), transparent 64%)',
-    glyphs: ['♥', '❤'],
+    shapes: ['heart', 'spark4'],
     color: '#ff6a9e',
   },
   Drama: {
     bg: 'radial-gradient(70vw 60vh at 20% 0%, rgba(58,134,255,0.3), transparent 62%), radial-gradient(60vw 55vh at 90% 96%, rgba(127,168,255,0.2), transparent 64%)',
-    glyphs: ['❖', '✷'],
+    shapes: ['diamond', 'burst'],
     color: '#7fa8ff',
   },
   Sports: {
     bg: 'radial-gradient(70vw 60vh at 18% 4%, rgba(0,245,212,0.3), transparent 62%), radial-gradient(60vw 55vh at 92% 92%, rgba(79,224,208,0.22), transparent 64%)',
-    glyphs: ['➤', '✦'],
+    shapes: ['arrow', 'spark4'],
     color: '#4fe0d0',
   },
   Comedy: {
     bg: 'radial-gradient(70vw 60vh at 22% 0%, rgba(255,207,77,0.34), transparent 62%), radial-gradient(58vw 52vh at 88% 94%, rgba(255,215,106,0.22), transparent 64%)',
-    glyphs: ['✺', '✦', '☺'],
+    shapes: ['bloom', 'spark4', 'dot'],
     color: '#ffd76a',
   },
   Thriller: {
     bg: 'radial-gradient(70vw 60vh at 20% 0%, rgba(46,204,113,0.26), transparent 64%), radial-gradient(60vw 55vh at 90% 96%, rgba(95,214,138,0.2), transparent 66%)',
-    glyphs: ['●', '◆'],
+    shapes: ['dot', 'diamond'],
     color: '#5fd68a',
   },
 };
@@ -83,7 +105,7 @@ interface Particle {
   delay: number;
   dur: number;
   size: number;
-  glyph: string;
+  shape: ShapeKey;
 }
 
 /**
@@ -107,7 +129,7 @@ function GenreStage({ genre }: { genre: Genre | null }) {
       delay: -((i * 1.3) % 10),
       dur: 9 + ((i * 2.3) % 8),
       size: 12 + ((i * 5) % 18),
-      glyph: theme.glyphs[i % theme.glyphs.length],
+      shape: theme.shapes[i % theme.shapes.length],
     }));
   }, [theme]);
 
@@ -121,25 +143,36 @@ function GenreStage({ genre }: { genre: Genre | null }) {
         opacity: theme ? (isNarrow ? 0.55 : 1) : 0,
       }}
     >
-      {particles.map((p, i) => (
-        <span
-          key={i}
-          className="genre-particle"
-          style={{
-            left: `${p.left}%`,
-            bottom: `${p.bottom}%`,
-            fontSize: p.size,
-            color: theme?.color,
-            animationName: 'particle-float',
-            animationDuration: `${p.dur}s`,
-            animationDelay: `${p.delay}s`,
-            animationTimingFunction: 'linear',
-            animationIterationCount: 'infinite',
-          }}
-        >
-          {p.glyph}
-        </span>
-      ))}
+      {particles.map((p, i) => {
+        const stroked = STROKE_ONLY.has(p.shape);
+        return (
+          <span
+            key={i}
+            className="genre-particle"
+            style={{
+              left: `${p.left}%`,
+              bottom: `${p.bottom}%`,
+              color: theme?.color,
+              animationName: 'particle-float',
+              animationDuration: `${p.dur}s`,
+              animationDelay: `${p.delay}s`,
+              animationTimingFunction: 'linear',
+              animationIterationCount: 'infinite',
+            }}
+          >
+            <svg width={p.size} height={p.size} viewBox="0 0 24 24" aria-hidden>
+              <path
+                d={SHAPE_PATH[p.shape]}
+                fill={stroked ? 'none' : 'currentColor'}
+                stroke={stroked ? 'currentColor' : 'none'}
+                strokeWidth={stroked ? 2.2 : undefined}
+                strokeLinecap={stroked ? 'round' : undefined}
+                strokeLinejoin={stroked ? 'round' : undefined}
+              />
+            </svg>
+          </span>
+        );
+      })}
     </div>,
     document.body,
   );

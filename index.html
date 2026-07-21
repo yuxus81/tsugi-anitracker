@@ -6,12 +6,20 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
+    <!-- Färbt auf dem Handy die Browser-/Statusleiste in die App-Farbe, damit
+         der Bereich mit Uhrzeit/Akku nicht als schwarzer Fremdkörper über der
+         App sitzt. Muss exakt dem Hintergrund der Kopfleiste entsprechen. -->
     <meta name="theme-color" content="#0d0f18" />
+    <meta name="color-scheme" content="dark" />
     <meta name="description" content="Tsugi-Anitracker — dein Anime-Archiv. Tracke Franchises, Fortschritt und neue Staffeln." />
     <!-- App-Feeling statt Browser-Tab, falls zum Homescreen hinzugefügt. -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- `default` statt `black-translucent`: translucent lässt den Inhalt unter
+         die Statusleiste laufen UND zwingt sie auf einen schwarzen Balken,
+         sobald nichts Eingefärbtes dahinterliegt — genau der schwarze Streifen
+         über der App. `default` übernimmt stattdessen theme-color. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Tsugi" />
     <title>Tsugi-Anitracker</title>
     <link rel="icon" type="image/png" href="./logo.png" />

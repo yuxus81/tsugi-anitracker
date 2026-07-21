@@ -346,7 +346,7 @@ const DICT = {
     de: 'Staffel geschafft — {t} ist bereit',
     en: 'Season done — {t} is ready',
   },
-  franchiseComplete: { de: 'Franchise abgeschlossen 🎉', en: 'Franchise completed 🎉' },
+  franchiseComplete: { de: 'Franchise abgeschlossen', en: 'Franchise completed' },
 
   // Formate
   fmtTV: { de: 'Serie', en: 'TV' },

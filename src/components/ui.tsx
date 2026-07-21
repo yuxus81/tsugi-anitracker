@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useT } from '@/i18n';
 import { IconArrowRight } from './icons';
@@ -84,43 +84,65 @@ export function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  // Hintergrund darf nicht weiterscrollen, während der Dialog offen ist —
-  // sonst kann es auf iOS Safari wirken, als läge er "unter" dem sichtbaren
-  // Bereich. Portal auf <body>, damit `fixed` garantiert relativ zum
-  // Viewport bleibt, egal wie tief QuickActions gerade im Baum sitzt.
+  // Der Dialog verabschiedet sich mit einer eigenen Abblend-Animation, statt
+  // hart zu verschwinden. Dafür lebt er nach dem Auslösen noch kurz weiter
+  // (`leaving`) und meldet erst danach nach oben. Nebeneffekt, der genauso
+  // wichtig ist: solange die Overlay-Fläche noch liegt, fängt sie den
+  // „Geister-Klick“ ab, den Touch-Geräte nach dem Tippen nachschicken — sonst
+  // landet der auf dem Knopf, der zufällig hinter dem Dialog lag.
+  const [leaving, setLeaving] = useState(false);
+  const closingRef = useRef(false);
+
+  const dismiss = (action: () => void) => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    setLeaving(true);
+    window.setTimeout(action, 160);
+  };
+
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') dismiss(onCancel);
+    };
+    window.addEventListener('keydown', onEsc);
     return () => {
       document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onEsc);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return createPortal(
     <div
-      className="fixed inset-0 z-modal grid place-items-center bg-bg/70 p-4 backdrop-blur-sm"
-      onClick={onCancel}
+      className={`fixed inset-0 z-modal grid place-items-center p-4 ${leaving ? 'scrim-out' : 'scrim-in'}`}
+      onPointerDown={(e) => {
+        if (e.target === e.currentTarget) dismiss(onCancel);
+      }}
     >
       <div
         role="alertdialog"
         aria-modal="true"
         aria-label={title}
-        onClick={(e) => e.stopPropagation()}
-        className="ios-glass-strong ios-spec pop-in w-full max-w-sm overflow-hidden rounded-sheet border border-white/10 p-5 shadow-glass-lift"
+        onPointerDown={(e) => e.stopPropagation()}
+        className={`w-full max-w-sm overflow-hidden rounded-sheet border border-line bg-surface p-5 shadow-glass-lift ${
+          leaving ? 'sheet-out' : 'sheet-in'
+        }`}
       >
         <p className="text-[15px] font-semibold text-ink">{title}</p>
         {message && <p className="mt-1.5 text-sm leading-6 text-ink-dim">{message}</p>}
         <div className="mt-5 flex gap-2.5">
           <button
             type="button"
-            onClick={onCancel}
-            className="press flex-1 rounded-ctl border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-sm font-medium text-ink"
+            onClick={() => dismiss(onCancel)}
+            className="press flex-1 rounded-ctl border border-line bg-raised px-3.5 py-2.5 text-sm font-medium text-ink"
           >
             {cancelLabel}
           </button>
           <button
             type="button"
-            onClick={onConfirm}
+            onClick={() => dismiss(onConfirm)}
             className={`press flex-1 rounded-ctl px-3.5 py-2.5 text-sm font-semibold text-bg transition-[filter] duration-150 hover:brightness-110 ${
               danger ? 'bg-rose' : 'bg-accent'
             }`}

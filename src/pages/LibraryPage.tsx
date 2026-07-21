@@ -243,7 +243,7 @@ function ContinuationTile({ entry, index }: { entry: LibraryEntry; index: number
           />
         )}
         <span className="absolute inset-0 bg-gradient-to-t from-bg via-bg/35 to-blue/25" />
-        <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-bg/70 px-2 py-0.5 text-[10.5px] font-bold text-blue backdrop-blur-sm">
+        <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-bg/90 px-2 py-0.5 text-[10.5px] font-bold text-blue ">
           {isFilm ? <IconFilm className="h-2.5 w-2.5" /> : <IconStack className="h-2.5 w-2.5" />}
           {typeLabel}
         </span>

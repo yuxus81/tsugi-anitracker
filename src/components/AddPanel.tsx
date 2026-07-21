@@ -187,11 +187,11 @@ export function AddPanel({
                         {!released && (
                           <>
                             <span className="absolute inset-0 grid place-items-center">
-                              <span className="grid h-7 w-7 place-items-center rounded-full bg-bg/70 text-ink-dim backdrop-blur-sm">
+                              <span className="grid h-7 w-7 place-items-center rounded-full bg-bg/90 text-ink-dim ">
                                 <IconClock className="h-3.5 w-3.5" />
                               </span>
                             </span>
-                            <span className="absolute left-1 top-1 rounded-full bg-bg/80 px-1.5 py-0.5 text-[9px] font-semibold text-ink-faint backdrop-blur-sm">
+                            <span className="absolute left-1 top-1 rounded-full bg-bg/90 px-1.5 py-0.5 text-[9px] font-semibold text-ink-faint ">
                               {t('statusNotYet')}
                             </span>
                           </>
@@ -342,18 +342,18 @@ export function AddPanel({
                         </span>
                         {!released && !excluded && (
                           <span className="absolute inset-0 grid place-items-center">
-                            <span className="grid h-7 w-7 place-items-center rounded-full bg-bg/70 text-ink-dim backdrop-blur-sm">
+                            <span className="grid h-7 w-7 place-items-center rounded-full bg-bg/90 text-ink-dim ">
                               <IconClock className="h-3.5 w-3.5" />
                             </span>
                           </span>
                         )}
                         {excluded && (
-                          <span className="absolute left-1 top-1 rounded-full bg-bg/80 px-1.5 py-0.5 text-[9px] font-semibold text-rose backdrop-blur-sm">
+                          <span className="absolute left-1 top-1 rounded-full bg-bg/90 px-1.5 py-0.5 text-[9px] font-semibold text-rose ">
                             {t('addExcluded')}
                           </span>
                         )}
                         {!released && !excluded && (
-                          <span className="absolute left-1 top-1 rounded-full bg-bg/80 px-1.5 py-0.5 text-[9px] font-semibold text-ink-faint backdrop-blur-sm">
+                          <span className="absolute left-1 top-1 rounded-full bg-bg/90 px-1.5 py-0.5 text-[9px] font-semibold text-ink-faint ">
                             {t('statusNotYet')}
                           </span>
                         )}
@@ -366,7 +366,7 @@ export function AddPanel({
                             }}
                             aria-label={t('addCutoffToggle')}
                             title={t('addCutoffToggle')}
-                            className={`grid h-5 w-5 place-items-center rounded-full backdrop-blur-sm transition-colors duration-150 ${
+                            className={`grid h-5 w-5 place-items-center rounded-full transition-colors duration-150 ${
                               cutoff === i
                                 ? 'bg-rose text-bg'
                                 : 'bg-bg/70 text-ink-faint hover:text-rose'
@@ -377,7 +377,7 @@ export function AddPanel({
                           {watched && (
                             <span
                               className={`grid h-5 w-5 place-items-center rounded-full ${
-                                isMark ? 'bg-accent text-bg' : 'bg-bg/70 text-accent backdrop-blur-sm'
+                                isMark ? 'bg-accent text-bg' : 'bg-bg/90 text-accent '
                               }`}
                             >
                               <IconCheck className="h-3 w-3" />

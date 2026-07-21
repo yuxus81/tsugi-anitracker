@@ -129,34 +129,13 @@ h3 {
 }
 
 @layer components {
-  /* iOS „Liquid Glass“: durchscheinende, milchig verwischte Fläche mit
-     feiner Oberkante — für Tab-Bar, Header, Sheets und schwebende Karten.
-     backdrop-filter gezielt nur auf App-Chrome (nicht flächig hinter langen
-     Listen), damit Safari nicht ruckelt. */
-  .ios-glass {
-    background: rgba(20, 23, 40, 0.6);
-    -webkit-backdrop-filter: blur(22px) saturate(180%);
-    backdrop-filter: blur(22px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  .ios-glass-strong {
-    background: rgba(16, 19, 33, 0.74);
-    -webkit-backdrop-filter: blur(26px) saturate(180%);
-    backdrop-filter: blur(26px) saturate(180%);
-  }
-  /* Heller Spekular-Streifen an der Oberkante (der „nasse“ Glas-Look). */
-  .ios-spec {
-    position: relative;
-  }
-  .ios-spec::before {
-    content: '';
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 42%;
-    border-radius: inherit;
-    background: linear-gradient(rgba(255, 255, 255, 0.14), transparent);
-    pointer-events: none;
-  }
+  /* Bewusst KEINE backdrop-filter-Glasflächen mehr (frühere `.ios-glass`/
+     `.ios-spec`): der milchige Blur-Look traf Apples aktuelle Sprache nicht
+     und wirkte eher vernebelt als modern. Chrome und Sheets sind jetzt
+     durchgängig solide Flächen aus der eigenen Palette (bg/surface/line) —
+     das ist auch, was Apples eigene Apps für Bedienflächen tun. Nebeneffekt:
+     spürbar weniger Compositing-Last auf dem iPhone. */
+
   /* Taktiles Antippen: kurzes Zusammendrücken wie bei nativen iOS-Buttons. */
   .press {
     transition: transform 0.16s cubic-bezier(0.32, 0.72, 0, 1);
@@ -245,6 +224,52 @@ h3 {
     to {
       opacity: 1;
       transform: none;
+    }
+  }
+
+  /* Dialog: Abdunkler + Blatt kommen und gehen mit eigener Kurve, statt
+     hart ein-/auszublenden. Das Blatt geht minimal schneller weg als es
+     kommt — fühlt sich beim Abbrechen entschlossen an, nicht zäh. */
+  .scrim-in {
+    background: rgba(6, 8, 14, 0.62);
+    animation: scrim-in 0.18s ease-out both;
+  }
+  .scrim-out {
+    background: rgba(6, 8, 14, 0.62);
+    animation: scrim-in 0.16s ease-in both reverse;
+  }
+  @keyframes scrim-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  .sheet-in {
+    animation: sheet-in 0.26s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  @keyframes sheet-in {
+    from {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  .sheet-out {
+    animation: sheet-out 0.16s ease-in both;
+  }
+  @keyframes sheet-out {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.96);
     }
   }
 
@@ -381,6 +406,10 @@ h3 {
   .stagger-in,
   .pop-in,
   .panel-in,
+  .scrim-in,
+  .scrim-out,
+  .sheet-in,
+  .sheet-out,
   .pulse-play,
   .blink-dot,
   .genre-particle {

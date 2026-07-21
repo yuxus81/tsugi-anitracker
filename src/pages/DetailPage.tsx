@@ -212,11 +212,11 @@ function FranchiseAccordion({
                             {!released && (
                               <>
                                 <span className="absolute inset-0 grid place-items-center">
-                                  <span className="grid h-7 w-7 place-items-center rounded-full bg-bg/70 text-ink-dim backdrop-blur-sm">
+                                  <span className="grid h-7 w-7 place-items-center rounded-full bg-bg/90 text-ink-dim ">
                                     <IconClock className="h-3.5 w-3.5" />
                                   </span>
                                 </span>
-                                <span className="absolute left-1 top-1 rounded-full bg-bg/85 px-1.5 py-0.5 text-[8.5px] font-semibold text-ink-faint backdrop-blur-sm">
+                                <span className="absolute left-1 top-1 rounded-full bg-bg/90 px-1.5 py-0.5 text-[8.5px] font-semibold text-ink-faint ">
                                   {t('statusNotYet')}
                                 </span>
                               </>
@@ -459,7 +459,7 @@ export function DetailPage() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="press ios-glass ios-spec absolute left-4 top-4 inline-flex items-center gap-1 overflow-hidden rounded-full py-1.5 pl-2 pr-3.5 text-sm font-medium text-ink"
+          className="press absolute left-4 top-4 inline-flex items-center gap-1 rounded-full border border-line bg-bg/85 py-1.5 pl-2 pr-3.5 text-sm font-medium text-ink"
         >
           <IconChevronLeft className="h-4 w-4" />
           {t('back')}

@@ -73,7 +73,7 @@ export function SearchOverlay() {
 
   return (
     <div
-      className="fixed inset-0 z-modal flex items-start justify-center bg-bg/80 p-4 pt-[12vh] backdrop-blur-sm"
+      className="fixed inset-0 z-modal flex items-start justify-center bg-bg/85 p-4 pt-[12vh]"
       onPointerDown={(e) => {
         if (e.target === e.currentTarget) close();
       }}
@@ -82,10 +82,10 @@ export function SearchOverlay() {
         role="dialog"
         aria-modal="true"
         aria-label={t('search')}
-        className="ios-glass-strong unfold w-full max-w-xl overflow-hidden rounded-sheet border border-white/10 shadow-glass-lift transition-colors duration-150 focus-within:border-accent/60"
+        className="unfold w-full max-w-xl overflow-hidden rounded-sheet border border-line bg-surface shadow-glass-lift transition-colors duration-150 focus-within:border-accent/60"
         onKeyDown={onKey}
       >
-        <div className="flex items-center gap-3 border-b border-white/[0.06] px-4">
+        <div className="flex items-center gap-3 border-b border-line px-4">
           <IconSearch className="h-5 w-5 shrink-0 text-ink-dim" />
           <input
             ref={inputRef}

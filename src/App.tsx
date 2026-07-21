@@ -112,7 +112,7 @@ function MobileHeader() {
   return (
     <>
       <header
-        className="ios-glass-strong fixed inset-x-0 top-0 z-sticky flex items-center justify-between border-b border-white/5 px-4 py-2.5 md:hidden"
+        className="fixed inset-x-0 top-0 z-sticky flex items-center justify-between border-b border-line bg-bg px-4 py-2.5 md:hidden"
         style={{ paddingTop: 'calc(0.625rem + env(safe-area-inset-top))' }}
       >
         <NavLink to="/" className="flex items-center gap-2.5" aria-label="Tsugi-Anitracker — Home">
@@ -129,7 +129,7 @@ function MobileHeader() {
           type="button"
           onClick={openSearch}
           aria-label={t('search')}
-          className="ios-spec press grid h-10 w-10 place-items-center overflow-hidden rounded-full border border-white/10 bg-white/[0.07] text-accent"
+          className="press grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-accent"
         >
           <IconSearch className="h-[18px] w-[18px]" />
         </button>
@@ -152,20 +152,22 @@ function BottomBar() {
   return (
     <nav
       aria-label="Navigation"
-      className="ios-glass ios-spec fixed inset-x-3 z-sticky flex h-[70px] items-stretch overflow-hidden rounded-[28px] shadow-glass-lift md:hidden"
-      style={{ bottom: 'calc(4px + env(safe-area-inset-bottom))' }}
+      className="fixed inset-x-3 z-sticky flex h-[70px] items-stretch overflow-hidden rounded-[26px] border border-line bg-surface shadow-[0_12px_32px_-10px_rgba(0,0,0,0.7)] md:hidden"
+      style={{ bottom: 'calc(2px + env(safe-area-inset-bottom))' }}
     >
-      {/* Gleitende Liquid-Glass-Kapsel hinter dem aktiven Tab (iOS 26). */}
+      {/* Gleitende Auswahl-Kapsel hinter dem aktiven Tab. Sie füllt das Feld
+          fast komplett aus (nur 3px Luft), damit sie zum Label passt und
+          nicht wie ein zu kleiner Fleck darunter wirkt. */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-y-2 left-0 transition-[transform,opacity] duration-[420ms] ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="pointer-events-none absolute inset-y-[5px] left-0 transition-transform duration-[360ms] ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
           width: `${100 / NAV.length}%`,
           transform: `translateX(${activeIndex * 100}%)`,
           opacity: hasActive ? 1 : 0,
         }}
       >
-        <span className="absolute inset-x-[7px] inset-y-0 rounded-[18px] border border-white/15 bg-white/[0.1] shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_4px_14px_-3px_rgba(0,245,212,0.4)]" />
+        <span className="absolute inset-x-[2px] inset-y-0 rounded-[19px] bg-accent/[0.14]" />
       </span>
 
       {NAV.map(({ to, label, Icon, end }) => (
@@ -174,7 +176,7 @@ function BottomBar() {
           to={to}
           end={end}
           className={({ isActive }) =>
-            `press relative z-10 flex flex-1 flex-col items-center justify-center gap-1 text-[10.5px] font-semibold tracking-tight transition-colors duration-200 ${
+            `press relative z-10 flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-semibold tracking-tight transition-colors duration-200 ${
               isActive ? 'text-accent' : 'text-ink-faint'
             }`
           }

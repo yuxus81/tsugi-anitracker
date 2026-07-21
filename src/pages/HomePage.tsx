@@ -94,7 +94,7 @@ function ContinueCard({ entry }: { entry: LibraryEntry }) {
               e.stopPropagation();
               setStatus(entry.rootId, 'completed');
             }}
-            className="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-bg/70 text-ink-dim backdrop-blur-sm transition-colors duration-150 hover:bg-green hover:text-bg active:scale-95"
+            className="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-bg/90 text-ink-dim  transition-colors duration-150 hover:bg-green hover:text-bg active:scale-95"
           >
             <IconCheck className="h-3.5 w-3.5" />
           </button>
@@ -270,7 +270,7 @@ function PlannedCard({
           e.stopPropagation();
           setStatus(entry.rootId, 'watching');
         }}
-        className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-bg/70 text-purple backdrop-blur-sm transition-colors duration-150 hover:bg-accent hover:text-bg active:scale-95"
+        className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-bg/90 text-purple  transition-colors duration-150 hover:bg-accent hover:text-bg active:scale-95"
       >
         <IconPlay className="h-3.5 w-3.5 translate-x-[1px]" />
       </button>
