@@ -40,8 +40,20 @@ export const STATUS_KEY: Record<WatchStatus, DictKey> = {
 
 export const STATUS_ORDER: WatchStatus[] = ['watching', 'nextup', 'planned', 'continuation', 'completed'];
 
-/** Bibliothek zeigt genau diese drei Kategorien, in dieser Reihenfolge. */
-export const LIBRARY_TABS: WatchStatus[] = ['completed', 'continuation', 'nextup'];
+/**
+ * Bibliothek zeigt ALLE Status. Vorher fehlten hier `watching` und `planned` —
+ * beide gab es nur auf Home, und dort jeweils nur die ersten 8 bzw. 20
+ * Einträge. Alles darüber hinaus war damit nirgends in der App erreichbar
+ * (nur noch über die Namenssuche auffindbar). Die Bibliothek ist der Ort, an
+ * dem das Archiv vollständig sein muss.
+ */
+export const LIBRARY_TABS: WatchStatus[] = [
+  'completed',
+  'watching',
+  'nextup',
+  'planned',
+  'continuation',
+];
 
 function statusLabelNow(s: WatchStatus): string {
   return translate(useSettings.getState().lang, STATUS_KEY[s]);

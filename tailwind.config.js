@@ -12,6 +12,10 @@ export default {
         ink: '#f1f3f9',
         'ink-dim': '#7e8da6',
         'ink-faint': '#566078',
+        // Inaktive Navigations-Labels: `ink-faint` erreichte auf der Tab-Bar
+        // nur 2,76:1 und lag damit unter WCAG AA (4,5:1) — ausgerechnet an der
+        // meistgenutzten Stelle der App.
+        'ink-muted': '#95a1b8',
         accent: '#00f5d4',
         'accent-deep': '#0b6e63',
         purple: '#8a2be2',

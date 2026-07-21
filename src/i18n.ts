@@ -347,6 +347,11 @@ const DICT = {
     en: 'Season done — {t} is ready',
   },
   franchiseComplete: { de: 'Franchise abgeschlossen', en: 'Franchise completed' },
+  discoverGenreFilter: { de: 'Nach Genre filtern', en: 'Filter by genre' },
+  showAllInLibrary: {
+    de: 'Alle {n} in der Bibliothek',
+    en: 'Show all {n} in library',
+  },
 
   // Formate
   fmtTV: { de: 'Serie', en: 'TV' },

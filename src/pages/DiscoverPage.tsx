@@ -217,7 +217,7 @@ function Spotlight({ media }: { media: MediaCard }) {
               <button
                 type="button"
                 onClick={() => navigate(`/anime/${media.id}`)}
-                className="inline-flex items-center gap-2 rounded-ctl bg-accent px-3.5 py-2 text-[13px] font-bold text-bg shadow-glow-accent transition-[filter] duration-150 hover:brightness-110 sm:px-4 sm:py-2.5 sm:text-sm"
+                className="press inline-flex min-h-[44px] items-center gap-2 rounded-ctl bg-accent px-4 text-[13px] font-bold text-bg shadow-glow-accent transition-[filter] duration-150 hover:brightness-110 sm:text-sm"
               >
                 <IconPlus className="h-4 w-4" />
                 {t('add')}
@@ -264,17 +264,19 @@ export function DiscoverPage() {
 
       <PageTitle title={t('discoverTitle')} sub={t('discoverSub')} />
 
+      {/* Kein `role="tablist"`: das versprach Screenreadern Tab-Panels, die es
+          nicht gibt (und keine Pfeiltasten-Navigation). Es sind Filter-
+          Schalter — `group` + `aria-pressed` beschreibt genau das. */}
       <div
         className="-mx-4 mb-8 flex gap-2 overflow-x-auto px-4 py-3 sm:-mx-6 sm:px-6"
-        role="tablist"
-        aria-label="Genre"
+        role="group"
+        aria-label={t('discoverGenreFilter')}
       >
         <button
           type="button"
-          role="tab"
-          aria-selected={genre === null}
+          aria-pressed={genre === null}
           onClick={() => setGenre(null)}
-          className={`press shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 ${
+          className={`press inline-flex min-h-[44px] shrink-0 items-center rounded-full border px-4 text-sm font-medium transition-all duration-200 ${
             genre === null
               ? 'border-accent/40 bg-accent/15 text-accent shadow-[0_2px_14px_-3px_rgba(0,245,212,0.45)]'
               : 'border-white/10 bg-white/[0.05] text-ink-dim hover:text-ink'
@@ -289,8 +291,7 @@ export function DiscoverPage() {
             <button
               key={g}
               type="button"
-              role="tab"
-              aria-selected={active}
+              aria-pressed={active}
               onClick={() => setGenre(genre === g ? null : g)}
               style={
                 active
@@ -302,7 +303,7 @@ export function DiscoverPage() {
                     }
                   : undefined
               }
-              className={`press shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 ${
+              className={`press inline-flex min-h-[44px] shrink-0 items-center rounded-full border px-4 text-sm font-medium transition-all duration-200 ${
                 active ? '' : 'border-white/10 bg-white/[0.05] text-ink-dim hover:text-ink'
               }`}
             >

@@ -47,6 +47,9 @@ const PANEL_STYLE: Record<
   },
 };
 
+/** Wie viele Einträge Home je Panel als Vorschau zeigt (Rest: Bibliothek). */
+const PANEL_PREVIEW: Record<PanelKey, number> = { watching: 8, nextup: 20, planned: 20 };
+
 const RING_R = 24;
 const RING_C = 2 * Math.PI * RING_R;
 
@@ -488,7 +491,7 @@ export function HomePage() {
               </div>
             ) : panel === 'watching' ? (
               <div className="space-y-3">
-                {watching.slice(0, 8).map((e, i) => (
+                {watching.slice(0, PANEL_PREVIEW.watching).map((e, i) => (
                   <div key={e.rootId} className="stagger-in" style={{ ['--i' as string]: i }}>
                     <ContinueCard entry={e} />
                   </div>
@@ -496,7 +499,7 @@ export function HomePage() {
               </div>
             ) : panel === 'nextup' ? (
               <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
-                {byStatus.nextup.slice(0, 20).map((e, i) => (
+                {byStatus.nextup.slice(0, PANEL_PREVIEW.nextup).map((e, i) => (
                   <div key={e.rootId} className="stagger-in" style={{ ['--i' as string]: Math.min(i, 12) }}>
                     <NextupCard entry={e} />
                   </div>
@@ -516,7 +519,7 @@ export function HomePage() {
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
-                  {byStatus.planned.slice(0, 20).map((e, i) => (
+                  {byStatus.planned.slice(0, PANEL_PREVIEW.planned).map((e, i) => (
                     <div key={e.rootId} className="stagger-in" style={{ ['--i' as string]: Math.min(i, 12) }}>
                       <PlannedCard
                         entry={e}
@@ -531,6 +534,20 @@ export function HomePage() {
                   ))}
                 </div>
               </>
+            )}
+
+            {/* Home zeigt bewusst nur einen Ausschnitt. Ohne diesen Hinweis
+                sah der Ausschnitt aus wie der ganze Bestand — alles darüber
+                hinaus war faktisch unsichtbar. */}
+            {active.items.length > PANEL_PREVIEW[panel] && (
+              <div className="mt-4 flex justify-center">
+                <Link
+                  to="/bibliothek"
+                  className="press inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-4 py-2.5 text-[13px] font-semibold text-ink-dim transition-colors duration-150 hover:text-ink"
+                >
+                  {t('showAllInLibrary', { n: active.items.length })}
+                </Link>
+              </div>
             )}
           </section>
 

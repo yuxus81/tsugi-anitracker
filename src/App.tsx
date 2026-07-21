@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { HashRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { useLibrary } from '@/store/library';
 import { useAuth } from '@/store/auth';
@@ -7,11 +7,13 @@ import { useStartupScan } from '@/lib/scan';
 import { useT } from '@/i18n';
 import { AuthScreen } from '@/components/AuthScreen';
 import { HomePage } from '@/pages/HomePage';
-import { DiscoverPage } from '@/pages/DiscoverPage';
-import { LibraryPage } from '@/pages/LibraryPage';
-import { DetailPage } from '@/pages/DetailPage';
-import { StatsPage } from '@/pages/StatsPage';
-import { SettingsPage } from '@/pages/SettingsPage';
+// Home lädt sofort (erste Ansicht nach dem Start), der Rest erst beim
+// Aufrufen — das nimmt spürbar Gewicht aus dem ersten Laden auf Mobilfunk.
+const DiscoverPage = lazy(() => import('@/pages/DiscoverPage').then((m) => ({ default: m.DiscoverPage })));
+const LibraryPage = lazy(() => import('@/pages/LibraryPage').then((m) => ({ default: m.LibraryPage })));
+const DetailPage = lazy(() => import('@/pages/DetailPage').then((m) => ({ default: m.DetailPage })));
+const StatsPage = lazy(() => import('@/pages/StatsPage').then((m) => ({ default: m.StatsPage })));
+const SettingsPage = lazy(() => import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 import { SearchOverlay } from '@/components/SearchOverlay';
 import { useSearchOverlay } from '@/components/searchStore';
 import {
@@ -115,7 +117,7 @@ function MobileHeader() {
         className="fixed inset-x-0 top-0 z-sticky flex items-center justify-between border-b border-line bg-bg px-4 py-2.5 md:hidden"
         style={{ paddingTop: 'calc(0.625rem + env(safe-area-inset-top))' }}
       >
-        <NavLink to="/" className="flex items-center gap-2.5" aria-label="Tsugi-Anitracker — Home">
+        <NavLink to="/" className="flex min-h-[44px] items-center gap-2.5" aria-label="Tsugi-Anitracker — Home">
           <img
             src={`${import.meta.env.BASE_URL}logo.png`}
             alt=""
@@ -129,7 +131,7 @@ function MobileHeader() {
           type="button"
           onClick={openSearch}
           aria-label={t('search')}
-          className="press grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-accent"
+          className="press grid h-11 w-11 place-items-center rounded-full border border-line bg-surface text-accent"
         >
           <IconSearch className="h-[18px] w-[18px]" />
         </button>
@@ -177,7 +179,7 @@ function BottomBar() {
           end={end}
           className={({ isActive }) =>
             `press relative z-10 flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-semibold tracking-tight transition-colors duration-200 ${
-              isActive ? 'text-accent' : 'text-ink-faint'
+              isActive ? 'text-accent' : 'text-ink-muted'
             }`
           }
         >
@@ -218,20 +220,41 @@ function Toasts() {
   );
 }
 
+/**
+ * Platzhalter, solange eine nachgeladene Seite unterwegs ist. Bewusst die
+ * gleiche Skelett-Sprache wie in den Seiten selbst — kein Spinner mitten im
+ * Inhalt (siehe Design-Regel „Skeletons statt Spinner“).
+ */
+function RouteSkeleton() {
+  return (
+    <div aria-busy="true" aria-live="polite">
+      <div className="skeleton h-9 w-52 rounded" />
+      <div className="skeleton mt-3 h-4 w-72 rounded" />
+      <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="skeleton aspect-[2/3] w-full" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Remount-keyed wrapper so route changes crossfade. */
 function ViewFrame() {
   const location = useLocation();
   return (
     <div key={location.pathname} className="view-enter">
-      <Routes location={location}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/entdecken" element={<DiscoverPage />} />
-        <Route path="/bibliothek" element={<LibraryPage />} />
-        <Route path="/anime/:id" element={<DetailPage />} />
-        <Route path="/statistik" element={<StatsPage />} />
-        <Route path="/einstellungen" element={<SettingsPage />} />
-        <Route path="*" element={<HomePage />} />
-      </Routes>
+      <Suspense fallback={<RouteSkeleton />}>
+        <Routes location={location}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/entdecken" element={<DiscoverPage />} />
+          <Route path="/bibliothek" element={<LibraryPage />} />
+          <Route path="/anime/:id" element={<DetailPage />} />
+          <Route path="/statistik" element={<StatsPage />} />
+          <Route path="/einstellungen" element={<SettingsPage />} />
+          <Route path="*" element={<HomePage />} />
+        </Routes>
+      </Suspense>
     </div>
   );
 }

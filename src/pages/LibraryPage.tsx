@@ -310,6 +310,94 @@ function NextupRow({ entry, index }: { entry: LibraryEntry; index: number }) {
   );
 }
 
+/**
+ * „Weiter schauen“ in der Bibliothek — bewusst kompakter als die große
+ * Kino-Karte auf Home: hier zählt der Überblick über alles Laufende, nicht die
+ * Inszenierung des Nächsten. Fortschritt steht als Zahl UND als Leiste da.
+ */
+function WatchingRow({ entry, index }: { entry: LibraryEntry; index: number }) {
+  const t = useT();
+  const setProgress = useLibrary((s) => s.setProgress);
+  const season = currentSeason(entry);
+  const linkId = season?.id ?? entry.rootId;
+  const cov = entryCover(entry);
+  const multi = entry.seasons.length > 1;
+  const pct = season?.episodes ? Math.min(100, (entry.progress / season.episodes) * 100) : 0;
+  const atMax = !!season?.episodes && entry.progress >= season.episodes;
+  const title = useDisplayTitle(entryQuery(entry), entryTitle(entry));
+
+  return (
+    <li className="stagger-in" style={{ ['--i' as string]: Math.min(index, 12) }}>
+      <div className="flex items-center gap-3 rounded-card border border-accent/25 bg-surface px-3 py-3 sm:gap-4 sm:px-4">
+        <Link to={`/anime/${linkId}`} className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+          <span className="block h-[84px] w-[60px] shrink-0 overflow-hidden rounded-[9px] bg-raised shadow-[0_0_0_2px_rgba(0,245,212,0.3)]">
+            {cov && <img src={cov} alt="" className="h-full w-full object-cover" />}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[15px] font-semibold text-ink">{title}</span>
+            <span className="mt-1 block truncate text-[13px] text-ink-dim">
+              {multi && <>{t('seasonN', { n: entry.seasonIndex + 1 })} · </>}
+              {season?.episodes
+                ? `${entry.progress}/${season.episodes}`
+                : t('episodesSeen', { n: entry.progress })}
+            </span>
+            {!!season?.episodes && (
+              <span className="mt-2 block h-1 w-full overflow-hidden rounded-full bg-raised">
+                <span className="block h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
+              </span>
+            )}
+          </span>
+        </Link>
+        <button
+          type="button"
+          aria-label={t('continueWithEp', { n: entry.progress + 1 })}
+          title={t('continueWithEp', { n: entry.progress + 1 })}
+          disabled={atMax}
+          onClick={() => setProgress(entry.rootId, entry.progress + 1)}
+          className="press grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent text-bg shadow-glow-accent disabled:opacity-40"
+        >
+          <IconPlay className="h-4 w-4 translate-x-[1px]" />
+        </button>
+      </div>
+    </li>
+  );
+}
+
+/** Watchlist in der Bibliothek — Poster-Raster, Violett wie auf Home. */
+function PlannedTile({ entry, index }: { entry: LibraryEntry; index: number }) {
+  const t = useT();
+  const lang = useSettings((s) => s.lang);
+  const cov = entryCover(entry);
+  const seasons = entry.seasons.length;
+  const totalEp = entry.seasons.reduce((s, x) => s + (x.episodes ?? 0), 0);
+  const title = useDisplayTitle(entryQuery(entry), entryTitle(entry));
+
+  return (
+    <div className="stagger-in" style={{ ['--i' as string]: Math.min(index, 12) }}>
+      <Link
+        to={`/anime/${entry.seasons[0]?.id ?? entry.rootId}`}
+        className="group relative block aspect-[2/3] overflow-hidden rounded-card bg-raised shadow-[0_16px_34px_-20px_rgba(0,0,0,0.8)] ring-1 ring-purple/25 transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:ring-purple/55"
+      >
+        {cov && <img src={cov} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+        <span className="absolute inset-0 bg-gradient-to-t from-bg via-bg/25 to-transparent" />
+        <span className="absolute inset-x-0 bottom-0 p-3">
+          <span className="block line-clamp-2 text-[13.5px] font-semibold leading-snug text-ink drop-shadow">
+            {title}
+          </span>
+          <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-ink-dim">
+            {seasons > 1 && (
+              <span className="rounded-full bg-bg/70 px-1.5 py-0.5 font-semibold text-purple">
+                {formatLabel('TV', lang)} ×{seasons}
+              </span>
+            )}
+            <span>{totalEp ? t('episodesN', { n: totalEp }) : t('ongoing')}</span>
+          </span>
+        </span>
+      </Link>
+    </div>
+  );
+}
+
 export function LibraryPage() {
   const entries = useLibrary((s) => s.entries);
   const hydrated = useLibrary((s) => s.hydrated);
@@ -406,8 +494,10 @@ export function LibraryPage() {
               type="button"
               role="tab"
               aria-selected={active}
+              id={`libtab-${s}`}
+              aria-controls="libpanel"
               onClick={() => setTab(s)}
-              className={`press inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 ${
+              className={`press inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-all duration-200 ${
                 active
                   ? 'border-accent/40 bg-accent/15 text-accent shadow-[0_2px_14px_-3px_rgba(0,245,212,0.45)]'
                   : 'border-white/10 bg-white/[0.05] text-ink-dim hover:text-ink'
@@ -427,7 +517,7 @@ export function LibraryPage() {
             type="button"
             aria-pressed={onlyFullyDone}
             onClick={() => setOnlyFullyDone((v) => !v)}
-            className={`press inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition-all duration-200 ${
+            className={`press inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[12.5px] font-medium transition-all duration-200 ${
               onlyFullyDone
                 ? 'border-gold/50 bg-gold/15 text-gold shadow-[0_2px_12px_-3px_rgba(255,207,77,0.5)]'
                 : 'border-white/10 bg-white/[0.05] text-ink-faint hover:text-ink-dim'
@@ -440,6 +530,10 @@ export function LibraryPage() {
         </div>
       )}
 
+      {/* Die Tabs versprachen per `role="tab"` ein zugehöriges Panel, das es im
+          Dokument nicht gab — Screenreader kündigten eine Beziehung an, die ins
+          Leere lief. Dieser Wrapper ist das Panel. */}
+      <div id="libpanel" role="tabpanel" aria-labelledby={`libtab-${activeTab}`}>
       {list.length === 0 ? (
         <EmptyState
           title={t('libraryNothingIn', { s: t(STATUS_KEY[activeTab]) })}
@@ -451,14 +545,23 @@ export function LibraryPage() {
             <ContinuationTile key={e.rootId} entry={e} index={i} />
           ))}
         </div>
+      ) : activeTab === 'planned' ? (
+        <div key={activeTab} className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {list.map((e, i) => (
+            <PlannedTile key={e.rootId} entry={e} index={i} />
+          ))}
+        </div>
       ) : activeTab === 'completed' ? (
         <CompletedList key={activeTab} list={list} />
       ) : (
         <ul key={activeTab} className="space-y-3">
           {activeTab === 'nextup' &&
             list.map((e, i) => <NextupRow key={e.rootId} entry={e} index={i} />)}
+          {activeTab === 'watching' &&
+            list.map((e, i) => <WatchingRow key={e.rootId} entry={e} index={i} />)}
         </ul>
       )}
+      </div>
     </div>
   );
 }
