@@ -99,7 +99,7 @@ export function SettingsPage() {
       <p className="mb-2 ml-4 text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
         {t('profileTitle')}
       </p>
-      <div className="ios-glass overflow-hidden rounded-card">
+      <div className="overflow-hidden rounded-card border border-line bg-surface">
         {nameLocked ? (
           <p className="px-4 py-4 text-sm leading-6 text-ink-dim">
             {t('profileLockedHint', { name: username ?? '', days: nameLockedDays })}
@@ -120,7 +120,7 @@ export function SettingsPage() {
               type="button"
               onClick={saveUsername}
               disabled={!nameDraft.trim() || nameDraft.trim() === username}
-              className="press ios-spec mt-3 inline-flex items-center gap-2 overflow-hidden rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter] duration-150 hover:brightness-110 disabled:opacity-40"
+              className="press mt-3 inline-flex items-center gap-2 rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter] duration-150 hover:brightness-110 disabled:opacity-40"
             >
               <IconCheck className="h-4 w-4" />
               {t('profileSaveBtn')}
@@ -134,12 +134,12 @@ export function SettingsPage() {
       <p className="mb-2 ml-4 mt-7 text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
         {t('accountTitle')}
       </p>
-      <div className="ios-glass overflow-hidden rounded-card">
+      <div className="overflow-hidden rounded-card border border-line bg-surface">
         <div className="px-4 py-3.5">
           <p className="min-w-0 truncate text-[15px] text-ink">{user?.email ?? ''}</p>
           <p className="mt-0.5 text-xs text-ink-faint">{t('settingsSub')}</p>
         </div>
-        <div className="ml-4 h-px bg-white/[0.06]" />
+        <div className="ml-4 h-px bg-line" />
         <button
           type="button"
           onClick={() => void signOut()}
@@ -185,7 +185,7 @@ export function SettingsPage() {
       <p className="mb-2 ml-4 mt-7 text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
         {t('backupTitle')}
       </p>
-      <div className="ios-glass overflow-hidden rounded-card p-4">
+      <div className="overflow-hidden rounded-card border border-line bg-surface p-4">
         <p className="text-sm leading-6 text-ink-dim">
           {t('backupText', { n: count, plural: count === 1 ? t('entryOne') : t('entryMany') })}
         </p>
@@ -194,7 +194,7 @@ export function SettingsPage() {
             type="button"
             onClick={doExport}
             disabled={count === 0}
-            className="press ios-spec inline-flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter] duration-150 hover:brightness-110 disabled:opacity-40"
+            className="press inline-flex flex-1 items-center justify-center gap-2 rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter] duration-150 hover:brightness-110 disabled:opacity-40"
           >
             <IconDownload className="h-4 w-4" />
             {t('exportBtn')}

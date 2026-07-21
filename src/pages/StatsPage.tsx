@@ -38,7 +38,7 @@ const GENRE_GRADIENT = [
 
 function StatTile({ value, label, detail }: { value: string; label: string; detail?: string }) {
   return (
-    <div className="ios-glass overflow-hidden rounded-card px-5 py-4">
+    <div className="overflow-hidden rounded-card border border-line bg-surface px-5 py-4">
       <p className="font-display text-[30px] font-semibold leading-none tracking-tight text-ink">
         {value}
       </p>
@@ -191,7 +191,7 @@ export function StatsPage() {
 
       <div className="mb-10 grid gap-4 sm:grid-cols-[220px_1fr] lg:grid-cols-[268px_1fr]">
         <div
-          className="ios-spec overflow-hidden rounded-card border border-white/10 p-6 text-center"
+          className="overflow-hidden rounded-card border border-white/10 p-6 text-center"
           style={{ background: 'radial-gradient(120% 120% at 30% 0%, rgba(0,245,212,0.16), rgba(22,25,43,0.6) 62%)' }}
         >
           <WatchtimeOrbit pct={completionPct} value={watchtimeValue} label={t('statsWatchtime')} />
@@ -216,7 +216,7 @@ export function StatsPage() {
       {stats.byStatus.length > 0 && (
         <section className="mb-10">
           <SectionHead title={t('statsByStatus')} />
-          <div className="ios-glass flex flex-col items-center gap-6 overflow-hidden rounded-card p-5 sm:flex-row">
+          <div className="flex flex-col items-center gap-6 overflow-hidden rounded-card border border-line bg-surface p-5 sm:flex-row">
             <StatusDonut rows={stats.byStatus} total={total} />
             <ul className="grid flex-1 grid-cols-2 gap-x-5 gap-y-2.5 sm:grid-cols-3">
               {stats.byStatus.map(({ status, count }) => (

@@ -122,7 +122,7 @@ export function AddPanel({
 
   return (
     <section
-      className="ios-glass-strong unfold mt-5 overflow-hidden rounded-sheet border border-accent/30"
+      className="unfold mt-5 overflow-hidden rounded-sheet border border-accent/30 bg-surface"
       aria-label={t('add')}
     >
       <div className="flex items-center justify-between border-b border-line px-4 py-3 sm:px-5">
@@ -211,13 +211,13 @@ export function AddPanel({
             {watchingSeason && (
               <div className="mt-4">
                 <p className="mb-2 text-[13px] font-medium text-ink-dim">{t('addWatchingEpisodePrompt')}</p>
-                <div className="ios-glass inline-flex items-center gap-1 rounded-ctl p-1">
+                <div className="inline-flex items-center gap-1 rounded-ctl border border-line bg-surface p-1">
                   <button
                     type="button"
                     aria-label="−1"
                     disabled={episode <= 1}
                     onClick={() => setEpisode((e) => Math.max(1, e - 1))}
-                    className="grid h-9 w-9 place-items-center rounded-[6px] text-ink-dim transition-colors duration-150 hover:bg-surface hover:text-ink disabled:opacity-30"
+                    className="grid h-9 w-9 place-items-center rounded-[6px] text-ink-dim transition-colors duration-150 hover:bg-raised hover:text-ink disabled:opacity-30"
                   >
                     <IconMinus className="h-4 w-4" />
                   </button>
@@ -230,7 +230,7 @@ export function AddPanel({
                     aria-label="+1"
                     disabled={maxEpisode !== undefined && episode >= maxEpisode}
                     onClick={() => setEpisode((e) => (maxEpisode !== undefined ? Math.min(maxEpisode, e + 1) : e + 1))}
-                    className="grid h-9 w-9 place-items-center rounded-[6px] text-accent transition-colors duration-150 hover:bg-surface disabled:opacity-30"
+                    className="grid h-9 w-9 place-items-center rounded-[6px] text-accent transition-colors duration-150 hover:bg-raised disabled:opacity-30"
                   >
                     <IconPlus className="h-4 w-4" />
                   </button>

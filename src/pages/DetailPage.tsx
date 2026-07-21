@@ -164,7 +164,7 @@ function FranchiseAccordion({
             const meta = GROUP_META[k];
             const open = openGroups.has(k);
             return (
-              <div key={k} className="ios-glass mb-2.5 overflow-hidden rounded-card">
+              <div key={k} className="mb-2.5 overflow-hidden rounded-card border border-line bg-surface">
                 <button
                   type="button"
                   onClick={() => toggle(k)}

@@ -407,7 +407,7 @@ export function LibraryPage() {
               role="tab"
               aria-selected={active}
               onClick={() => setTab(s)}
-              className={`press ios-spec inline-flex shrink-0 items-center gap-2 overflow-hidden rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 ${
+              className={`press inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 ${
                 active
                   ? 'border-accent/40 bg-accent/15 text-accent shadow-[0_2px_14px_-3px_rgba(0,245,212,0.45)]'
                   : 'border-white/10 bg-white/[0.05] text-ink-dim hover:text-ink'
