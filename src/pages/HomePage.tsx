@@ -47,8 +47,14 @@ const PANEL_STYLE: Record<
   },
 };
 
-/** Wie viele Einträge Home je Panel als Vorschau zeigt (Rest: Bibliothek). */
-const PANEL_PREVIEW: Record<PanelKey, number> = { watching: 8, nextup: 20, planned: 20 };
+/**
+ * Wie viele Einträge Home je Panel zeigt. „Schaue ich“ und „Noch zu schauen“
+ * sind bewusst NUR hier zu Hause (die Bibliothek listet sie absichtlich
+ * nicht) — deshalb kein Deckel: alles muss hier erreichbar bleiben, es gibt
+ * keinen Ausweichort. Nur die Watchlist ist zusätzlich in der Bibliothek
+ * vertreten, dort darf Home also kürzen und dorthin verweisen.
+ */
+const PANEL_PREVIEW: Record<PanelKey, number> = { watching: Infinity, nextup: Infinity, planned: 20 };
 
 const RING_R = 24;
 const RING_C = 2 * Math.PI * RING_R;

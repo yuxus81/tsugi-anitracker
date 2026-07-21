@@ -41,19 +41,16 @@ export const STATUS_KEY: Record<WatchStatus, DictKey> = {
 export const STATUS_ORDER: WatchStatus[] = ['watching', 'nextup', 'planned', 'continuation', 'completed'];
 
 /**
- * Bibliothek zeigt ALLE Status. Vorher fehlten hier `watching` und `planned` —
- * beide gab es nur auf Home, und dort jeweils nur die ersten 8 bzw. 20
- * Einträge. Alles darüber hinaus war damit nirgends in der App erreichbar
- * (nur noch über die Namenssuche auffindbar). Die Bibliothek ist der Ort, an
- * dem das Archiv vollständig sein muss.
+ * Bibliothek zeigt bewusst NICHT alle Status: „Schaue ich“ und „Noch zu
+ * schauen“ sind Home vorbehalten (dort mit eigener Inszenierung — große
+ * Kino-Karte bzw. Bereit-Regal). Die Bibliothek ist das Archiv für das, was
+ * nicht gerade aktiv ist: Geschaut, Fortsetzung folgt, Watchlist. `planned`
+ * ist trotzdem hier, weil eine lange Watchlist auf Home sonst nach den
+ * ersten Einträgen unauffindbar wird (Home zeigt dort nur einen Ausschnitt
+ * und verlinkt bei Bedarf hierher) — für `watching`/`nextup` deckelt Home
+ * gar nicht erst, siehe `PANEL_PREVIEW` in HomePage.tsx.
  */
-export const LIBRARY_TABS: WatchStatus[] = [
-  'completed',
-  'watching',
-  'nextup',
-  'planned',
-  'continuation',
-];
+export const LIBRARY_TABS: WatchStatus[] = ['completed', 'continuation', 'planned'];
 
 function statusLabelNow(s: WatchStatus): string {
   return translate(useSettings.getState().lang, STATUS_KEY[s]);

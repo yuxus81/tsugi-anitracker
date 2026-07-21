@@ -23,7 +23,6 @@ import {
   IconCheck,
   IconFilm,
   IconGrip,
-  IconPlay,
   IconSearch,
   IconSparkle,
   IconStack,
@@ -261,108 +260,6 @@ function ContinuationTile({ entry, index }: { entry: LibraryEntry; index: number
   );
 }
 
-/**
- * Noch zu schauen — „Bereit-Regal“: kräftiger Pink-Akzent, Typ-Chip (Film/Staffel)
- * und ein großer Play-Knopf als klare Handlungsaufforderung.
- */
-function NextupRow({ entry, index }: { entry: LibraryEntry; index: number }) {
-  const t = useT();
-  const lang = useSettings((s) => s.lang);
-  const season = currentSeason(entry);
-  const linkId = season?.id ?? entry.rootId;
-  const cov = entryCover(entry);
-  const isFilm = season?.format === 'MOVIE';
-  const typeLabel = isFilm
-    ? formatLabel('MOVIE', lang)
-    : entry.seasons.length > 1
-      ? t('seasonN', { n: entry.seasonIndex + 1 })
-      : null;
-  const title = useDisplayTitle(entryQuery(entry), entryTitle(entry));
-
-  return (
-    <li className="stagger-in" style={{ ['--i' as string]: Math.min(index, 12) }}>
-      <Link
-        to={`/anime/${linkId}`}
-        className="group flex items-center gap-4 rounded-card border border-pink/30 bg-gradient-to-r from-pink/[0.08] to-surface px-3 py-3.5 shadow-[0_16px_34px_-24px_rgba(255,0,85,0.7)] transition-colors duration-150 hover:border-pink/55 sm:px-4"
-      >
-        <span className="block h-[84px] w-[60px] shrink-0 overflow-hidden rounded-[9px] bg-raised shadow-[0_0_0_2px_rgba(255,0,85,0.4)]">
-          {cov && <img src={cov} alt="" className="h-full w-full object-cover" />}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-semibold text-ink">{title}</p>
-          <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            {typeLabel && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-raised px-2 py-0.5 text-[10.5px] font-semibold text-ink-dim">
-                {isFilm && <IconFilm className="h-2.5 w-2.5" />}
-                {typeLabel}
-              </span>
-            )}
-            <span className="inline-flex items-center gap-1 rounded-full bg-pink/15 px-2.5 py-0.5 text-[11px] font-semibold text-pink">
-              {t('newSeasonReady')}
-            </span>
-          </span>
-        </div>
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-pink text-ink shadow-glow-pink transition-transform duration-150 group-hover:scale-105">
-          <IconPlay className="h-4 w-4 translate-x-[1px]" />
-        </span>
-      </Link>
-    </li>
-  );
-}
-
-/**
- * „Weiter schauen“ in der Bibliothek — bewusst kompakter als die große
- * Kino-Karte auf Home: hier zählt der Überblick über alles Laufende, nicht die
- * Inszenierung des Nächsten. Fortschritt steht als Zahl UND als Leiste da.
- */
-function WatchingRow({ entry, index }: { entry: LibraryEntry; index: number }) {
-  const t = useT();
-  const setProgress = useLibrary((s) => s.setProgress);
-  const season = currentSeason(entry);
-  const linkId = season?.id ?? entry.rootId;
-  const cov = entryCover(entry);
-  const multi = entry.seasons.length > 1;
-  const pct = season?.episodes ? Math.min(100, (entry.progress / season.episodes) * 100) : 0;
-  const atMax = !!season?.episodes && entry.progress >= season.episodes;
-  const title = useDisplayTitle(entryQuery(entry), entryTitle(entry));
-
-  return (
-    <li className="stagger-in" style={{ ['--i' as string]: Math.min(index, 12) }}>
-      <div className="flex items-center gap-3 rounded-card border border-accent/25 bg-surface px-3 py-3 sm:gap-4 sm:px-4">
-        <Link to={`/anime/${linkId}`} className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-          <span className="block h-[84px] w-[60px] shrink-0 overflow-hidden rounded-[9px] bg-raised shadow-[0_0_0_2px_rgba(0,245,212,0.3)]">
-            {cov && <img src={cov} alt="" className="h-full w-full object-cover" />}
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[15px] font-semibold text-ink">{title}</span>
-            <span className="mt-1 block truncate text-[13px] text-ink-dim">
-              {multi && <>{t('seasonN', { n: entry.seasonIndex + 1 })} · </>}
-              {season?.episodes
-                ? `${entry.progress}/${season.episodes}`
-                : t('episodesSeen', { n: entry.progress })}
-            </span>
-            {!!season?.episodes && (
-              <span className="mt-2 block h-1 w-full overflow-hidden rounded-full bg-raised">
-                <span className="block h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
-              </span>
-            )}
-          </span>
-        </Link>
-        <button
-          type="button"
-          aria-label={t('continueWithEp', { n: entry.progress + 1 })}
-          title={t('continueWithEp', { n: entry.progress + 1 })}
-          disabled={atMax}
-          onClick={() => setProgress(entry.rootId, entry.progress + 1)}
-          className="press grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent text-bg shadow-glow-accent disabled:opacity-40"
-        >
-          <IconPlay className="h-4 w-4 translate-x-[1px]" />
-        </button>
-      </div>
-    </li>
-  );
-}
-
 /** Watchlist in der Bibliothek — Poster-Raster, Violett wie auf Home. */
 function PlannedTile({ entry, index }: { entry: LibraryEntry; index: number }) {
   const t = useT();
@@ -551,15 +448,8 @@ export function LibraryPage() {
             <PlannedTile key={e.rootId} entry={e} index={i} />
           ))}
         </div>
-      ) : activeTab === 'completed' ? (
-        <CompletedList key={activeTab} list={list} />
       ) : (
-        <ul key={activeTab} className="space-y-3">
-          {activeTab === 'nextup' &&
-            list.map((e, i) => <NextupRow key={e.rootId} entry={e} index={i} />)}
-          {activeTab === 'watching' &&
-            list.map((e, i) => <WatchingRow key={e.rootId} entry={e} index={i} />)}
-        </ul>
+        <CompletedList key={activeTab} list={list} />
       )}
       </div>
     </div>
