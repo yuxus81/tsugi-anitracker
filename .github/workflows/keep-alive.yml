@@ -1,0 +1,52 @@
+name: Keep Supabase & Actions Alive
+
+# Supabases Free-Tier pausiert Projekte nach 7 Tagen ohne API-Traffic. Dieser
+# Job pingt die REST-API alle 5 Tage an (2 Tage Puffer). Damit der Scheduled
+# Workflow selbst nicht nach 60 Tagen ohne Repo-Aktivität von GitHub
+# stillgelegt wird, committet er bei jedem Lauf einen Zeitstempel auf einen
+# eigenen, isolierten Branch ("keepalive") — dort wird immer nur EIN Commit
+# per --amend überschrieben, damit main unangetastet bleibt und auch dieser
+# Branch nicht anwächst.
+
+on:
+  schedule:
+    - cron: '0 6 */5 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        run: |
+          curl -s -o /dev/null -w "Supabase-Ping: HTTP %{http_code}\n" \
+            "https://anyvdbweojvaztyiacwb.supabase.co/rest/v1/tsugi_settings?select=user_id&limit=1" \
+            -H "apikey: sb_publishable_6A73CDl65UrCWWVbTz9z7A_nu3cIWME" \
+            -H "Authorization: Bearer sb_publishable_6A73CDl65UrCWWVbTz9z7A_nu3cIWME"
+
+      - uses: actions/checkout@v4
+
+      - name: Heartbeat-Commit auf isoliertem 'keepalive'-Branch (immer nur 1 Commit)
+        run: |
+          git config user.name "keepalive-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          git fetch origin keepalive:refs/remotes/origin/keepalive 2>/dev/null || true
+
+          if git show-ref --verify --quiet refs/remotes/origin/keepalive; then
+            git checkout -B keepalive origin/keepalive
+            echo "Letzter Ping: $(date -u '+%Y-%m-%d %H:%M UTC')" > HEARTBEAT.md
+            git add HEARTBEAT.md
+            git commit --amend -m "keepalive: $(date -u '+%Y-%m-%d %H:%M UTC')"
+          else
+            git checkout --orphan keepalive
+            git rm -rf . > /dev/null 2>&1 || true
+            echo "Letzter Ping: $(date -u '+%Y-%m-%d %H:%M UTC')" > HEARTBEAT.md
+            git add HEARTBEAT.md
+            git commit -m "keepalive: $(date -u '+%Y-%m-%d %H:%M UTC')"
+          fi
+
+          git push origin keepalive --force
