@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Icon, type IconName } from '@/components/Icon';
 import { STATUS_THEME } from '@/domain/status';
 import { useT } from '@/i18n';
@@ -175,6 +175,7 @@ export function Segmented<K extends string>({
             aria-controls={panelId}
             aria-selected={gewaehlt}
             className={`seg__btn${gewaehlt ? ' is-on' : ''}`}
+            style={gewaehlt ? ({ '--seg-on': 'var(--tone-on)' } as CSSProperties) : undefined}
             onClick={() => onChange(o.key)}
           >
             <Icon name={o.icon} size={15} filled={gewaehlt} />
