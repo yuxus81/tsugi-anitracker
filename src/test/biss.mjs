@@ -153,6 +153,21 @@ const MUTATIONEN = [
 
   // ---- API-Helfer ---------------------------------------------------------
   {
+    // Die Grenze ist unsichtbar: zu große Bündel scheitern erst draußen bei
+    // AniList, und der Scan verschluckt den Fehler. Genau deshalb muss ein
+    // Test daran hängen.
+    name: 'fetchRelationSlices bündelt wieder über die Komplexitätsgrenze',
+    datei: 'src/api/anilist.ts',
+    von: 'const MAX_IDS_PRO_ABFRAGE = 8;',
+    nach: 'const MAX_IDS_PRO_ABFRAGE = 12;',
+  },
+  {
+    name: 'fetchRelationSlices teilt gar nicht mehr auf',
+    datei: 'src/api/anilist.ts',
+    von: 'for (let i = 0; i < ids.length; i += MAX_IDS_PRO_ABFRAGE) {',
+    nach: 'for (let i = 0; i < ids.length; i += 9999) {',
+  },
+  {
     name: 'bestTitle bevorzugt Romaji statt Englisch',
     datei: 'src/api/types.ts',
     von: "return m.title.english || m.title.romaji || 'Unbekannt';",

@@ -19,12 +19,13 @@ import { translate, useSettings } from '@/i18n';
  *  - Fortsetzung angekündigt  → Eintrag wandert zu „Fortsetzung folgt“ + Toast
  *  - Air-Status/Folgenzahlen laufender Staffeln werden dabei mit aufgefrischt.
  *
- * Kostenpunkt: dank gebündelter GraphQL-Aliases 1 Request pro ~12 Einträge,
+ * Kostenpunkt: dank gebündelter GraphQL-Aliases 1 Request pro 8 Einträge,
  * nicht 1 Request pro Anime — die App bleibt flott und weit unterm Rate-Limit.
+ * Die Bündelgröße bestimmt `fetchRelationSlices` selbst; sie hängt an
+ * AniLists Komplexitätsgrenze und geht niemanden hier etwas an.
  */
 
 const SCAN_DELAY_MS = 2500;
-const CHUNK = 12;
 const MAX_SEQUEL_ROUNDS = 3;
 
 /** Erste noch nicht komplett geschaute Staffel (Index), oder seasons.length. */
@@ -37,12 +38,10 @@ function firstUnwatched(e: LibraryEntry): number {
 }
 
 async function slicesFor(ids: number[]): Promise<Map<number, RelationSlice>> {
-  const out = new Map<number, RelationSlice>();
-  for (let i = 0; i < ids.length; i += CHUNK) {
-    const got = await fetchRelationSlices(ids.slice(i, i + CHUNK));
-    got.forEach((v, k) => out.set(k, v));
-  }
-  return out;
+  // Früher teilte diese Stelle selbst in Zwölferblöcke — und lag damit über
+  // AniLists Komplexitätsgrenze, weshalb JEDER Block mit 400 abgelehnt wurde.
+  // Die Aufteilung macht jetzt `fetchRelationSlices`.
+  return fetchRelationSlices(ids);
 }
 
 async function scanLibrary(): Promise<void> {
