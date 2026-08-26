@@ -42,10 +42,12 @@
 .factgrid dd { margin-top: 2px; font-size: 14px; font-weight: 600; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; }
 @media (min-width: 700px) { .factgrid { grid-template-columns: repeat(3, 1fr); } }
 
-/* Franchise-Zeitstrahl: die Staffeln liegen auf einer Achse. */
-.line { position: relative; padding-left: 22px; }
+/* Franchise-Zeitstrahl: die Staffeln liegen auf einer Achse.
+   Die Station ist ein LISTENEINTRAG, der Link darin trägt sie — dadurch
+   bleibt der Punkt auf der Achse (::before) außerhalb der Klickfläche. */
+.line { position: relative; padding-left: 22px; list-style: none; margin: 0; }
 .line::before { content: ''; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--line-2); }
-.lineitem { position: relative; display: flex; align-items: center; gap: 11px; width: 100%; padding: 9px 8px; border-radius: var(--r-2); text-align: left; transition: background var(--t-fast) var(--e-out); }
+.lineitem { position: relative; border-radius: var(--r-2); transition: background var(--t-fast) var(--e-out); }
 .lineitem::before {
   content: ''; position: absolute; left: -20px; top: 50%; margin-top: -5px;
   width: 10px; height: 10px; border-radius: 50%;
@@ -53,11 +55,24 @@
 }
 .lineitem.is-here::before { background: var(--tone); box-shadow: 0 0 0 3px var(--bg), 0 0 12px var(--tone); }
 .lineitem.is-here { background: var(--tone-bg); }
+.lineitem:hover { background: rgba(255,255,255,.04); }
+.lineitem__link { display: flex; align-items: center; gap: 11px; width: 100%; padding: 9px 8px; border-radius: var(--r-2); text-align: left; }
 .lineitem__art { width: 34px; height: 48px; border-radius: 7px; overflow: hidden; flex: none; background: var(--s2); }
 .lineitem__art img { width: 100%; height: 100%; object-fit: cover; }
-.lineitem__t { font-size: 13.5px; font-weight: 620; letter-spacing: -0.015em; }
-.lineitem__s { font-size: 11.5px; color: var(--ink-3); margin-top: 1px; font-variant-numeric: tabular-nums; }
-.lineitem:hover { background: rgba(255,255,255,.04); }
+.lineitem__body { flex: 1; min-width: 0; }
+.lineitem__t { display: block; font-size: 13.5px; font-weight: 620; letter-spacing: -0.015em; }
+.lineitem__s { display: block; margin-top: 1px; font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lineitem__done { display: grid; place-items: center; flex: none; color: var(--gr-t); }
+
+.det__progline { font-size: 14px; font-weight: 650; letter-spacing: -0.02em; }
+.det__text { margin-top: 2px; white-space: pre-line; max-width: 70ch; }
+.det__danger { margin-top: 26px; }
+.sheet__lead { margin-bottom: 12px; }
+
+/* Platzhalter für die Detailseite, in der Form dessen, was gleich kommt. */
+.skel--banner { height: 190px; margin: -14px calc(var(--pad) * -1) 0; border-radius: 0; }
+.skel--title { height: 30px; width: 62%; margin-top: 20px; }
+.skel--text { height: 90px; margin-top: 14px; }
 
 /* ==================================================== Statistik ========== */
 .barrow { display: grid; grid-template-columns: 92px 1fr 34px; align-items: center; gap: 10px; padding: 5px 0; }
@@ -85,4 +100,118 @@
 .setrow__s { margin-top: 2px; font-size: 12.5px; color: var(--ink-3); }
 .group { border-radius: var(--r-3); overflow: hidden; background: var(--s1); box-shadow: inset 0 0 0 1px var(--line); }
 .grouptitle { margin: 24px 0 8px; padding-left: 4px; font-size: 11.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); }
+/* Die Gefahrenzone kündigt sich schon in ihrer Überschrift an. */
+.grouptitle--danger { color: var(--pk-t); }
+.setrow__t.is-danger { color: var(--pk-t); }
+.setrow:disabled { opacity: .4; }
+.setrow:disabled:hover { background: none; }
 
+/* Kontokarte: wer bin ich hier eigentlich angemeldet. */
+.account { display: flex; align-items: center; gap: 14px; }
+.account__ico {
+  display: grid; place-items: center;
+  width: 54px; height: 54px; flex: none;
+  border-radius: 18px;
+  background: var(--tone-bg); color: var(--tone-t);
+}
+.account__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.account__name { font-size: 17px; font-weight: 700; letter-spacing: -0.025em; }
+
+/* Eingabefeld im Gerät-Stil: versenkt statt umrandet. */
+.field { display: block; }
+.field__label { display: block; margin-bottom: 6px; font-size: 12px; color: var(--ink-3); }
+.field__input {
+  width: 100%; height: 44px; padding: 0 13px;
+  border: 0; outline: none;
+  border-radius: var(--r-1);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 15px;
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  transition: box-shadow var(--t-fast) var(--e-out);
+}
+.field__input::placeholder { color: var(--ink-3); }
+.field__input:focus { box-shadow: inset 0 0 0 1.5px var(--cy); }
+.field__act { margin-top: 12px; }
+.field__note { margin-top: 8px; padding-left: 4px; max-width: 60ch; }
+/* Der lange Erklärtext steht ÜBER der Gruppe. In einer Zeile (`setrow__s`)
+   hat er keinen Platz — dort wird er nach einer Zeile abgeschnitten. */
+.groupnote { margin: -2px 0 10px; }
+
+.langbar { max-width: 360px; }
+.appfoot { margin-top: 26px; text-align: center; }
+
+/* Der Dateiwähler ist unsichtbar, aber NICHT `display:none` — sonst könnte
+   `click()` ihn in manchen Browsern gar nicht erst öffnen. */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+
+/* ==================================================== Das Tor ============ */
+/* Der Anmeldebildschirm hatte im Entwurf keine Vorlage. Er ist hier in
+   derselben Sprache gebaut: eine Platte auf dunklem Grund, versenkte Felder,
+   ein Knopf mit Lichtkante. Kein Rahmen, keine Tab-Leiste — wer hier steht,
+   hat noch kein Gerät in der Hand. */
+.gate {
+  min-height: 100dvh;
+  display: grid; place-items: center;
+  padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+  background: radial-gradient(120% 90% at 50% 0%, rgba(138,43,226,.12), transparent 60%), var(--bg);
+}
+.gate__plate {
+  width: 100%; max-width: 400px;
+  padding: 24px 20px 22px;
+  border-radius: var(--r-4);
+  background: var(--s1);
+  box-shadow: var(--lip), var(--sh-3), inset 0 0 0 1px var(--line-2);
+}
+.gate__head { text-align: center; margin-bottom: 22px; }
+.gate__logo { border-radius: var(--r-2); box-shadow: var(--sh-1); }
+.gate__title { margin-top: 12px; font-size: 24px; font-weight: 760; letter-spacing: -0.03em; }
+.gate__title-dim { color: var(--ink-3); font-weight: 600; }
+.gate__tagline { margin: 6px auto 0; max-width: 32ch; }
+.gate__form { display: flex; flex-direction: column; gap: 14px; }
+.gate__error {
+  padding: 10px 12px;
+  border-radius: var(--r-1);
+  background: var(--pk-bg);
+  color: var(--pk-t);
+  font-size: 13px; line-height: 1.45;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pk) 32%, transparent);
+}
+.gate__switch { text-align: center; }
+.gate__done { text-align: center; display: flex; flex-direction: column; gap: 14px; align-items: center; }
+.gate__seal {
+  display: grid; place-items: center;
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  background: var(--cy-bg); color: var(--cy-t);
+  --knock: var(--s1);
+}
+
+/* Schalterzeile: die ganze Zeile IST der Schalter — 44 px hoch, auch wenn
+   der Schieber selbst nur 31 px misst. */
+.switchrow {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; min-height: 44px;
+  text-align: left;
+}
+.switchrow__label { flex: 1; min-width: 0; font-size: 14px; color: var(--ink-2); }
+
+/* Textknopf, der wie ein Link liest, aber ein Knopf bleibt. */
+.linkish {
+  align-self: flex-start;
+  color: var(--cy-t);
+  font-size: 13.5px; font-weight: 600;
+  min-height: 32px;
+  transition: opacity var(--t-fast) var(--e-out);
+}
+.linkish:hover { opacity: .78; }
+.gate__switch .linkish { display: inline; align-self: auto; min-height: 0; }

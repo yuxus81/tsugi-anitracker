@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { buildFranchiseSeasons } from '@/components/AddPanel';
+import { buildFranchiseSeasons } from '@/domain/franchise';
 import type { Franchise } from '@/api/anilist';
 import type { MediaDetail } from '@/api/types';
 import { mediaCard } from '@/test/factories';

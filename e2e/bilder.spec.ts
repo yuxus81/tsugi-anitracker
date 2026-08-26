@@ -35,5 +35,39 @@ for (const g of GROESSEN) {
     await page.getByRole('tab', { name: /watchlist/i }).click();
     await page.waitForTimeout(700);
     await page.screenshot({ path: `e2e/bilder/${g.name}-watchlist.png` });
+
+    // ---- Etappe 3: die restlichen Bildschirme --------------------------
+    for (const [datei, pfad, warteAuf] of [
+      ['bibliothek', '#/bibliothek', '.ranklist'],
+      ['entdecken', '#/entdecken', '.genrebar'],
+      ['statistik', '#/statistik', '.tiles'],
+      ['einstellungen', '#/einstellungen', '.group'],
+    ] as const) {
+      await page.goto(`/${pfad}`);
+      await page.locator(warteAuf).first().waitFor({ state: 'visible', timeout: 10_000 });
+      await page.waitForTimeout(700);
+      await page.screenshot({ path: `e2e/bilder/${g.name}-${datei}.png` });
+    }
+
+    // Bibliothek: die anderen beiden Kategorien tragen eigene Bauformen.
+    await page.goto('/#/bibliothek');
+    await page.locator('.ranklist').first().waitFor({ state: 'visible' });
+    await page.getByRole('tab', { name: /fortsetzung folgt/i }).click();
+    await page.waitForTimeout(700);
+    await page.screenshot({ path: `e2e/bilder/${g.name}-bibliothek-warten.png` });
+
+    // Detailseite: Zeitstrahl, Fortschritt, Wertung an einem Stück.
+    await page.goto('/#/anime/1');
+    await page.locator('.det__head').waitFor({ state: 'visible', timeout: 10_000 });
+    await page.waitForTimeout(900);
+    await page.screenshot({ path: `e2e/bilder/${g.name}-detail.png` });
+
+    // Die Suche als Ebene über allem.
+    await page.goto('/');
+    await warteAufBibliothek(page);
+    await page.keyboard.press('/');
+    await page.locator('.pal').waitFor({ state: 'visible', timeout: 5_000 });
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: `e2e/bilder/${g.name}-suche.png` });
   });
 }

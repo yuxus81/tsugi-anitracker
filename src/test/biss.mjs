@@ -10,15 +10,37 @@
  * Mutation unbemerkt, ist an dieser Stelle eine Lücke im Netz — das Skript
  * endet dann mit Fehlercode und nennt sie beim Namen.
  *
- * Aufruf:  node src/test/biss.mjs
- * Die Dateien werden nach jedem Lauf per `git checkout --` zurückgeholt,
- * auch wenn das Skript abbricht.
+ * Aufruf:  node src/test/biss.mjs <testdatei> [weitere...]
+ *
+ * Die mutierten Dateien werden aus einem Schnappschuss zurückgeschrieben,
+ * der VOR dem ersten Eingriff gezogen wurde — auch wenn das Skript abbricht.
+ *
+ * Früher stand hier `git checkout --`. Das stellt aber nicht den Stand von
+ * vorher her, sondern den zuletzt eingecheckten, und hat zweimal eine
+ * fertige, noch nicht committete Fehlerbehebung in `store/library.ts`
+ * weggeworfen. Siehe `dateiSchutz.mjs`.
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { schnappschuss } from './dateiSchutz.mjs';
 
 const MUTATIONEN = [
+  {
+    // Der Wettlauf-Schutz selbst. Er ist unsichtbar und tritt nur auf einem
+    // frischen Gerät in Erscheinung — ohne Mutationsprobe wüsste niemand,
+    // ob der Test ihn wirklich festhält.
+    name: 'hydrate überschreibt die bereits geladene Cloud-Bibliothek wieder',
+    datei: 'src/store/library.ts',
+    von: '    if (get().remoteApplied) {',
+    nach: '    if (false) {',
+  },
+  {
+    name: 'resetLocal vergisst die Cloud-Marke — der Cache bleibt tot',
+    datei: 'src/store/library.ts',
+    von: "set({ entries: {}, completedOrder: [], hydrated: false, remoteApplied: false });",
+    nach: "set({ entries: {}, completedOrder: [], hydrated: false });",
+  },
   {
     name: 'watchedEpisodes zählt eine Staffel zu viel',
     datei: 'src/store/library.ts',
@@ -164,25 +186,25 @@ const MUTATIONEN = [
   // ---- Franchise-Zeitstrahl ----------------------------------------------
   {
     name: 'buildFranchiseSeasons mischt Recap- und Spin-off-Filme mit ein',
-    datei: 'src/components/AddPanel.tsx',
+    datei: 'src/domain/franchise.ts',
     von: ".filter((x) => x.media.format === 'MOVIE' && x.relation !== 'Zusammenfassung' && x.relation !== 'Spin-off')",
     nach: ".filter((x) => x.media.format === 'MOVIE')",
   },
   {
     name: 'buildFranchiseSeasons sortiert Staffeln ohne Jahr nach vorn',
-    datei: 'src/components/AddPanel.tsx',
+    datei: 'src/domain/franchise.ts',
     von: 'withOrder.sort((a, b) => (a.c.seasonYear ?? 9999) - (b.c.seasonYear ?? 9999) || a.i - b.i);',
     nach: 'withOrder.sort((a, b) => (a.c.seasonYear ?? 0) - (b.c.seasonYear ?? 0) || a.i - b.i);',
   },
   {
     name: 'buildFranchiseSeasons lässt Duplikate stehen',
-    datei: 'src/components/AddPanel.tsx',
+    datei: 'src/domain/franchise.ts',
     von: 'const ordered = withOrder.map((w) => w.c).filter((m) => (seen.has(m.id) ? false : seen.add(m.id)));',
     nach: 'const ordered = withOrder.map((w) => w.c);',
   },
   {
     name: 'buildFranchiseSeasons ignoriert die Hauptlinie und nimmt nur den Detailtitel',
-    datei: 'src/components/AddPanel.tsx',
+    datei: 'src/domain/franchise.ts',
     von: 'const base = main.length > 0 ? [...main, ...movieExtras] : [detail];',
     nach: 'const base = [detail];',
   },
@@ -190,8 +212,12 @@ const MUTATIONEN = [
 
 const dateien = [...new Set(MUTATIONEN.map((m) => m.datei))];
 
+// Der Schnappschuss wird HIER gezogen, beim Laden des Moduls — also
+// garantiert vor dem ersten Eingriff.
+const schutz = schnappschuss(dateien);
+
 function zuruecksetzen() {
-  execFileSync('git', ['checkout', '--', ...dateien], { stdio: 'ignore' });
+  schutz.zurueck();
 }
 
 /**

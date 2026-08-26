@@ -1,167 +1,161 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { EntryCard } from '@/components/EntryCard';
+import { Icon } from '@/components/Icon';
+import { Button, EmptyState, Segmented } from '@/components/kit';
+import { useSearchOverlay } from '@/components/searchStore';
+import { STATUS_THEME } from '@/domain/status';
+import { useRoller } from '@/lib/useRoller';
+import { useT } from '@/i18n';
 import {
-  currentSeason,
   entriesByStatus,
   entryCover,
   entryTitle,
   lastWatchedSeason,
   LIBRARY_TABS,
-  releaseLabel,
-  STATUS_KEY,
   useLibrary,
+  watchedEpisodes,
   type LibraryEntry,
   type WatchStatus,
 } from '@/store/library';
-import { formatLabel } from '@/api/types';
-import { entryQuery, useDisplayTitle } from '@/store/titles';
-import { STATUS_DOT } from '@/components/TrackControls';
-import { EmptyState, PageTitle } from '@/components/ui';
-import { useSearchOverlay } from '@/components/searchStore';
-import { useLocale, useSettings, useT } from '@/i18n';
-import {
-  IconCheck,
-  IconFilm,
-  IconGrip,
-  IconSearch,
-  IconSparkle,
-  IconStack,
-  IconStar,
-} from '@/components/icons';
 
 /**
- * Abgeschlossen — „Hall of Fame“: nummerierte Rangliste, großes Cover, Sterne
- * und persönliche Note, Gold→Grün-Unterstrich. Kein Siegel/Haken mehr — der
- * Rang selbst ist die Auszeichnung. Per Greifpunkt links draggable, damit sich
- * die Rangliste frei sortieren lässt (die eigentliche Reihenfolge kommt vom
- * Elternteil, siehe `CompletedList`).
+ * DIE BIBLIOTHEK — das Archiv, nicht der Alltag.
+ *
+ * Home zeigt, was gerade läuft. Hier stehen die drei Kategorien, die dort
+ * NICHT vorkommen: Geschaut, Fortsetzung folgt, Watchlist.
+ *
+ * „Geschaut" ist eine RANGLISTE, kein Poster-Raster. Das ist Absicht: eine
+ * andere Kategorie soll sich auch anders anfühlen, nicht bloß anders färben.
+ * Und ein Archiv ist eine Reihenfolge — deshalb hängt an jeder Zeile ein
+ * Greifpunkt.
  */
-function CompletedRow({
-  entry,
+
+const PANEL_ID = 'bibliothek-inhalt';
+
+/**
+ * Eine Zeile der Rangliste.
+ *
+ * Der Greifpunkt liegt NEBEN dem Link, nicht darin: ein Knopf innerhalb
+ * eines Links ist ungültiges Markup, und die Tastatur käme an genau einen
+ * der beiden nie heran.
+ */
+function RankRow({
+  entry: e,
   index,
-  dragProps,
+  dragging,
+  dragOver,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
 }: {
   entry: LibraryEntry;
   index: number;
-  dragProps: {
-    dragging: boolean;
-    dragOver: boolean;
-    onHandleDragStart: () => void;
-    onHandleDragEnd: () => void;
-  };
+  dragging: boolean;
+  dragOver: boolean;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  onDragOver: (ev: React.DragEvent) => void;
+  onDrop: (ev: React.DragEvent) => void;
 }) {
   const t = useT();
-  const locale = useLocale();
-  const season = lastWatchedSeason(entry);
-  const linkId = season?.id ?? entry.rootId;
-  const cov = season?.coverUrl ?? entryCover(entry);
-  const stars = entry.rating != null ? Math.round(entry.rating / 2) : 0;
-  const title = useDisplayTitle(entryQuery(entry), entryTitle(entry));
+  const season = lastWatchedSeason(e);
+  const cover = season?.coverUrl ?? entryCover(e);
+  const folgen = watchedEpisodes(e);
 
-  // Franchise ist „fertig geschaut“, hat aber laut Scan eine angekündigte
-  // Fortsetzung — beide Wahrheiten gehören auf diese Karte.
-  const upcoming = entry.status === 'continuation' ? currentSeason(entry) : undefined;
-  const upcomingWhen = upcoming ? releaseLabel(upcoming, locale) : null;
-
-  // Alles Veröffentlichte ist geschaut, aber eine bereits erschienene
-  // Staffel/ein Film wartet noch — landet zusätzlich hier, damit „geschaut,
-  // aber nicht ganz fertig“ nicht in einem separaten Tab untergeht.
-  const readyToWatch = entry.status === 'nextup' ? currentSeason(entry) : undefined;
-  const readyIsFilm = readyToWatch?.format === 'MOVIE';
+  const klassen = ['rank-row', dragging && 'is-dragging', dragOver && 'is-over']
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <div
-      className={`hover-lift flex items-stretch gap-1 rounded-card border border-gold/20 bg-gradient-to-r from-gold/[0.06] via-surface to-surface transition-[opacity,border-color,box-shadow] duration-150 hover:border-gold/45 hover:shadow-[0_18px_34px_-22px_rgba(217,164,65,0.55)] ${
-        dragProps.dragging ? 'opacity-40' : ''
-      } ${dragProps.dragOver ? 'ring-2 ring-gold/60' : ''}`}
+    <li
+      className={klassen}
+      data-st="completed"
+      data-testid="rank-row"
+      onDragOver={onDragOver}
+      onDrop={onDrop}
     >
       <button
         type="button"
         draggable
-        onDragStart={dragProps.onHandleDragStart}
-        onDragEnd={dragProps.onHandleDragEnd}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        className="rank-grip"
         aria-label={t('dragToReorder')}
         title={t('dragToReorder')}
-        className="flex shrink-0 cursor-grab touch-none items-center px-1.5 text-ink-faint/50 transition-colors duration-150 hover:text-gold active:cursor-grabbing sm:px-2"
       >
-        <IconGrip className="h-4 w-4" />
+        <Icon name="grip" size={18} />
       </button>
-      <Link
-        to={`/anime/${linkId}`}
-        draggable={false}
-        className="group flex min-w-0 flex-1 items-center gap-3 py-4 pr-3 sm:gap-5 sm:pr-5"
-      >
-        <span className="w-7 shrink-0 text-center font-display text-[28px] font-semibold leading-none text-gold sm:w-11 sm:text-[38px]">
+
+      <Link to={`/anime/${e.rootId}`} className="row-item" data-st="completed" draggable={false}>
+        <span className="row-item__rank tnum" data-testid="rank">
           {index + 1}
         </span>
-        <span className="block h-[104px] w-[72px] shrink-0 overflow-hidden rounded-[10px] bg-raised shadow-[0_10px_24px_-12px_rgba(0,0,0,0.7)]">
-          {cov && <img src={cov} alt="" className="h-full w-full object-cover" />}
+        <span className="row-item__art">
+          {cover && <img src={cover} alt="" loading="lazy" decoding="async" />}
+          <span className="seal-badge seal-badge--sm" aria-hidden>
+            <Icon name="seal" size={14} filled />
+          </span>
         </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[16px] font-semibold text-ink sm:text-[17px]">{title}</p>
-          <p className="mt-0.5 truncate text-[13px] text-ink-dim">
-            {season ? t('watchedUpToTitle', { t: season.title }) : t('seasonOne')}
-          </p>
-          {entry.rating != null && (
-            <div className="mt-2 flex items-center gap-0.5">
-              {Array.from({ length: 5 }, (_, i) => (
-                <IconStar
-                  key={i}
-                  className={`h-3.5 w-3.5 ${i < stars ? 'text-gold' : 'text-ink-faint/40'}`}
-                  fill={i < stars ? 'currentColor' : 'none'}
-                />
-              ))}
-              <span className="ml-1.5 text-[12px] font-semibold tabular-nums text-gold">
-                {entry.rating}/10
-              </span>
-            </div>
-          )}
-          {upcoming && (
-            <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue/20 to-purple/20 px-2.5 py-1 text-[10.5px] font-bold text-blue">
-              <IconSparkle className="h-3 w-3" />
-              {upcomingWhen ? t('continuationComing', { when: upcomingWhen }) : t('continuationComingSoon')}
+        <span className="row-item__body">
+          <span className="row-item__t">{entryTitle(e)}</span>
+          <span className="row-item__s">
+            <span>{folgen === 1 ? t('episodeOne') : t('cardEpisodes', { n: folgen })}</span>
+            <span className="dot" aria-hidden />
+            <span>
+              {e.seasons.length === 1
+                ? t('seasonOneCount')
+                : t('seasonsCount', { n: e.seasons.length })}
+            </span>
+          </span>
+        </span>
+        <span className="row-item__end">
+          {/* Gold und ein Stern — in dieser Version bedeutet Gold GENAU eine
+              Sache: Wertung. Eine grüne Siegel-Marke mit einer 9 darin läse
+              sich wie ein Status, nicht wie eine Note. */}
+          {e.rating != null && (
+            <span className="rating-tag tnum">
+              <Icon name="star" size={12} filled />
+              {e.rating}
             </span>
           )}
-          {readyToWatch && (
-            <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-pink/15 px-2.5 py-1 text-[10.5px] font-bold text-pink">
-              {readyIsFilm ? <IconFilm className="h-3 w-3" /> : <IconStack className="h-3 w-3" />}
-              {readyIsFilm ? t('readyFilmOpen') : t('readySeasonOpen')}
-            </span>
-          )}
-          <div className="mt-2 h-[2px] w-16 rounded-full bg-gradient-to-r from-gold to-green" />
-        </div>
+        </span>
       </Link>
-    </div>
+    </li>
   );
 }
 
 /**
- * Trägt die per Drag & Drop sortierbare Rangliste. Hält eine lokale
- * Arbeitskopie für sofortiges visuelles Feedback beim Ziehen; committet die
- * fertige Reihenfolge erst beim Loslassen in den Store (localStorage).
+ * Die Rangliste mit ihrer Arbeitskopie.
+ *
+ * Beim Ziehen wird lokal umsortiert, damit man sofort sieht, wohin es geht;
+ * erst beim Loslassen wandert die fertige Reihenfolge in den Store.
  */
-function CompletedList({ list }: { list: LibraryEntry[] }) {
+function RankList({ list }: { list: LibraryEntry[] }) {
   const setCompletedOrder = useLibrary((s) => s.setCompletedOrder);
   const [items, setItems] = useState(list);
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [overId, setOverId] = useState<number | null>(null);
 
   useEffect(() => {
+    // Nur übernehmen, wenn sich die MENGE geändert hat — sonst würde jedes
+    // Rendern des Elternteils die gerade gezogene Reihenfolge zurücksetzen.
     setItems((prev) => {
-      const prevIds = prev.map((e) => e.rootId).join(',');
-      const nextIds = list.map((e) => e.rootId).join(',');
-      return prevIds === nextIds ? prev : list;
+      const vorher = prev.map((e) => e.rootId).join(',');
+      const nachher = list.map((e) => e.rootId).join(',');
+      return vorher === nachher ? prev : list;
     });
   }, [list]);
 
-  function handleDrop(targetId: number) {
-    if (draggingId != null && draggingId !== targetId) {
-      const from = items.findIndex((e) => e.rootId === draggingId);
-      const to = items.findIndex((e) => e.rootId === targetId);
-      if (from !== -1 && to !== -1) {
+  function drop(zielId: number) {
+    if (draggingId != null && draggingId !== zielId) {
+      const von = items.findIndex((e) => e.rootId === draggingId);
+      const nach = items.findIndex((e) => e.rootId === zielId);
+      if (von !== -1 && nach !== -1) {
         const next = [...items];
-        const [moved] = next.splice(from, 1);
-        next.splice(to, 0, moved);
+        const [bewegt] = next.splice(von, 1);
+        next.splice(nach, 0, bewegt);
         setItems(next);
         setCompletedOrder(next.map((e) => e.rootId));
       }
@@ -171,12 +165,21 @@ function CompletedList({ list }: { list: LibraryEntry[] }) {
   }
 
   return (
-    <ul className="space-y-3">
+    <ul className="panel panel--flush ranklist">
       {items.map((e, i) => (
-        <li
+        <RankRow
           key={e.rootId}
-          className="stagger-in"
-          style={{ ['--i' as string]: Math.min(i, 12) }}
+          entry={e}
+          index={i}
+          dragging={draggingId === e.rootId}
+          dragOver={overId === e.rootId && draggingId !== e.rootId}
+          onDragStart={() => setDraggingId(e.rootId)}
+          onDragEnd={() => {
+            setDraggingId(null);
+            setOverId(null);
+          }}
+          // Der Greifpunkt startet den Zug, die ZEILE nimmt ihn entgegen —
+          // sonst müsste man exakt den kleinen Griff des Ziels treffen.
           onDragOver={(ev) => {
             if (draggingId == null || draggingId === e.rootId) return;
             ev.preventDefault();
@@ -184,114 +187,11 @@ function CompletedList({ list }: { list: LibraryEntry[] }) {
           }}
           onDrop={(ev) => {
             ev.preventDefault();
-            handleDrop(e.rootId);
+            drop(e.rootId);
           }}
-        >
-          <CompletedRow
-            entry={e}
-            index={i}
-            dragProps={{
-              dragging: draggingId === e.rootId,
-              dragOver: overId === e.rootId && draggingId !== e.rootId,
-              onHandleDragStart: () => setDraggingId(e.rootId),
-              onHandleDragEnd: () => {
-                setDraggingId(null);
-                setOverId(null);
-              },
-            }}
-          />
-        </li>
+        />
       ))}
     </ul>
-  );
-}
-
-/**
- * Fortsetzung folgt — Countdown-Kachel (Poster-Format wie „Noch zu schauen“):
- * großes Cover, Blau-Violett-Schleier, und direkt auf der Karte, was kommt
- * (Film oder Staffel) und wann. Kein flaches Listen-Layout — dieses eine Tab
- * ist ein Raster.
- */
-function ContinuationTile({ entry, index }: { entry: LibraryEntry; index: number }) {
-  const t = useT();
-  const lang = useSettings((s) => s.lang);
-  const locale = useLocale();
-  const upcoming = currentSeason(entry);
-  const linkId = upcoming?.id ?? entry.rootId;
-  const cov = entryCover(entry);
-  const isFilm = upcoming?.format === 'MOVIE';
-  const typeLabel = isFilm
-    ? formatLabel('MOVIE', lang)
-    : entry.seasons.length > 1
-      ? `${formatLabel('TV', lang)} ${entry.seasonIndex + 1}`
-      : formatLabel('TV', lang);
-  const when = upcoming ? releaseLabel(upcoming, locale) : null;
-  const title = useDisplayTitle(entryQuery(entry), entryTitle(entry));
-
-  return (
-    <div className="stagger-in" style={{ ['--i' as string]: Math.min(index, 12) }}>
-      <Link
-        to={`/anime/${linkId}`}
-        className="group relative block aspect-[2/3] overflow-hidden rounded-card bg-raised shadow-[0_16px_34px_-20px_rgba(58,134,255,0.6)] ring-1 ring-blue/25 transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:ring-blue/55"
-      >
-        {cov && (
-          <img
-            src={cov}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-90 transition-transform duration-500 ease-out group-hover:scale-105"
-          />
-        )}
-        <span className="absolute inset-0 bg-gradient-to-t from-bg via-bg/35 to-blue/25" />
-        <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-bg/90 px-2 py-0.5 text-[10.5px] font-bold text-blue ">
-          {isFilm ? <IconFilm className="h-2.5 w-2.5" /> : <IconStack className="h-2.5 w-2.5" />}
-          {typeLabel}
-        </span>
-        <span className="absolute inset-x-0 bottom-0 p-3">
-          <span className="block line-clamp-2 text-[13.5px] font-semibold leading-snug text-ink drop-shadow">
-            {title}
-          </span>
-          <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue to-purple px-2.5 py-1 text-[11px] font-bold text-ink">
-            <span className="blink-dot h-1.5 w-1.5 rounded-full bg-ink" />
-            {when ? t('announcedFor', { when }) : t('waitingForSequel')}
-          </span>
-        </span>
-      </Link>
-    </div>
-  );
-}
-
-/** Watchlist in der Bibliothek — Poster-Raster, Violett wie auf Home. */
-function PlannedTile({ entry, index }: { entry: LibraryEntry; index: number }) {
-  const t = useT();
-  const lang = useSettings((s) => s.lang);
-  const cov = entryCover(entry);
-  const seasons = entry.seasons.length;
-  const totalEp = entry.seasons.reduce((s, x) => s + (x.episodes ?? 0), 0);
-  const title = useDisplayTitle(entryQuery(entry), entryTitle(entry));
-
-  return (
-    <div className="stagger-in" style={{ ['--i' as string]: Math.min(index, 12) }}>
-      <Link
-        to={`/anime/${entry.seasons[0]?.id ?? entry.rootId}`}
-        className="group relative block aspect-[2/3] overflow-hidden rounded-card bg-raised shadow-[0_16px_34px_-20px_rgba(0,0,0,0.8)] ring-1 ring-purple/25 transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:ring-purple/55"
-      >
-        {cov && <img src={cov} alt="" className="absolute inset-0 h-full w-full object-cover" />}
-        <span className="absolute inset-0 bg-gradient-to-t from-bg via-bg/25 to-transparent" />
-        <span className="absolute inset-x-0 bottom-0 p-3">
-          <span className="block line-clamp-2 text-[13.5px] font-semibold leading-snug text-ink drop-shadow">
-            {title}
-          </span>
-          <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-ink-dim">
-            {seasons > 1 && (
-              <span className="rounded-full bg-bg/70 px-1.5 py-0.5 font-semibold text-purple">
-                {formatLabel('TV', lang)} ×{seasons}
-              </span>
-            )}
-            <span>{totalEp ? t('episodesN', { n: totalEp }) : t('ongoing')}</span>
-          </span>
-        </span>
-      </Link>
-    </div>
   );
 }
 
@@ -301,157 +201,172 @@ export function LibraryPage() {
   const completedOrder = useLibrary((s) => s.completedOrder);
   const openSearch = useSearchOverlay((s) => s.open);
   const t = useT();
-  const [tab, setTab] = useState<WatchStatus>('completed');
-  const [onlyFullyDone, setOnlyFullyDone] = useState(false);
+
+  // `null` heißt „noch nicht gewählt". Der Unterschied ist wichtig: die
+  // Startkategorie darf ausweichen, eine ANGETIPPTE nie — sonst schnappt die
+  // Leiste zurück und eine leere Kategorie ist überhaupt nicht erreichbar.
+  const [tab, setTab] = useState<WatchStatus | null>(null);
+  const [nurFertig, setNurFertig] = useState(false);
 
   const byStatus = useMemo(() => entriesByStatus(entries), [entries]);
-  const total = Object.keys(entries).length;
+  const gesamt = Object.keys(entries).length;
 
-  // „Geschaut“ zeigt alles, was mindestens eine Staffel komplett fertig
-  // geschaut hat: normal Abgeschlossene, welche mit angekündigter
-  // Fortsetzung, welche mit einer bereits erschienenen, aber noch nicht
-  // begonnenen Staffel/einem Film — UND welche, die gerade eine SPÄTERE
-  // Staffel schauen ("Gerade am Schauen"), aber eine frühere schon
-  // abgeschlossen haben. So landet z. B. Dr. Stone S1 hier, sobald sie fertig
-  // ist, auch wenn S2 parallel noch bei "Gerade am Schauen" läuft. Danach
-  // greift die manuelle Drag-&-Drop-Reihenfolge; neue/unsortierte Einträge
-  // fallen ans Ende (nach Aktualität sortiert).
-  const completedList = useMemo(() => {
-    const merged = [
+  /**
+   * „Geschaut" zeigt alles, was mindestens EINE Staffel komplett durch hat —
+   * auch, wenn der Eintrag selbst gerade woanders steht. Ein Franchise, das
+   * bei Staffel 2 hängt, hat Staffel 1 trotzdem gesehen; ohne diese
+   * Zusammenführung verschwände sie aus dem Archiv.
+   *
+   * Danach greift die von Hand gezogene Reihenfolge; alles Unsortierte fällt
+   * nach Aktualität ans Ende.
+   */
+  const geschaut = useMemo(() => {
+    const zusammen = [
       ...byStatus.completed,
       ...byStatus.continuation.filter((e) => lastWatchedSeason(e) !== undefined),
       ...byStatus.nextup.filter((e) => lastWatchedSeason(e) !== undefined),
       ...byStatus.watching.filter((e) => lastWatchedSeason(e) !== undefined),
     ];
-    const rank = new Map(completedOrder.map((id, i) => [id, i]));
-    return merged.sort((a, b) => {
-      const ra = rank.has(a.rootId) ? rank.get(a.rootId)! : Infinity;
-      const rb = rank.has(b.rootId) ? rank.get(b.rootId)! : Infinity;
-      if (ra !== rb) return ra - rb;
-      return b.updatedAt - a.updatedAt;
+    const rang = new Map(completedOrder.map((id, i) => [id, i]));
+    return zusammen.sort((a, b) => {
+      const ra = rang.get(a.rootId) ?? Infinity;
+      const rb = rang.get(b.rootId) ?? Infinity;
+      return ra !== rb ? ra - rb : b.updatedAt - a.updatedAt;
     });
   }, [byStatus, completedOrder]);
 
-  // Filter „Abgeschlossen“: blendet gezielt die mit noch offenem Posten aus
-  // ("Noch zu schauen" oder gerade aktiv laufendes "Gerade am Schauen") — der
-  // Rest (fertig oder mit angekündigter Fortsetzung) bleibt.
-  const filteredCompletedList = useMemo(
-    () =>
-      onlyFullyDone
-        ? completedList.filter((e) => e.status !== 'nextup' && e.status !== 'watching')
-        : completedList,
-    [completedList, onlyFullyDone],
+  /** Der Filter blendet aus, was noch einen offenen Posten hat. */
+  const gefiltert = useMemo(
+    () => (nurFertig ? geschaut.filter((e) => e.status !== 'nextup' && e.status !== 'watching') : geschaut),
+    [geschaut, nurFertig],
   );
 
-  const counts: Record<WatchStatus, number> = {
-    ...Object.fromEntries(Object.keys(byStatus).map((k) => [k, byStatus[k as WatchStatus].length])),
-    completed: completedList.length,
-  } as Record<WatchStatus, number>;
+  const zaehler: Record<WatchStatus, number> = {
+    watching: byStatus.watching.length,
+    nextup: byStatus.nextup.length,
+    planned: byStatus.planned.length,
+    continuation: byStatus.continuation.length,
+    completed: geschaut.length,
+  };
 
-  // Nie auf einem leeren Tab öffnen, wenn woanders etwas liegt.
-  const activeTab = counts[tab] > 0 ? tab : (LIBRARY_TABS.find((s) => counts[s] > 0) ?? tab);
-  const list = activeTab === 'completed' ? filteredCompletedList : byStatus[activeTab];
+  // Beim Öffnen die erste Kategorie zeigen, in der etwas liegt — eine leere
+  // Bibliothek zu begrüßen, obwohl nebenan 40 Titel stehen, wäre unsinnig.
+  const aktiv = tab ?? LIBRARY_TABS.find((s) => zaehler[s] > 0) ?? 'completed';
 
-  if (hydrated && total === 0) {
+  const watchlist = byStatus.planned;
+  const roller = useRoller(useMemo(() => watchlist.map((e) => e.rootId), [watchlist]));
+
+  if (hydrated && gesamt === 0) {
     return (
-      <div>
-        <PageTitle title={t('libraryTitle')} />
+      <>
+        <header className="pagehead">
+          <h1 className="h-large">{t('libraryTitle')}</h1>
+        </header>
         <EmptyState
+          status="planned"
           title={t('libraryEmptyTitle')}
           hint={t('libraryEmptyHint')}
           action={
-            <button
-              type="button"
-              onClick={openSearch}
-              className="inline-flex items-center gap-2 rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter] duration-150 hover:brightness-110"
-            >
-              <IconSearch className="h-4 w-4" />
+            <Button variant="primary" icon="search" onClick={openSearch}>
               {t('libraryEmptyCta')}
-            </button>
+            </Button>
           }
         />
-      </div>
+      </>
     );
   }
 
+  const liste = aktiv === 'completed' ? gefiltert : byStatus[aktiv];
+
   return (
-    <div>
-      <PageTitle title={t('libraryTitle')} sub={t('librarySub', { n: total })} />
+    <>
+      <header className="pagehead">
+        <h1 className="h-large">{t('libraryTitle')}</h1>
+        <p className="sub">{t('librarySub', { n: gesamt })}</p>
+      </header>
+
+      <Segmented
+        label={t('libraryTitle')}
+        value={aktiv}
+        onChange={setTab}
+        panelId={PANEL_ID}
+        options={LIBRARY_TABS.map((key) => ({
+          key,
+          label: t(STATUS_THEME[key].labelKey),
+          count: zaehler[key],
+          icon: STATUS_THEME[key].icon,
+        }))}
+      />
 
       <div
-        className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 py-3 sm:-mx-6 sm:px-6"
-        role="tablist"
-        aria-label="Status"
+        className="panel-body"
+        data-st={aktiv}
+        id={PANEL_ID}
+        role="tabpanel"
+        aria-labelledby={`tab-${aktiv}`}
       >
-        {LIBRARY_TABS.map((s) => {
-          const active = s === activeTab;
-          return (
-            <button
-              key={s}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              id={`libtab-${s}`}
-              aria-controls="libpanel"
-              onClick={() => setTab(s)}
-              className={`press inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-all duration-200 ${
-                active
-                  ? 'border-accent/40 bg-accent/15 text-accent shadow-[0_2px_14px_-3px_rgba(0,245,212,0.45)]'
-                  : 'border-white/10 bg-white/[0.05] text-ink-dim hover:text-ink'
-              }`}
-            >
-              <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[s]}`} />
-              {t(STATUS_KEY[s])}
-              <span className="tabular-nums opacity-70">{counts[s]}</span>
-            </button>
-          );
-        })}
+        {liste.length === 0 ? (
+          <EmptyState
+            status={aktiv}
+            title={t('libraryNothingIn', { s: t(STATUS_THEME[aktiv].labelKey) })}
+            hint={t('libraryNothingHint')}
+            action={
+              <Button variant="primary" icon="search" onClick={openSearch}>
+                {t('libraryEmptyCta')}
+              </Button>
+            }
+          />
+        ) : aktiv === 'completed' ? (
+          <>
+            <div className="libbar">
+              <button
+                type="button"
+                className={`chip${nurFertig ? ' is-on' : ''}`}
+                data-st="completed"
+                aria-pressed={nurFertig}
+                onClick={() => setNurFertig((v) => !v)}
+              >
+                {nurFertig && <Icon name="check" size={14} />}
+                {t('geschautFilterAll')}
+                {nurFertig && <span className="tnum">{gefiltert.length}</span>}
+              </button>
+            </div>
+            <p className="muted libnote">{t('libraryRankHint')}</p>
+            <RankList key={String(nurFertig)} list={gefiltert} />
+          </>
+        ) : aktiv === 'continuation' ? (
+          <>
+            <p className="muted libnote">{t('libraryWaitingHint')}</p>
+            <div className="grid grid--roomy">
+              {liste.map((e) => (
+                <EntryCard key={e.rootId} entry={e} />
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="libbar">
+              <Button
+                variant="primary"
+                icon="dice"
+                size="sm"
+                disabled={roller.rolling}
+                onClick={roller.roll}
+              >
+                {t('randomPickBtn')}
+              </Button>
+              <Button icon="plus" size="sm" onClick={openSearch}>
+                {t('add')}
+              </Button>
+            </div>
+            <div className="grid grid--roomy">
+              {liste.map((e) => (
+                <EntryCard key={e.rootId} entry={e} justAdded={roller.highlightId === e.rootId} />
+              ))}
+            </div>
+          </>
+        )}
       </div>
-
-      {activeTab === 'completed' && (
-        <div className="-mt-3 mb-6 flex">
-          <button
-            type="button"
-            aria-pressed={onlyFullyDone}
-            onClick={() => setOnlyFullyDone((v) => !v)}
-            className={`press inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[12.5px] font-medium transition-all duration-200 ${
-              onlyFullyDone
-                ? 'border-gold/50 bg-gold/15 text-gold shadow-[0_2px_12px_-3px_rgba(255,207,77,0.5)]'
-                : 'border-white/10 bg-white/[0.05] text-ink-faint hover:text-ink-dim'
-            }`}
-          >
-            {onlyFullyDone && <IconCheck className="h-3 w-3" />}
-            {t('geschautFilterAll')}
-            {onlyFullyDone && <span className="tabular-nums opacity-70">({filteredCompletedList.length})</span>}
-          </button>
-        </div>
-      )}
-
-      {/* Die Tabs versprachen per `role="tab"` ein zugehöriges Panel, das es im
-          Dokument nicht gab — Screenreader kündigten eine Beziehung an, die ins
-          Leere lief. Dieser Wrapper ist das Panel. */}
-      <div id="libpanel" role="tabpanel" aria-labelledby={`libtab-${activeTab}`}>
-      {list.length === 0 ? (
-        <EmptyState
-          title={t('libraryNothingIn', { s: t(STATUS_KEY[activeTab]) })}
-          hint={t('libraryNothingHint')}
-        />
-      ) : activeTab === 'continuation' ? (
-        <div key={activeTab} className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {list.map((e, i) => (
-            <ContinuationTile key={e.rootId} entry={e} index={i} />
-          ))}
-        </div>
-      ) : activeTab === 'planned' ? (
-        <div key={activeTab} className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {list.map((e, i) => (
-            <PlannedTile key={e.rootId} entry={e} index={i} />
-          ))}
-        </div>
-      ) : (
-        <CompletedList key={activeTab} list={list} />
-      )}
-      </div>
-    </div>
+    </>
   );
 }

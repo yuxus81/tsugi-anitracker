@@ -74,6 +74,66 @@ export function entryRow(over: Partial<Record<string, unknown>> = {}) {
   };
 }
 
+/** Ein Katalog-Eintrag, so wie AniList ihn über `CARD_FIELDS` liefert. */
+function mediaCard(id: number) {
+  return {
+    id,
+    title: { romaji: `Romaji ${id}`, english: `Titel ${id}` },
+    coverImage: { extraLarge: null, large: null, color: '#8a2be2' },
+    format: 'TV',
+    status: 'FINISHED',
+    episodes: 12,
+    duration: 24,
+    averageScore: 70 + (id % 25),
+    season: 'SPRING',
+    seasonYear: 2024,
+    genres: ['Action', 'Drama'],
+    isAdult: false,
+    nextAiringEpisode: null,
+    startDate: { year: 2024, month: 4, day: 1 },
+  };
+}
+
+function seite(ids: number[]) {
+  return { pageInfo: { hasNextPage: false }, media: ids.map(mediaCard) };
+}
+
+/**
+ * Die Franchise-Kette der Attrappe: 1 → 2 → 3, dann ist Schluss.
+ *
+ * Das ENDE ist der wichtige Teil. Eine erste Fassung gab auf jede Abfrage
+ * denselben Titel zurück, egal welche Id gefragt war — der Startup-Scan lief
+ * dann endlos im Kreis und feuerte Anfrage um Anfrage, bis der Test in einen
+ * Zeitablauf lief. Eine Attrappe, die nicht antwortet, was gefragt wurde,
+ * ist keine Attrappe, sondern eine Falle.
+ */
+const NACHFOLGER: Record<number, number | undefined> = { 1: 2, 2: 3 };
+
+function relations(id: number) {
+  const naechste = NACHFOLGER[id];
+  return {
+    edges: naechste
+      ? [{ relationType: 'SEQUEL', node: { ...mediaCard(naechste), type: 'ANIME' } }]
+      : [],
+  };
+}
+
+/** Die volle Detail-Antwort — mit Kette, damit der Zeitstrahl etwas hat. */
+function mediaDetail(id: number) {
+  return {
+    ...mediaCard(id),
+    bannerImage: null,
+    description: 'Eine Beschreibung <i>mit</i> Markup.<br>Zweite Zeile.',
+    studios: { nodes: [{ name: 'Studio Test', isAnimationStudio: true }] },
+    endDate: null,
+    trailer: null,
+    relations: relations(id),
+    recommendations: {
+      nodes: [{ mediaRecommendation: mediaCard(41) }, { mediaRecommendation: mediaCard(42) }],
+    },
+  };
+}
+
 export interface SeedOptions {
   /** Einträge, die die Bibliothek nach dem Sync enthält. */
   entries?: ReturnType<typeof entryRow>[];
@@ -158,11 +218,57 @@ export async function seed(page: Page, options: SeedOptions = {}) {
     return route.fulfill({ json: [] });
   });
 
-  // AniList: leere, aber wohlgeformte Antworten. Die Seiten müssen auch
-  // ohne Katalogdaten stehen — genau das ist der Offline-Fall.
-  await page.route('**://graphql.anilist.co/**', (route) =>
-    route.fulfill({ json: { data: {} } }),
-  );
+  // AniList: wohlgeformte Antworten je nach gestellter Frage.
+  //
+  // Vorher stand hier stur `{ data: {} }`. Das war KEINE „leere, aber
+  // wohlgeformte" Antwort, sondern eine kaputte: `data.trending` gab es dann
+  // gar nicht, und Entdecken stürzte beim ersten Zugriff ab. Aufgefallen ist
+  // es erst, als ein Bild von der Detailseite gebraucht wurde — bis dahin
+  // hatte kein Test diese Seiten je geöffnet.
+  await page.route('**://graphql.anilist.co/**', async (route) => {
+    const roh = route.request().postDataJSON() as
+      | { query?: string; variables?: Record<string, unknown> }
+      | null;
+    const query = roh?.query ?? '';
+    const vars = roh?.variables ?? {};
+
+    // Detailseite: EIN Titel mit allem dran.
+    if (query.includes('recommendations')) {
+      return route.fulfill({ json: { data: { Media: mediaDetail(Number(vars.id) || 1) } } });
+    }
+
+    // Der Franchise-Läufer fragt mehrere Ids gleichzeitig, je unter einem
+    // eigenen Alias. Jeder Alias bekommt SEINE Id zurück — sonst dreht sich
+    // die Kette im Kreis.
+    if (query.includes('m0: Media')) {
+      const data: Record<string, unknown> = {};
+      for (const [alias, id] of Object.entries(vars)) {
+        data[alias] = { ...mediaCard(Number(id)), relations: relations(Number(id)) };
+      }
+      return route.fulfill({ json: { data } });
+    }
+
+    if (query.includes('trending:')) {
+      return route.fulfill({
+        json: {
+          data: {
+            trending: seite([2, 3, 4, 5, 6, 7]),
+            season: seite([8, 9, 10]),
+            upcoming: seite([11, 12]),
+            top: seite([13, 14, 15]),
+            movies: seite([16, 17]),
+          },
+        },
+      });
+    }
+    if (query.includes('popular:')) {
+      return route.fulfill({
+        json: { data: { popular: seite([21, 22]), best: seite([23]), fresh: seite([24]) } },
+      });
+    }
+    // Suche und Sammelabfrage nach Ids.
+    return route.fulfill({ json: { data: { Page: seite([31, 32, 33]) } } });
+  });
   await page.route('**://api.themoviedb.org/**', (route) =>
     route.fulfill({ json: { results: [] } }),
   );

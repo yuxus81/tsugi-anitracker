@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchManyByIds } from '@/api/anilist';
@@ -8,6 +8,7 @@ import { Button, EmptyState, IconButton, Ring, SectionHead, Segmented, Stepper }
 import { useSearchOverlay } from '@/components/searchStore';
 import { STATUS_THEME } from '@/domain/status';
 import { seasonNo, seasonPct } from '@/domain/progress';
+import { useRoller } from '@/lib/useRoller';
 import { useLocale, useT } from '@/i18n';
 import {
   currentSeason,
@@ -219,41 +220,14 @@ export function HomePage() {
   })();
 
   // ---- Zufallsroller: rollt sichtbar durch die Watchlist und wird langsamer.
-  const [roll, setRoll] = useState<{ highlightId: number | null; rolling: boolean }>({
-    highlightId: null,
-    rolling: false,
-  });
-  const rollTimer = useRef<number | null>(null);
-
-  useEffect(
-    () => () => {
-      if (rollTimer.current) window.clearTimeout(rollTimer.current);
-    },
-    [],
-  );
+  // Die Mechanik steckt in `useRoller` — Home und Bibliothek teilen sie sich.
+  const roll = useRoller(useMemo(() => byStatus.planned.map((e) => e.rootId), [byStatus.planned]));
 
   function rollRandom() {
-    const list = byStatus.planned;
-    if (list.length === 0 || roll.rolling) return;
-    if (rollTimer.current) window.clearTimeout(rollTimer.current);
-
+    // Der Wurf hat nur Sinn, wenn man das Ergebnis auch sieht: erst zur
+    // Watchlist, dann rollen.
     setPanel('planned');
-    const ziel = Math.floor(Math.random() * list.length);
-    const runden = list.length > 1 ? 3 : 1;
-    const schritte = runden * list.length + ziel + 1;
-    let schritt = 0;
-
-    const tick = () => {
-      const idx = schritt % list.length;
-      const letzter = schritt === schritte - 1;
-      setRoll({ highlightId: list[idx].rootId, rolling: !letzter });
-      schritt += 1;
-      if (!letzter) {
-        const anteil = schritt / schritte;
-        rollTimer.current = window.setTimeout(tick, 45 + anteil * anteil * 240);
-      }
-    };
-    tick();
+    roll.roll();
   }
 
   const listen: Record<PanelKey, LibraryEntry[]> = {

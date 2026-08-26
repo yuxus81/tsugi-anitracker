@@ -509,10 +509,23 @@ function migrateLegacyStatuses(
 interface LibraryState {
   entries: Record<number, LibraryEntry>;
   hydrated: boolean;
+  /**
+   * Ob die Cloud-Antwort schon angekommen und eingespielt ist.
+   *
+   * Beim Start laufen zwei Dinge GLEICHZEITIG los: `hydrate()` liest den
+   * lokalen Cache, `syncFromRemote()` holt die Wahrheit. Auf einem neuen
+   * Gerät ist der Cache leer und das Anlegen der IndexedDB langsam — die
+   * Cloud kann vorher da sein. Ohne diese Marke überschreibt der leere Cache
+   * danach die bereits geladene Bibliothek, und der Nutzer sieht ein leeres
+   * Archiv, bis er neu lädt.
+   */
+  remoteApplied: boolean;
   completedOrder: number[];
   username: string | null;
   usernameChangedAt: number | null;
   hydrate: () => Promise<void>;
+  /** Meldet: die Cloud hat geantwortet, der Cache ist ab jetzt nur noch Beiwerk. */
+  markRemoteApplied: () => void;
   /** Nach Login: mit Supabase abgleichen, ggf. lokale Erstdaten hochladen, Realtime starten. */
   syncFromRemote: (userId: string) => Promise<void>;
   /** Nach Logout: Zustand & Realtime-Abo zurücksetzen. */
@@ -533,13 +546,24 @@ interface LibraryState {
 export const useLibrary = create<LibraryState>((set, get) => ({
   entries: {},
   hydrated: false,
+  remoteApplied: false,
   completedOrder: loadCompletedOrder(),
   username: loadUsername(),
   usernameChangedAt: loadUsernameChangedAt(),
 
+  markRemoteApplied: () => set({ remoteApplied: true }),
+
   hydrate: async () => {
     const rows = await dbGetAll<LibraryEntry>();
     const valid = rows.filter((r) => typeof r.rootId === 'number' && Array.isArray(r.seasons));
+
+    // WETTLAUF: War die Cloud schneller, ist ihr Stand die Wahrheit — der
+    // Cache ist ein Beschleuniger, keine Quelle.
+    if (get().remoteApplied) {
+      set({ hydrated: true });
+      return;
+    }
+
     set({
       entries: migrateLegacyStatuses(Object.fromEntries(valid.map((r) => [r.rootId, r])), null),
       hydrated: true,
@@ -565,10 +589,15 @@ export const useLibrary = create<LibraryState>((set, get) => ({
         if (remoteSettings.completedOrder.length === 0 && localOrder.length > 0) {
           upsertRemoteCompletedOrder(userId, localOrder);
         }
+        // Auch dieser Zweig ist eine Cloud-Antwort: die lokalen Einträge sind
+        // ab jetzt der abgeglichene Stand und dürfen nicht mehr von einem
+        // später eintrudelnden Cache-Lesevorgang ersetzt werden.
+        set({ remoteApplied: true });
       } else {
         set({
           entries: migrateLegacyStatuses(Object.fromEntries(remote.map((r) => [r.rootId, r])), userId),
           completedOrder: remoteSettings.completedOrder,
+          remoteApplied: true,
         });
         await dbClear();
         for (const r of remote) await dbPut(r);
@@ -604,7 +633,9 @@ export const useLibrary = create<LibraryState>((set, get) => ({
 
   resetLocal: () => {
     unsubscribeRealtime();
-    set({ entries: {}, completedOrder: [], hydrated: false });
+    // `remoteApplied` MUSS mit zurück: nach dem Abmelden gibt es keine
+    // Cloud-Antwort mehr, gegen die der Cache verlieren dürfte.
+    set({ entries: {}, completedOrder: [], hydrated: false, remoteApplied: false });
   },
 
   addFranchise: ({ seasons, genres, status, watchedThrough, currentEpisode }) => {

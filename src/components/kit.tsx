@@ -129,16 +129,33 @@ export function Segmented<K extends string>({
   value,
   onChange,
   label,
+  panelId,
+  tone,
 }: {
   options: SegmentOption<K>[];
   value: K;
   onChange: (key: K) => void;
   label?: string;
+  /**
+   * Farbrolle für den Daumen. Ohne Angabe ist es der gewählte Schlüssel —
+   * das stimmt für Kategorie-Leisten. Leisten mit ANDEREN Werten (etwa der
+   * Sprachumschalter mit „de"/„en") müssen sie mitgeben: sonst stünde dort
+   * eine Rolle, die es in der Farbwelt nicht gibt, und der Daumen erbte
+   * irgendeine Farbe von weiter oben im Baum.
+   */
+  tone?: WatchStatus;
+  /**
+   * Id des Bereichs, den diese Leiste umschaltet. Nur mitgeben, wenn es den
+   * Bereich WIRKLICH gibt: ein `aria-controls` ins Leere ist schlimmer als
+   * keines — ein Screenreader kündigt dann eine Beziehung an, die nicht
+   * existiert.
+   */
+  panelId?: string;
 }) {
   const index = Math.max(0, options.findIndex((o) => o.key === value));
 
   return (
-    <div className="seg" role="tablist" aria-label={label} data-st={value}>
+    <div className="seg" role="tablist" aria-label={label} data-st={tone ?? value}>
       <span
         className="seg__thumb is-tone"
         aria-hidden
@@ -154,6 +171,8 @@ export function Segmented<K extends string>({
             key={o.key}
             type="button"
             role="tab"
+            id={panelId ? `tab-${o.key}` : undefined}
+            aria-controls={panelId}
             aria-selected={gewaehlt}
             className={`seg__btn${gewaehlt ? ' is-on' : ''}`}
             onClick={() => onChange(o.key)}
@@ -267,6 +286,46 @@ export function Stepper({
       >
         <Icon name="plus" size={18} />
       </button>
+    </div>
+  );
+}
+
+// ---- Wertung --------------------------------------------------------------
+
+/**
+ * Zehn Stufen, die einrasten. Gefüllt ist alles BIS zur gewählten Stufe —
+ * gewählt ist trotzdem nur eine; sonst meldete ein Screenreader bei einer 7
+ * sieben ausgewählte Werte.
+ *
+ * Gold trägt hier die Wertung und nur sie: seit die Kategorie „Geschaut"
+ * grün ist, steht die Farbe für nichts anderes mehr.
+ */
+export function Pips({
+  value,
+  onChange,
+}: {
+  value: number | null;
+  onChange: (next: number | null) => void;
+}) {
+  const t = useT();
+
+  return (
+    <div className="pips" role="radiogroup" aria-label={t('yourRating')}>
+      {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+        <button
+          key={n}
+          type="button"
+          role="radio"
+          aria-checked={value === n}
+          aria-label={t('ratingPip', { n })}
+          className={`pip${value !== null && n <= value ? ' is-on' : ''}`}
+          // Nochmal dieselbe Stufe nimmt die Wertung zurück — ohne diesen
+          // Weg gäbe es keinen: einmal gewertet, für immer gewertet.
+          onClick={() => onChange(value === n ? null : n)}
+        >
+          {n}
+        </button>
+      ))}
     </div>
   );
 }

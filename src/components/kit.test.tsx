@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, test, vi } from 'vitest';
-import { Bar, Button, EmptyState, IconButton, Ring, SectionHead, Segmented, Stepper, Tag } from '@/components/kit';
+import { Bar, Button, EmptyState, IconButton, Pips, Ring, SectionHead, Segmented, Stepper, Tag } from '@/components/kit';
 
 /**
  * Die Bedienelemente des V5-Designs. Geprüft wird ihr VERHALTEN und ihre
@@ -348,5 +348,133 @@ describe('Zusammenspiel', () => {
     await user.click(within(screen.getByRole('tablist')).getByRole('tab', { name: /Zwei/ }));
 
     expect(onChange).toHaveBeenCalledWith('b');
+  });
+});
+
+describe('Pips (Wertung 1–10)', () => {
+  test('bietet zehn Stufen an, jede mit eigenem Namen', () => {
+    render(<Pips value={null} onChange={() => {}} />);
+
+    const stufen = screen.getAllByRole('radio');
+    expect(stufen).toHaveLength(10);
+    expect(stufen[0]).toHaveAccessibleName(/1/);
+    expect(stufen[9]).toHaveAccessibleName(/10/);
+  });
+
+  test('füllt alles bis zur gewählten Stufe — nicht nur die Stufe selbst', () => {
+    render(<Pips value={7} onChange={() => {}} />);
+
+    const an = screen.getAllByRole('radio').filter((p) => p.classList.contains('is-on'));
+    expect(an).toHaveLength(7);
+  });
+
+  test('gewählt ist genau eine Stufe, auch wenn sieben gefüllt sind', () => {
+    render(<Pips value={7} onChange={() => {}} />);
+
+    const gewaehlt = screen
+      .getAllByRole('radio')
+      .filter((p) => p.getAttribute('aria-checked') === 'true');
+    expect(gewaehlt).toHaveLength(1);
+    expect(gewaehlt[0]).toHaveAccessibleName(/7/);
+  });
+
+  test('ein Klick setzt die Wertung', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<Pips value={null} onChange={onChange} />);
+
+    await user.click(screen.getAllByRole('radio')[4]);
+    expect(onChange).toHaveBeenCalledWith(5);
+  });
+
+  test('ein zweiter Klick auf dieselbe Stufe nimmt die Wertung zurück', async () => {
+    // Ohne diesen Weg gäbe es keinen: einmal gewertet, für immer gewertet.
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<Pips value={5} onChange={onChange} />);
+
+    await user.click(screen.getAllByRole('radio')[4]);
+    expect(onChange).toHaveBeenCalledWith(null);
+  });
+});
+
+describe('Segmented — Beziehung zum Inhalt', () => {
+  test('ohne `panelId` verspricht kein Tab ein Panel', () => {
+    // Ein `aria-controls`, das ins Leere zeigt, ist schlimmer als keines:
+    // ein Screenreader kündigt eine Beziehung an, die es nicht gibt.
+    render(
+      <Segmented
+        options={[
+          { key: 'a', label: 'Eins', icon: 'play' },
+          { key: 'b', label: 'Zwei', icon: 'ready' },
+        ]}
+        value="a"
+        onChange={() => {}}
+      />,
+    );
+
+    for (const tab of screen.getAllByRole('tab')) {
+      expect(tab).not.toHaveAttribute('aria-controls');
+    }
+  });
+
+  test('mit `panelId` zeigt jeder Tab auf denselben Inhaltsbereich', () => {
+    render(
+      <div>
+        <Segmented
+          options={[
+            { key: 'a', label: 'Eins', icon: 'play' },
+            { key: 'b', label: 'Zwei', icon: 'ready' },
+          ]}
+          value="a"
+          onChange={() => {}}
+          panelId="inhalt"
+        />
+        <div id="inhalt" role="tabpanel" aria-labelledby="tab-a" />
+      </div>,
+    );
+
+    const tabs = screen.getAllByRole('tab');
+    for (const tab of tabs) expect(tab).toHaveAttribute('aria-controls', 'inhalt');
+
+    // Und der Rückweg: das Panel nennt seinen aktiven Tab beim Namen.
+    expect(tabs[0]).toHaveAttribute('id', 'tab-a');
+    expect(screen.getByRole('tabpanel')).toHaveAccessibleName(/Eins/);
+  });
+});
+
+describe('Segmented — Farbrolle', () => {
+  test('nimmt standardmäßig die gewählte Kategorie als Farbrolle', () => {
+    render(
+      <Segmented
+        options={[
+          { key: 'watching', label: 'Eins', icon: 'play' },
+          { key: 'completed', label: 'Zwei', icon: 'seal' },
+        ]}
+        value="completed"
+        onChange={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole('tablist')).toHaveAttribute('data-st', 'completed');
+  });
+
+  test('eine Leiste ohne Kategorien bekommt eine eigene Rolle mitgegeben', () => {
+    // Der Sprachumschalter hat die Werte „de"/„en". Ohne eigene Angabe stünde
+    // dort `data-st="de"` — eine Rolle, die es in der Farbwelt nicht gibt,
+    // und der Daumen erbte irgendeine Farbe von weiter oben.
+    render(
+      <Segmented
+        options={[
+          { key: 'de', label: 'Deutsch', icon: 'globe' },
+          { key: 'en', label: 'Englisch', icon: 'globe' },
+        ]}
+        value="de"
+        onChange={() => {}}
+        tone="watching"
+      />,
+    );
+
+    expect(screen.getByRole('tablist')).toHaveAttribute('data-st', 'watching');
   });
 });

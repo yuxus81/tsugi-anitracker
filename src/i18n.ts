@@ -63,6 +63,10 @@ const DICT = {
   cardBookmarked: { de: 'Vorgemerkt', en: 'Bookmarked' },
   cardNoRating: { de: 'ohne Wertung', en: 'unrated' },
   cardEpisodes: { de: '{n} Episoden', en: '{n} episodes' },
+  // Einzahl getrennt geführt: „1 Staffeln" und „1 Episoden" sind schlicht
+  // falsch, und eine Rangliste voller Einzelstaffeln zeigt es in jeder Zeile.
+  episodeOne: { de: '1 Episode', en: '1 episode' },
+  seasonOneCount: { de: '1 Staffel', en: '1 season' },
   cardDateUnknown: { de: 'Datum unbekannt', en: 'Date unknown' },
   // Blättern durch die laufenden Serien auf der Frontplatte.
   heroPrev: { de: 'Vorherige Serie', en: 'Previous series' },
@@ -118,6 +122,52 @@ const DICT = {
   geschautFilterAll: { de: 'Abgeschlossen', en: 'Completed' },
   removeConfirm: { de: 'Wirklich löschen?', en: 'Really delete?' },
   removeConfirmYes: { de: 'Ja, löschen', en: 'Yes, delete' },
+  changeStatus: { de: 'Status ändern', en: 'Change status' },
+  seasonsCount: { de: '{n} Staffeln', en: '{n} seasons' },
+  statsCompletion: { de: '{n} % der bekannten Folgen', en: '{n}% of known episodes' },
+  // Kurzfassungen für die Zeilen: `.setrow__s` ist EINE Zeile. Der lange
+  // Erklärtext steht als Absatz über der Gruppe, wo er auch Platz hat.
+  exportHint: { de: '{n} {plural} als Datei', en: '{n} {plural} as a file' },
+  importHint: {
+    de: 'Überschreibt das aktuelle Archiv',
+    en: 'Overwrites the current archive',
+  },
+  wipeHint: { de: 'Löscht alle Einträge unwiderruflich', en: 'Deletes every entry permanently' },
+  libraryRankHint: {
+    de: 'Nach deiner Wertung sortiert · Greifpunkt zum Umsortieren',
+    en: 'Sorted by your rating · drag the handle to reorder',
+  },
+  libraryWaitingHint: {
+    de: 'Angekündigt, aber noch nicht da — die Einträge bleiben gedämpft, bis es losgeht.',
+    en: 'Announced but not out yet — these stay dimmed until they start.',
+  },
+  // Jede Kategorie erklärt sich in einem Satz. Aus fünf Namen allein war der
+  // Unterschied zwischen „Noch zu schauen" und „Fortsetzung folgt" nicht zu
+  // erraten — und Farbe erklärt gar nichts.
+  hintWatching: { de: 'Läuft gerade — der Fortschritt wird gezählt', en: 'Running — progress is counted' },
+  hintNextup: { de: 'Steht bereit, Staffel oder Film ist offen', en: 'Ready and waiting, season or film is open' },
+  hintPlanned: { de: 'Nur vorgemerkt, noch nicht gestartet', en: 'Bookmarked only, not started yet' },
+  hintContinuation: { de: 'Fortsetzung ist angekündigt, aber noch nicht da', en: 'Sequel announced, but not out yet' },
+  hintCompleted: { de: 'Durchgeschaut und abgelegt', en: 'Watched through and filed away' },
+
+  // Ebenen (Blatt, Bestätigung, Befehlspalette)
+  sheetClose: { de: 'Schließen', en: 'Close' },
+  searchHits: { de: '{n} Treffer', en: '{n} hits' },
+  pickWhere: { de: 'Wo soll der Titel landen?', en: 'Where should this go?' },
+  watchAgain: { de: 'Nochmal schauen', en: 'Watch again' },
+  removeHint: {
+    de: 'Fortschritt und Wertung gehen verloren',
+    en: 'Progress and rating will be lost',
+  },
+  removeConfirmMessage: {
+    de: '„{t}" wird aus dem Archiv gelöscht. Fortschritt und Wertung gehen verloren.',
+    en: '“{t}” will be deleted from your archive. Progress and rating will be lost.',
+  },
+  ratingSetToast: { de: 'Wertung {n}/10', en: 'Rated {n}/10' },
+  ratingClearedToast: { de: 'Wertung entfernt', en: 'Rating removed' },
+  // Die Pips zeigen nur eine Ziffer. Ohne Namen hörte ein Screenreader
+  // zehnmal „Auswahlfeld" und wüsste nie, wovon von zehn.
+  ratingPip: { de: '{n} von 10', en: '{n} out of 10' },
 
   // Home
   homeGreetingLate: { de: 'Späte Session?', en: 'Late-night session?' },
