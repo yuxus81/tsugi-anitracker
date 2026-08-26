@@ -1,0 +1,124 @@
+/**
+ * TSUGI V5 — „Gerät"
+ * ==================
+ * These: Die App ist ein GERÄT, kein Dokument. Der Rahmen (Kopfleiste, Tab-
+ * Leiste, Seitenschiene) steht fest und bewegt sich nie; nur der Inhalt läuft
+ * darunter durch. Alles, was man drücken kann, hat eine Oberkante aus Licht
+ * und fährt beim Drücken nach unten. Alles, was man nur liest, bleibt flach.
+ *
+ * FARBWELT: unverändert die der aktuellen App — sie ist auf `logo.png`
+ * abgestimmt und damit erledigt. Aus dem Logo gemessen (dominante Töne):
+ * #104060 Tiefblau · #302060 Indigo · #401060 Violett · #005060 Petrol ·
+ * Weiß als Tinte. Genau diese Achse trägt die Leiter unten. Neu ist nicht die
+ * Farbe, sondern ihre Verwendung: Farbe bedeutet hier IMMER einen Status,
+ * nie Dekoration.
+ *
+ * Zuordnung nach Tailwind (spätere Code-Phase):
+ *   --bg → colors.bg · --s1 → colors.surface · --s2 → colors.raised
+ *   --line → colors.line · --ink → colors.ink · --ink-2 → colors['ink-dim']
+ *   --ink-3 → colors['ink-muted']
+ *   --cy → colors.accent · --bl → colors.blue · --pu → colors.purple
+ *   --gr → colors.green · --go → colors.gold (nur noch Wertung)
+ *   --sl → (neu: „wartend") · --pk → nur noch Gefahr/Löschen
+ */
+
+:root {
+  /* ---- Nachtblau-Leiter: sechs Stufen mit bewusstem Abstand ---------- */
+  --void:  #06070d;   /* Bezel: außerhalb der App-Fläche (nur Desktop)     */
+  --bg:    #0d0f18;   /* Grundfarbe der App — unverändert                  */
+  --s1:    #141827;   /* Inhaltsfläche (Sektionen, Listen)                 */
+  --s2:    #1b2032;   /* erhaben: Karten, Bedienelemente                   */
+  --s2h:   #232941;   /* Oberkante von --s2 (Licht kommt von oben)         */
+  --s3:    #262e48;   /* gedrückt / schwebend                              */
+  --s4:    #333d5e;   /* Rand stark, deaktivierte Füllung                  */
+
+  /* ---- Tinte --------------------------------------------------------- */
+  --ink:   #f1f3f9;
+  --ink-2: #a8b3cb;
+  --ink-3: #8a95af;   /* 4,9:1 auf --bg → AA                              */
+
+  /* ---- Status-Farben: fünf Bedeutungen, sonst nichts ------------------
+     Stand 26.08.2026, auf Yunus' Ansage geändert: Watchlist wird lila
+     (vorher Pink), Geschaut wird grün (vorher Gold — Gold bleibt als reine
+     „Wertung"-Farbe für die Sterne-Pips übrig, unabhängig vom Status).
+     Weil Watchlist jetzt Purple trägt, braucht „Noch zu schauen" eine neue
+     Farbe — Blau, aus der Palette der echten App (`colors.blue`). */
+  --cy:    #00f5d4;   /* Weiter schauen / Schaue ich — läuft              */
+  --bl:    #3a86ff;   /* Noch zu schauen — geladen, bereit                */
+  --pu:    #8a2be2;   /* Watchlist — vorgemerkt                          */
+  --pk:    #ff2d6f;   /* nur noch für Gefahr/Löschen (kein Status mehr)   */
+  --sl:    #64789f;   /* Fortsetzung folgt — graublau, nicht reines Grau  */
+  --gr:    #2ecc71;   /* Geschaut — abgelegt, versiegelt                 */
+  --go:    #ffcf4d;   /* Wertung (Sterne/Pips) — unabhängig vom Status    */
+
+  /* Schrift-taugliche Aufhellungen: die reinen Werte sind auf Dunkel
+     entweder zu grell (Cyan) oder zu dunkel (Purple) für Text. */
+  --cy-t:  #5ff5df;
+  --bl-t:  #93bcff;
+  --pu-t:  #c9a6ff;
+  --pk-t:  #ff8fb0;
+  --sl-t:  #b0c0e2;
+  --gr-t:  #7fe3a4;
+  --go-t:  #ffdd85;
+
+  /* Flächen in Statusfarbe (Chips, Kapseln) — immer sehr dunkel, damit die
+     Farbe Signal bleibt und nicht Anstrich wird. */
+  --cy-bg: rgba(0, 245, 212, .12);
+  --bl-bg: rgba(58, 134, 255, .15);
+  --pu-bg: rgba(160, 90, 255, .16);
+  --pk-bg: rgba(255, 45, 111, .13);
+  --sl-bg: rgba(100, 120, 159, .17);
+  --gr-bg: rgba(46, 204, 113, .13);
+  --go-bg: rgba(255, 207, 77, .12);
+
+  /* ---- Linien -------------------------------------------------------- */
+  --line:   rgba(241, 243, 249, .09);
+  --line-2: rgba(241, 243, 249, .16);
+  --hair:   rgba(241, 243, 249, .07);   /* Haarlinie in der Chrome        */
+  --focus:  var(--cy-t);
+
+  /* ---- Tiefe: NUR für Drückbares und Schwebendes ---------------------
+     Regel dieser Version: eine Lichtkante oben (die Fläche fängt Licht),
+     ein enger Kontaktschatten (das Ding liegt auf) und ein weiter, weicher
+     Schatten (es steht ab). Beim Drücken fällt alles drei zusammen. */
+  --lip:    inset 0 1px 0 rgba(255, 255, 255, .09);
+  --lip-hi: inset 0 1px 0 rgba(255, 255, 255, .22);
+  --sh-0:   0 1px 1px rgba(0, 0, 0, .35);
+  --sh-1:   0 1px 2px rgba(0, 0, 0, .45), 0 4px 10px -6px rgba(0, 0, 0, .6);
+  --sh-2:   0 2px 4px rgba(0, 0, 0, .45), 0 12px 26px -12px rgba(0, 0, 0, .7);
+  --sh-3:   0 6px 12px rgba(0, 0, 0, .45), 0 28px 60px -22px rgba(0, 0, 0, .85);
+
+  /* ---- Radien: App-Maßstab, nicht Website-Maßstab -------------------- */
+  --r-1:  9px;
+  --r-2:  13px;
+  --r-3:  18px;
+  --r-4:  24px;
+  --r-5:  30px;
+  --r-pill: 999px;
+
+  /* ---- Raster & Rahmen ---------------------------------------------- */
+  --pad:    16px;
+  --gap:    14px;
+  --tap:    44px;          /* Mindest-Touchziel                          */
+  --topbar: 54px;
+  --tabbar: 60px;
+  --rail:   232px;         /* Seitenschiene ab Laptop                    */
+  --wide:   1120px;
+
+  /* ---- Schrift ------------------------------------------------------- */
+  --font-ui: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-num: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --font-kana: 'Yu Gothic', 'Hiragino Sans', 'Noto Sans JP', 'MS PGothic', sans-serif;
+
+  /* ---- Bewegung ------------------------------------------------------
+     Drei Kurven, mehr braucht es nicht: `out` für alles Alltägliche,
+     `spring` für das Zurückschnellen nach dem Druck (das ist der Teil, der
+     sich nach Gerät anfühlt), `snap` für Formwechsel. */
+  --e-out:    cubic-bezier(.22, 1, .36, 1);
+  --e-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --e-snap:   cubic-bezier(.32, .72, 0, 1);
+  --t-tap:   120ms;
+  --t-fast:  180ms;
+  --t-mid:   280ms;
+  --t-slow:  460ms;
+}

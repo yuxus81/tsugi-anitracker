@@ -1,56 +1,132 @@
 /** @type {import('tailwindcss').Config} */
+
+/**
+ * Tailwind spricht hier dieselben Werte wie das Designsystem in
+ * `src/styles/` — beides greift auf DIESELBEN CSS-Variablen zu, statt die
+ * Zahlen ein zweites Mal zu führen. Ändert sich eine Farbe in
+ * `src/styles/tokens.css`, ändert sie sich hier automatisch mit; es gibt
+ * keine zweite Wahrheit, die veralten könnte.
+ *
+ * Arbeitsteilung: Tailwind macht Layout, Abstand und Typografie. Die
+ * Bausteine mit Zuständen und Pseudo-Elementen (Knöpfe mit Lichtkante,
+ * Karten mit fünf Charakteren, Rahmen) stehen in `src/styles/` — als
+ * Klassenketten wären sie unlesbar.
+ */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
+
+  /**
+   * NAMENSKOLLISION MIT DEM DESIGNSYSTEM.
+   *
+   * `src/styles/controls.css` bringt eine Klasse `.ring` mit — den
+   * Fortschrittsring. Tailwind hat zufällig eine gleichnamige Utility, die
+   * einen blauen Schlagschatten setzt, und die Utility-Schicht steht NACH
+   * unseren Importen: Tailwind gewann und malte eine blaue Kiste um jeden
+   * Ring. Da die App keine einzige Tailwind-`ring-*`-Klasse benutzt, wird
+   * die Utility hier abgeschaltet, statt den Baustein umzubenennen.
+   */
+  corePlugins: {
+    ringWidth: false,
+    ringColor: false,
+    ringOpacity: false,
+    ringOffsetWidth: false,
+    ringOffsetColor: false,
+  },
+
   theme: {
     extend: {
       colors: {
-        // Palette übernommen aus AniTracker V1 (dunkles Blau + Neon-Akzente).
-        bg: '#0d0f18',
-        surface: '#16192b',
-        raised: '#1e2338',
-        line: '#262c47',
-        ink: '#f1f3f9',
-        'ink-dim': '#7e8da6',
-        'ink-faint': '#566078',
-        // Inaktive Navigations-Labels: `ink-faint` erreichte auf der Tab-Bar
-        // nur 2,76:1 und lag damit unter WCAG AA (4,5:1) — ausgerechnet an der
-        // meistgenutzten Stelle der App.
-        'ink-muted': '#95a1b8',
-        accent: '#00f5d4',
-        'accent-deep': '#0b6e63',
-        purple: '#8a2be2',
-        pink: '#ff0055',
-        blue: '#3a86ff',
-        green: '#2ecc71',
-        amber: '#f5a524',
-        rose: '#ff4757',
-        gold: '#ffcf4d',
+        void: 'var(--void)',
+        bg: 'var(--bg)',
+        // Vier Flächenstufen statt zwei: --s3 (gedrückt/schwebend) und
+        // --s4 (starker Rand) sind neu gegenüber dem alten Design.
+        surface: 'var(--s1)',
+        raised: 'var(--s2)',
+        'raised-hi': 'var(--s2h)',
+        sunken: 'var(--s3)',
+        edge: 'var(--s4)',
+        line: 'var(--line)',
+        'line-strong': 'var(--line-2)',
+        hair: 'var(--hair)',
+
+        ink: 'var(--ink)',
+        'ink-dim': 'var(--ink-2)',
+        'ink-muted': 'var(--ink-3)',
+
+        // Statusfarben. Jede trägt GENAU eine Bedeutung — Farbe ist hier
+        // niemals Dekoration.
+        accent: 'var(--cy)', // Weiter schauen
+        blue: 'var(--bl)', // Noch zu schauen
+        purple: 'var(--pu)', // Watchlist
+        slate: 'var(--sl)', // Fortsetzung folgt (wartend) — neu
+        green: 'var(--gr)', // Geschaut
+        gold: 'var(--go)', // nur Wertung, kein Status
+        pink: 'var(--pk)', // nur Gefahr/Löschen, kein Status
+
+        // Schrift-taugliche Aufhellungen: die reinen Werte sind auf dunklem
+        // Grund entweder zu grell (Cyan) oder zu dunkel (Purpur) für Text.
+        'accent-text': 'var(--cy-t)',
+        'blue-text': 'var(--bl-t)',
+        'purple-text': 'var(--pu-t)',
+        'slate-text': 'var(--sl-t)',
+        'green-text': 'var(--gr-t)',
+        'gold-text': 'var(--go-t)',
+        'pink-text': 'var(--pk-t)',
+
+        // Die Rolle des aktuellen Kontexts — gesetzt über `data-st`.
+        tone: 'var(--tone, var(--cy))',
+        'tone-lit': 'var(--tone-lit)',
+        'tone-text': 'var(--tone-t, var(--cy-t))',
+        'tone-bg': 'var(--tone-bg, var(--cy-bg))',
+        'tone-on': 'var(--tone-on)',
       },
       fontFamily: {
-        display: ['"Fraunces Variable"', 'Georgia', 'serif'],
-        sans: ['"Inter Variable"', 'system-ui', 'sans-serif'],
+        sans: ['Inter Variable', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        // Alles Gezählte läuft auf Mono mit Tabellenziffern, damit Zahlen
+        // beim Hochzählen nicht springen.
+        mono: ['JetBrains Mono Variable', 'ui-monospace', 'Consolas', 'monospace'],
+        kana: ['Yu Gothic', 'Hiragino Sans', 'Noto Sans JP', 'MS PGothic', 'sans-serif'],
       },
       borderRadius: {
-        // iOS-Maßstab: großzügigere Rundungen fürs „Apple-Glas“-Gefühl.
-        card: '16px',
-        ctl: '12px',
-        pill: '22px',
-        sheet: '28px',
+        ctl: 'var(--r-1)',
+        card: 'var(--r-2)',
+        panel: 'var(--r-3)',
+        sheet: 'var(--r-4)',
+        deep: 'var(--r-5)',
+        pill: 'var(--r-pill)',
       },
       boxShadow: {
-        'glow-accent': '0 0 20px rgba(0,245,212,0.35)',
-        'glow-purple': '0 0 20px rgba(138,43,226,0.45)',
-        'glow-pink': '0 0 22px rgba(255,0,85,0.4)',
-        'glow-blue': '0 0 20px rgba(58,134,255,0.4)',
-        'glow-green': '0 0 20px rgba(46,204,113,0.4)',
-        'glow-amber': '0 0 20px rgba(245,165,36,0.35)',
-        'glow-gold': '0 0 20px rgba(255,207,77,0.45)',
-        // Liquid-Glass: weiche Tiefe + heller Spekular-Rand oben.
-        glass: '0 10px 30px -8px rgba(0,0,0,0.55)',
-        'glass-lift': '0 16px 40px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.16)',
+        // Lichtkante oben — das Zeichen dafür, dass etwas drückbar ist.
+        lip: 'var(--lip)',
+        'lip-hi': 'var(--lip-hi)',
+        contact: 'var(--sh-0)',
+        rise1: 'var(--sh-1)',
+        rise2: 'var(--sh-2)',
+        rise3: 'var(--sh-3)',
+      },
+      spacing: {
+        pad: 'var(--pad)',
+        gap: 'var(--gap)',
+        tap: 'var(--tap)', // 44px Mindest-Touchziel
+        topbar: 'var(--topbar)',
+        tabbar: 'var(--tabbar)',
+        rail: 'var(--rail)',
+      },
+      maxWidth: {
+        wide: 'var(--wide)',
       },
       transitionTimingFunction: {
-        out: 'cubic-bezier(0.22, 1, 0.36, 1)',
+        out: 'var(--e-out)',
+        // Das Zurückschnellen nach dem Druck — der Teil, der sich nach
+        // Gerät anfühlt statt nach Hover-Farbe.
+        spring: 'var(--e-spring)',
+        snap: 'var(--e-snap)',
+      },
+      transitionDuration: {
+        tap: '120ms',
+        fast: '180ms',
+        mid: '280ms',
+        slow: '460ms',
       },
       zIndex: {
         sticky: '100',

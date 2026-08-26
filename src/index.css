@@ -1,5 +1,21 @@
 @import '@fontsource-variable/inter';
-@import '@fontsource-variable/fraunces';
+@import '@fontsource-variable/jetbrains-mono';
+
+/* --- V5 „Gerät": das Designsystem aus design-lab/v5-nativ -------------
+   Reihenfolge zählt: Tokens zuerst, dann Basis, dann die Bausteine, die
+   darauf aufbauen. Statusfarben stehen VOR den Karten, weil die Karten
+   ihre --tone-Variablen daraus erben.                                   */
+@import './styles/tokens.css';
+@import './styles/base.css';
+@import './styles/chrome.css';
+@import './styles/controls.css';
+@import './styles/status.css';
+@import './styles/cards.css';
+@import './styles/layout.css';
+@import './styles/pages.css';
+@import './styles/overlays.css';
+@import './styles/app.css';
+@import './styles/responsive.css';
 
 @tailwind base;
 @tailwind components;

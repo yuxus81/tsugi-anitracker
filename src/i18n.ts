@@ -48,6 +48,26 @@ const DICT = {
   navLibrary: { de: 'Bibliothek', en: 'Library' },
   navStats: { de: 'Statistik', en: 'Stats' },
   navSettings: { de: 'Einstellungen', en: 'Settings' },
+  // Beschriftung der Navigationsbereiche für Screenreader. Tab-Leiste und
+  // Seitenschiene stehen gleichzeitig im Baum (CSS blendet eines aus) —
+  // ohne eigenen Namen zählte ein Screenreader zwei namenlose „Navigation".
+  navMain: { de: 'Hauptnavigation', en: 'Main navigation' },
+  // Der Stepper zeigt nur + und −. Ohne Namen hörte ein Screenreader
+  // „Schaltfläche, Schaltfläche" und wüsste nicht, was gezählt wird.
+  stepperBack: { de: 'Eine {label} zurück', en: 'One {label} back' },
+  stepperForward: { de: 'Eine {label} weiter', en: 'One {label} forward' },
+  // Kurzfassungen für die Zeile unter einer Karte. Die Pille ist schmal —
+  // die längeren Sätze weiter oben sprengen sie auf 104-px-Karten.
+  cardSeasonWaits: { de: 'Staffel {n} wartet', en: 'Season {n} waiting' },
+  cardFilmWaits: { de: 'Film wartet', en: 'Movie waiting' },
+  cardBookmarked: { de: 'Vorgemerkt', en: 'Bookmarked' },
+  cardNoRating: { de: 'ohne Wertung', en: 'unrated' },
+  cardEpisodes: { de: '{n} Episoden', en: '{n} episodes' },
+  cardDateUnknown: { de: 'Datum unbekannt', en: 'Date unknown' },
+  // Blättern durch die laufenden Serien auf der Frontplatte.
+  heroPrev: { de: 'Vorherige Serie', en: 'Previous series' },
+  heroNext: { de: 'Nächste Serie', en: 'Next series' },
+  heroProgress: { de: 'Fortschritt', en: 'Progress' },
   search: { de: 'Suchen', en: 'Search' },
   sidebarTagline: {
     de: 'Dein Archiv, auf allen Geräten synchron.',
@@ -84,7 +104,12 @@ const DICT = {
   authLogOut: { de: 'Abmelden', en: 'Log out' },
 
   // Status
-  stWatching: { de: 'Schaue ich', en: 'Watching' },
+  // V5 führt EINEN Namen je Kategorie. Vorher hieß dieselbe Sache je nach
+  // Ort „Schaue ich" (Detail, Bibliothek) oder „Weiter schauen" (Home) —
+  // zwei Namen für dieselbe Kategorie. Der Entwurf legt sich auf die fünf
+  // Namen fest: Weiter schauen · Noch zu schauen · Watchlist ·
+  // Fortsetzung folgt · Geschaut.
+  stWatching: { de: 'Weiter schauen', en: 'Continue watching' },
   stPlanned: { de: 'Watchlist', en: 'Watchlist' },
   stNextup: { de: 'Noch zu schauen', en: 'Ready to watch' },
   stContinuation: { de: 'Fortsetzung folgt', en: 'Sequel coming' },

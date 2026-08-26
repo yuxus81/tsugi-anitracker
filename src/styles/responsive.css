@@ -1,0 +1,30 @@
+/* ---- Anpassungen für enge und für breite Fenster ---------------------- */
+/* Auf sehr schmalen Handys müssen die vollen Kategorienamen in die
+   segmentierte Auswahl passen — dann fliegen die Zähler raus, nicht die
+   Namen. Die Namen sind das, woran man die Kategorie erkennt. */
+@media (max-width: 479px) {
+  .seg-count { display: none; }
+  .seg__btn { padding: 0 6px; font-size: 12.5px; gap: 5px; }
+  /* Unter 420 px fliegt das Zeichen aus der Auswahlleiste, nie der Name:
+     an den Namen erkennt man die Kategorie, das Zeichen wiederholt nur,
+     was der eingefärbte Daumen ohnehin schon sagt. */
+}
+@media (max-width: 419px) {
+  .seg__btn > .ico { display: none; }
+}
+@media (min-width: 900px) {
+  .det__banner { margin: -26px -28px 0; height: 240px; }
+  .det__back { top: 16px; left: 20px; }
+  .det__cover { width: 136px; }
+  .det__head { margin-top: -78px; }
+  .hero__acts { gap: 12px; }
+}
+
+/* ==================================================== Bewegung aus ======= */
+@media (prefers-reduced-motion: reduce) {
+  .tick, .skel::after, .card__prog i { animation: none !important; }
+  .just-added { animation: none !important; }
+  .card[data-st='continuation'] .card__art img { transition: none; }
+  .btn, .iconbtn, .chip, .pip, .seg__thumb, .switch::after { transition-duration: .01ms !important; }
+}
+

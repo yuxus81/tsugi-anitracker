@@ -46,6 +46,14 @@ beforeAll(() => {
   }
 
   window.scrollTo = (() => {}) as typeof window.scrollTo;
+
+  // jsdom hat gar kein Layout und deshalb auch kein Element.scrollTo. Der
+  // Rahmen scrollt seinen Inhaltsbereich bei jedem Bildschirmwechsel nach
+  // oben — ohne diese Attrappe stürben alle Rahmen-Tests an der Umgebung
+  // statt am Verhalten. Ob wirklich gescrollt wird, misst Playwright.
+  if (!Element.prototype.scrollTo) {
+    Element.prototype.scrollTo = function scrollTo() {} as typeof Element.prototype.scrollTo;
+  }
 });
 
 afterEach(() => {
