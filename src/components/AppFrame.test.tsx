@@ -54,10 +54,15 @@ describe('Aufbau des Rahmens', () => {
   });
 
   test('der scrollende Bereich ist per Tastatur erreichbar', () => {
-    // Sonst käme man mit der Tastatur nie an langen Inhalt heran.
+    // `0`, nicht `-1`. Dieser Test hieß von Anfang an so, prüfte aber das
+    // Gegenteil: `-1` macht ein Element nur programmatisch fokussierbar, es
+    // bekommt KEINEN Tab-Stopp. Auf der Statistik, wo im Scrollbereich kein
+    // einziger Knopf liegt, kam man mit der Tastatur allein nicht an den
+    // Inhalt weiter unten heran. axe meldet das als
+    // `scrollable-region-focusable`; gefunden hat es e2e/messung.spec.ts.
     const { container } = frame();
 
-    expect(container.querySelector('.pane')).toHaveAttribute('tabindex', '-1');
+    expect(container.querySelector('.pane')).toHaveAttribute('tabindex', '0');
   });
 });
 

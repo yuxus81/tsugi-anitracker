@@ -241,6 +241,10 @@ export function SettingsPage() {
         type="file"
         accept="application/json"
         className="visually-hidden"
+        // Unsichtbar heißt nicht namenlos: Vorleseprogramme finden das Feld
+        // trotzdem, und axe meldet ein Formularfeld ohne Beschriftung als
+        // schweren Fehler. Bedient wird es über die Zeile darüber.
+        aria-label={t('importBtn')}
         tabIndex={-1}
         onChange={(e) => {
           const f = e.target.files?.[0];

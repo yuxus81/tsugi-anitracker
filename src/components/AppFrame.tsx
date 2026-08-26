@@ -167,7 +167,13 @@ export function AppFrame({ children }: { children: ReactNode }) {
         </button>
       </header>
 
-      <main className="pane" ref={paneRef} tabIndex={-1}>
+      {/* `tabIndex={0}`, nicht `-1`: `.pane` ist der EINZIGE scrollende
+          Bereich der App. Ohne Tab-Stopp kommt niemand mit der Tastatur
+          allein an den Inhalt weiter unten — auf Seiten ohne Knöpfe im
+          Scrollbereich (Statistik) gar nicht. axe meldet das als
+          `scrollable-region-focusable`. Der Preis ist ein zusätzlicher
+          Tab-Stopp vor dem Inhalt; das ist der übliche und richtige Tausch. */}
+      <main className="pane" ref={paneRef} tabIndex={0}>
         <div className="pane__inner" id="main">
           {children}
         </div>

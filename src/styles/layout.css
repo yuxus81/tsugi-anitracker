@@ -145,7 +145,10 @@
 .rank-row.is-over { box-shadow: inset 0 0 0 2px var(--tone); }
 .rank-grip {
   display: grid; place-items: center;
-  width: 30px; flex: none;
+  /* 44 px, nicht 30: daneben liegt der Zeilen-Link zur Detailseite. Ein
+     verfehlter Griff blättert also weg, statt nur nichts zu tun — das ist
+     die teuerste Sorte Fehlgriff und rechtfertigt die 14 px Zeilenbreite. */
+  width: 44px; flex: none;
   color: var(--ink-3);
   cursor: grab;
   touch-action: none;
@@ -216,7 +219,11 @@
 .spot__acts { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
 /* Der Titel IST der Weg zum Titel — ein extra „Ansehen"-Knopf daneben wäre
    ein zweiter Knopf für dieselbe Sache. */
-.spot__t a { color: inherit; }
+/* Die Überschrift IST der Link. Bei einer Zeile misst sie nur ihre Zeilenhöhe
+   (41 px bei 34 px Schrift) und bliebe unter dem Daumenmaß. Senkrechte
+   Polsterung auf einem Inline-Element vergrößert die Trefferfläche, ohne den
+   Zeilenfluss zu verschieben — die Bühne sieht danach aus wie vorher. */
+.spot__t a { color: inherit; padding-block: 0.42em; }
 .genrebar { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 4px; margin-top: 18px; }
 .genrebar::-webkit-scrollbar { display: none; }
 
