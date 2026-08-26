@@ -1,21 +1,5 @@
 @import '@fontsource-variable/inter';
-@import '@fontsource-variable/jetbrains-mono';
-
-/* --- V5 „Gerät": das Designsystem aus design-lab/v5-nativ -------------
-   Reihenfolge zählt: Tokens zuerst, dann Basis, dann die Bausteine, die
-   darauf aufbauen. Statusfarben stehen VOR den Karten, weil die Karten
-   ihre --tone-Variablen daraus erben.                                   */
-@import './styles/tokens.css';
-@import './styles/base.css';
-@import './styles/chrome.css';
-@import './styles/controls.css';
-@import './styles/status.css';
-@import './styles/cards.css';
-@import './styles/layout.css';
-@import './styles/pages.css';
-@import './styles/overlays.css';
-@import './styles/app.css';
-@import './styles/responsive.css';
+@import '@fontsource-variable/fraunces';
 
 @tailwind base;
 @tailwind components;
@@ -123,6 +107,12 @@ h3 {
   border-radius: 4px;
 }
 
+/* Eingebettete Felder (z. B. Suchleiste) markieren ihren Container per
+   focus-within — der eigene Ring würde vom overflow-hidden abgeschnitten. */
+.no-focus-ring:focus-visible {
+  outline: none;
+}
+
 ::selection {
   background: #0b6e63;
   color: #f1f3f9;
@@ -139,21 +129,46 @@ h3 {
 }
 
 @layer components {
-  /* Was hier stand, war fast vollstaendig das abgeloeste Design: .press,
-     .skeleton, .toast-in, .unfold, .stagger-in, .scrim-in/out, .sheet-in/out,
-     .pop-in, .panel-in, .hover-lift, .tilt-card, .pulse-play, .blink-dot,
-     .desat-hover, .row-hover und .genre-particle. Keine davon stand noch in
-     irgendeiner Datei — geprueft wurde jede einzeln, nicht pauschal.
+  /* Bewusst KEINE backdrop-filter-Glasflächen mehr (frühere `.ios-glass`/
+     `.ios-spec`): der milchige Blur-Look traf Apples aktuelle Sprache nicht
+     und wirkte eher vernebelt als modern. Chrome und Sheets sind jetzt
+     durchgängig solide Flächen aus der eigenen Palette (bg/surface/line) —
+     das ist auch, was Apples eigene Apps für Bedienflächen tun. Nebeneffekt:
+     spürbar weniger Compositing-Last auf dem iPhone. */
 
-     Die V5-Bewegungen liegen in src/styles/, jede bei ihrem Bauteil; die
-     Meldung bringt ihr eigenes toast-in in overlays.css mit (dieses hier war
-     ein zweites gleichen Namens, das nur zufaellig nie gewann). */
+  /* Taktiles Antippen: kurzes Zusammendrücken wie bei nativen iOS-Buttons. */
+  .press {
+    transition: transform 0.16s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .press:active {
+    transform: scale(0.96);
+  }
 
-  /* Bildwechsel beim Seitenwechsel — bewusst NUR opacity (kein translateY):
+  /* Skeleton shimmer — state, not decoration. */
+  .skeleton {
+    @apply relative overflow-hidden rounded-card bg-surface;
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 30%, rgba(126, 141, 166, 0.14) 50%, transparent 70%);
+    animation: shimmer 1.6s infinite;
+  }
+  @keyframes shimmer {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  /* View crossfade on route change — bewusst NUR opacity (kein translateY):
      ein Transform auf dem kompletten (teils schweren) Seiten-Subtree zwingt
-     den Browser, fuers Crossfade eine neue Compositing-Layer fuers ganze
-     Fragment zu bauen, was auf schwaecheren Handy-GPUs genau dann ruckelt,
-     wenn gleichzeitig noch der Daumen in der Tab-Leiste gleitet. */
+     den Browser, fürs Crossfade eine neue Compositing-Layer fürs ganze
+     Fragment zu bauen, was auf schwächeren Handy-GPUs genau in dem Moment
+     ruckelt, wenn gleichzeitig noch das Highlight in der Tab-Bar gleitet. */
   .view-enter {
     animation: view-in 0.16s ease-out both;
   }
@@ -163,6 +178,211 @@ h3 {
     }
     to {
       opacity: 1;
+    }
+  }
+
+  .toast-in {
+    animation: toast-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Aufklapp-Panel (Hinzufügen-Flow, Franchise-Auswahl). */
+  .unfold {
+    animation: unfold 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+    transform-origin: top center;
+  }
+  @keyframes unfold {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scaleY(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Gestaffeltes Erscheinen von Listen (Zeitstrahl, Panels). */
+  .stagger-in {
+    animation: stagger-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--i, 0) * 28ms);
+  }
+  @keyframes stagger-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Dialog: Abdunkler + Blatt kommen und gehen mit eigener Kurve, statt
+     hart ein-/auszublenden. Das Blatt geht minimal schneller weg als es
+     kommt — fühlt sich beim Abbrechen entschlossen an, nicht zäh. */
+  .scrim-in {
+    background: rgba(6, 8, 14, 0.62);
+    animation: scrim-in 0.18s ease-out both;
+  }
+  .scrim-out {
+    background: rgba(6, 8, 14, 0.62);
+    animation: scrim-in 0.16s ease-in both reverse;
+  }
+  @keyframes scrim-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  .sheet-in {
+    animation: sheet-in 0.26s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  @keyframes sheet-in {
+    from {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  .sheet-out {
+    animation: sheet-out 0.16s ease-in both;
+  }
+  @keyframes sheet-out {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
+
+  /* Kurzer Erfolgs-Pop, z. B. nach dem Hinzufügen. */
+  .pop-in {
+    animation: pop-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes pop-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+    55% {
+      opacity: 1;
+      transform: scale(1.04);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Panel-Wechsel auf Home. */
+  .panel-in {
+    animation: panel-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translateX(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Sanftes Heben auf Zeiger-Geräten. */
+  @media (hover: hover) and (pointer: fine) {
+    .hover-lift {
+      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-3px) scale(1.015);
+    }
+  }
+
+  /* Play-Button auf der „Weiter schauen“-Kinoreihe: ruhiges Atmen, kein Dauerblinken. */
+  .pulse-play {
+    animation: pulse-play 2.6s ease-in-out infinite;
+  }
+  @keyframes pulse-play {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(0, 245, 212, 0.45), 0 0 20px -2px rgba(0, 245, 212, 0.8);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(0, 245, 212, 0), 0 0 20px -2px rgba(0, 245, 212, 0.8);
+    }
+  }
+
+  /* Blinkender Punkt vor Release-Daten (Fortsetzung folgt). */
+  .blink-dot {
+    animation: blink-dot 1.8s ease-in-out infinite;
+  }
+  @keyframes blink-dot {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.25;
+    }
+  }
+
+  /* Neuheiten-Regal (Home „Noch zu schauen“): leichtes 3D-Kippen beim Hover. */
+  @media (hover: hover) and (pointer: fine) {
+    .tilt-card {
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
+    }
+    .tilt-card:hover {
+      transform: perspective(700px) rotateY(-6deg) rotateX(3deg) translateY(-4px);
+    }
+  }
+
+  /* Pausiert-Zeilen: Cover entsättigt, wird beim Hover wieder farbig. */
+  .desat-hover {
+    filter: saturate(0.35) brightness(0.85);
+    transition: filter 0.25s ease;
+  }
+  .desat-hover:hover,
+  .row-hover:hover .desat-hover {
+    filter: saturate(0.95) brightness(1);
+  }
+
+  /* Genre-reaktive Entdecken-Bühne: treibende Partikel (Herzen, Funken, …). */
+  .genre-particle {
+    position: absolute;
+    pointer-events: none;
+    will-change: transform, opacity;
+    animation: particle-float linear forwards;
+  }
+  @keyframes particle-float {
+    from {
+      transform: translateY(16px) scale(0.85);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    to {
+      transform: translateY(-180px) scale(1.05);
+      opacity: 0;
     }
   }
 }
@@ -177,12 +397,30 @@ h3 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* Nur noch .view-enter: die uebrigen Namen gehoerten zum abgeloesten
-     Design. Die V5-Bewegungen kuerzt die Regel ganz unten ohnehin mit,
-     jede Transition wird dort auf 0,01 ms gesetzt. */
-  .view-enter {
+  .skeleton::after {
+    animation: none;
+  }
+  .view-enter,
+  .toast-in,
+  .unfold,
+  .stagger-in,
+  .pop-in,
+  .panel-in,
+  .scrim-in,
+  .scrim-out,
+  .sheet-in,
+  .sheet-out,
+  .pulse-play,
+  .blink-dot,
+  .genre-particle {
     animation-duration: 0.01ms;
     animation-delay: 0ms;
+  }
+  .genre-particle {
+    display: none;
+  }
+  .tilt-card:hover {
+    transform: none;
   }
   *,
   *::before,

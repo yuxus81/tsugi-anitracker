@@ -7,9 +7,6 @@ import path from 'node:path';
 export default defineConfig({
   plugins: [react()],
   base: './',
-  server: {
-    port: process.env.PORT ? Number(process.env.PORT) : 5173,
-  },
   resolve: {
     alias: { '@': path.resolve(__dirname, 'src') },
   },

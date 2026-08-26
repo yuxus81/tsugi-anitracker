@@ -1,53 +1,118 @@
 import { useMemo } from 'react';
-import { Bar, EmptyState, SectionHead } from '@/components/kit';
-import { STATUS_THEME } from '@/domain/status';
-import { useLocale, useT } from '@/i18n';
 import {
   meanDuration,
+  STATUS_KEY,
   STATUS_ORDER,
-  useLibrary,
   totalEpisodes,
+  useLibrary,
   watchedEpisodes,
   type WatchStatus,
 } from '@/store/library';
+import { PageTitle, SectionHead, EmptyState } from '@/components/ui';
+import { useLocale, useT } from '@/i18n';
 
 /**
- * STATISTIK — das Archiv in Zahlen.
- *
- * Alles wird aus dem AKTUELLEN Zustand gerechnet, nie aus etwas
- * Vorgebackenem: sonst zeigte die Seite nach dem Hinzufügen eines Titels
- * Fantasiewerte. Kein einziger Netzwerkaufruf.
- *
- * Farbe steht hier nie allein. Jede Kategorie trägt zwar ihre Farbrolle,
- * aber daneben immer Name UND Zahl — ein Balkendiagramm, das nur über Farbe
- * spricht, ist für einen Teil der Leser gar kein Diagramm.
+ * Everything here is computed from the local library — zero network. Charts
+ * follow the house dataviz rules: single-hue bars for magnitude, status colors
+ * only for status (always with label + count, never color alone).
  */
 
-interface BarDatum {
-  key: string;
-  label: string;
-  value: number;
-  tone?: WatchStatus;
+const STATUS_FILL: Record<WatchStatus, string> = {
+  watching: '#00f5d4',
+  nextup: '#ff0055',
+  planned: '#8a2be2',
+  continuation: '#3a86ff',
+  completed: '#2ecc71',
+};
+
+const GENRE_GRADIENT = [
+  'linear-gradient(90deg,#00f5d4,#3a86ff)',
+  'linear-gradient(90deg,#ff0055,#8a2be2)',
+  'linear-gradient(90deg,#3a86ff,#8a2be2)',
+  'linear-gradient(90deg,#ffcf4d,#f5a524)',
+  'linear-gradient(90deg,#2ecc71,#00f5d4)',
+  'linear-gradient(90deg,#8a2be2,#ff0055)',
+  'linear-gradient(90deg,#f5a524,#ff0055)',
+  'linear-gradient(90deg,#3a86ff,#00f5d4)',
+];
+
+function StatTile({ value, label, detail }: { value: string; label: string; detail?: string }) {
+  return (
+    <div className="overflow-hidden rounded-card border border-line bg-surface px-5 py-4">
+      <p className="font-display text-[30px] font-semibold leading-none tracking-tight text-ink">
+        {value}
+      </p>
+      <p className="mt-2 text-[13px] font-medium text-ink-dim">{label}</p>
+      {detail && <p className="mt-0.5 text-xs text-ink-faint">{detail}</p>}
+    </div>
+  );
 }
 
-/** Eine Reihe Balken mit gemeinsamem Maßstab. */
-function BarRows({ rows, testId }: { rows: BarDatum[]; testId: string }) {
-  // Der längste Balken füllt die Zeile. Ohne die Untergrenze 1 teilte eine
-  // durchweg leere Reihe durch null.
-  const max = Math.max(1, ...rows.map((r) => r.value));
-
+/** Orbit-Ring: die Sehzeit als leuchtender Fortschrittskreis statt Kachel. */
+function WatchtimeOrbit({ pct, value, label }: { pct: number; value: string; label: string }) {
+  const r = 72;
+  const c = 2 * Math.PI * r;
+  const offset = c - (Math.max(2, Math.min(100, pct)) / 100) * c;
   return (
-    <div className="panel" data-testid={testId}>
-      {rows.map((r) => (
-        <div className="barrow" key={r.key} data-st={r.tone}>
-          <span className="barrow__k" data-testid="bar-key">
-            {r.label}
-          </span>
-          <Bar pct={r.value / max} label={r.label} />
-          <span className="barrow__v">{r.value}</span>
-        </div>
-      ))}
+    <div className="relative mx-auto h-[168px] w-[168px]">
+      <svg viewBox="0 0 170 170" className="h-full w-full -rotate-90">
+        <circle cx="85" cy="85" r={r} fill="none" stroke="currentColor" strokeWidth="10" className="text-line" />
+        <circle
+          cx="85"
+          cy="85"
+          r={r}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={offset}
+          className="text-accent transition-[stroke-dashoffset] duration-700 ease-out"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
+        <span className="font-display text-[26px] font-semibold leading-none text-ink">{value}</span>
+        <span className="mt-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-ink-faint">
+          {label}
+        </span>
+      </div>
     </div>
+  );
+}
+
+/** Status-Donut statt gestapeltem Balken. */
+function StatusDonut({ rows, total }: { rows: Array<{ status: WatchStatus; count: number }>; total: number }) {
+  let acc = 0;
+  const stops = rows.map(({ status, count }) => {
+    const start = acc;
+    acc += (count / total) * 100;
+    return `${STATUS_FILL[status]} ${start}% ${acc}%`;
+  });
+  return (
+    <div className="relative h-[140px] w-[140px] shrink-0 rounded-full" style={{ background: `conic-gradient(${stops.join(', ')})` }}>
+      <div className="absolute inset-[18px] rounded-full bg-bg" />
+    </div>
+  );
+}
+
+/** Horizontal bar list mit Farbverlauf statt Einheitsfarbe. */
+function GenreBars({ rows }: { rows: Array<{ label: string; value: number }> }) {
+  const max = Math.max(...rows.map((r) => r.value), 1);
+  return (
+    <ul className="space-y-3">
+      {rows.map((r, i) => (
+        <li key={r.label} className="grid grid-cols-[100px_1fr_36px] items-center gap-3">
+          <span className="truncate text-[13px] text-ink-dim">{r.label}</span>
+          <span className="h-2.5 overflow-hidden rounded-[5px] bg-raised">
+            <span
+              className="block h-full rounded-[5px] transition-[width] duration-500 ease-out"
+              style={{ width: `${(r.value / max) * 100}%`, background: GENRE_GRADIENT[i % GENRE_GRADIENT.length] }}
+            />
+          </span>
+          <span className="text-right text-[13px] font-semibold tabular-nums text-ink">{r.value}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -57,193 +122,168 @@ export function StatsPage() {
   const t = useT();
   const locale = useLocale();
 
-  const zahlen = useMemo(() => {
-    const alle = Object.values(entries);
+  const stats = useMemo(() => {
+    const all = Object.values(entries);
+    const episodes = all.reduce((sum, e) => sum + watchedEpisodes(e), 0);
+    const minutes = all.reduce((sum, e) => sum + watchedEpisodes(e) * meanDuration(e), 0);
+    const knownEpisodes = all.reduce((sum, e) => sum + totalEpisodes(e), 0);
+    const rated = all.filter((e) => e.rating !== null);
+    const meanRating = rated.length
+      ? rated.reduce((s, e) => s + (e.rating ?? 0), 0) / rated.length
+      : null;
 
-    let minuten = 0;
-    let folgen = 0;
-    let wertungSumme = 0;
-    let wertungAnzahl = 0;
-    const proStatus = Object.fromEntries(STATUS_ORDER.map((s) => [s, 0])) as Record<
-      WatchStatus,
-      number
-    >;
-    const proGenre = new Map<string, number>();
-    const proJahr = new Map<number, number>();
-    const stufen = Array<number>(10).fill(0);
-    let bekannteFolgen = 0;
-
-    for (const e of alle) {
-      const ep = watchedEpisodes(e);
-      folgen += ep;
-      minuten += ep * meanDuration(e);
-      bekannteFolgen += totalEpisodes(e);
-      proStatus[e.status] += 1;
-      for (const g of e.genres) proGenre.set(g, (proGenre.get(g) ?? 0) + 1);
-      const jahr = e.seasons[0]?.seasonYear;
-      if (jahr) proJahr.set(jahr, (proJahr.get(jahr) ?? 0) + 1);
-      if (e.rating != null) {
-        stufen[e.rating - 1] += 1;
-        wertungSumme += e.rating;
-        wertungAnzahl += 1;
-      }
+    const genreCount = new Map<string, number>();
+    for (const e of all) {
+      for (const g of e.genres) genreCount.set(g, (genreCount.get(g) ?? 0) + 1);
     }
+    const genres = [...genreCount.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([label, value]) => ({ label, value }));
 
-    return {
-      gesamt: alle.length,
-      folgen,
-      stunden: Math.round(minuten / 60),
-      tage: minuten / 1440,
-      // `null`, nicht 0: „noch nie bewertet" ist keine Wertung von 0.
-      schnitt: wertungAnzahl > 0 ? wertungSumme / wertungAnzahl : null,
-      // Ebenfalls `null` statt 0: kennt AniList keine Folgenzahl (laufende
-      // Staffeln haben oft keine), ist der Anteil UNBEKANNT — eine 0 % wäre
-      // eine erfundene Zahl mit einem Etikett davor.
-      anteil: bekannteFolgen > 0 ? Math.round((folgen / bekannteFolgen) * 100) : null,
-      proStatus,
-      genres: [...proGenre.entries()]
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 8)
-        .map(([label, value]) => ({ key: label, label, value })),
-      // Nach Jahr AUFSTEIGEND: eine Zeitachse, die nach Menge sortiert ist,
-      // ist keine Zeitachse mehr.
-      jahre: [...proJahr.entries()]
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 8)
-        .sort((a, b) => a[0] - b[0])
-        .map(([jahr, value]) => ({ key: String(jahr), label: String(jahr), value })),
-      stufen,
-    };
+    const ratingDist = Array.from({ length: 10 }, (_, i) => ({
+      label: String(i + 1),
+      value: rated.filter((e) => e.rating === i + 1).length,
+    }));
+
+    const byStatus = STATUS_ORDER.map((s) => ({
+      status: s,
+      count: all.filter((e) => e.status === s).length,
+    })).filter((x) => x.count > 0);
+
+    const years = new Map<number, number>();
+    for (const e of all) {
+      const y = e.seasons[0]?.seasonYear;
+      if (y) years.set(y, (years.get(y) ?? 0) + 1);
+    }
+    const topYears = [...years.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .sort((a, b) => a[0] - b[0])
+      .map(([y, v]) => ({ label: String(y), value: v }));
+
+    return { all, episodes, minutes, knownEpisodes, meanRating, genres, ratingDist, byStatus, topYears };
   }, [entries]);
 
-  if (hydrated && zahlen.gesamt === 0) {
+  if (hydrated && stats.all.length === 0) {
     return (
-      <>
-        <header className="pagehead">
-          <h1 className="h-large">{t('statsTitle')}</h1>
-        </header>
-        <EmptyState status="watching" title={t('statsEmptyTitle')} hint={t('statsEmptyHint')} />
-      </>
+      <div>
+        <PageTitle title={t('statsTitle')} />
+        <EmptyState title={t('statsEmptyTitle')} hint={t('statsEmptyHint')} />
+      </div>
     );
   }
 
-  const sehzeit =
-    zahlen.tage >= 1
-      ? t('statsDays', { n: zahlen.tage.toLocaleString(locale, { maximumFractionDigits: 1 }) })
-      : t('statsHours', { n: zahlen.stunden });
-
-  const hatWertungen = zahlen.stufen.some((n) => n > 0);
-  const maxStufe = Math.max(1, ...zahlen.stufen);
-
-  const kacheln: Array<{
-    id: string;
-    wert: string;
-    name: string;
-    tone: WatchStatus;
-    detail?: string;
-  }> = [
-    {
-      id: 'stat-watchtime',
-      wert: sehzeit,
-      name: t('statsWatchtime'),
-      tone: 'watching',
-      // Wie weit man durch den eigenen Bestand ist. Stand vorher als großer
-      // Leuchtring da; die Zahl ist dieselbe, sie braucht nur keinen Ring.
-      detail: zahlen.anteil !== null ? t('statsCompletion', { n: zahlen.anteil }) : undefined,
-    },
-    {
-      id: 'stat-episodes',
-      wert: zahlen.folgen.toLocaleString(locale),
-      name: t('statsEpisodes'),
-      tone: 'nextup',
-    },
-    {
-      id: 'stat-total',
-      wert: zahlen.gesamt.toLocaleString(locale),
-      name: t('statsTitles'),
-      tone: 'planned',
-    },
-    {
-      id: 'stat-rating',
-      wert: zahlen.schnitt !== null ? zahlen.schnitt.toFixed(1) : '—',
-      name: t('statsAvgRating'),
-      tone: 'completed',
-    },
-  ];
+  const days = stats.minutes / 60 / 24;
+  const total = stats.all.length;
+  const maxRatingCount = Math.max(...stats.ratingDist.map((r) => r.value), 1);
+  const peakRating = Math.max(...stats.ratingDist.map((r) => r.value));
+  const anyRatings = stats.ratingDist.some((r) => r.value > 0);
+  const completionPct = stats.knownEpisodes > 0 ? (stats.episodes / stats.knownEpisodes) * 100 : 0;
+  const watchtimeValue =
+    days >= 1
+      ? t('statsDays', { n: days.toLocaleString(locale, { maximumFractionDigits: 1 }) })
+      : t('statsHours', { n: Math.round(stats.minutes / 60) });
 
   return (
-    <>
-      <header className="pagehead">
-        <h1 className="h-large">{t('statsTitle')}</h1>
-        <p className="sub">{t('statsSub')}</p>
-      </header>
+    <div>
+      <PageTitle title={t('statsTitle')} sub={t('statsSub')} />
 
-      <div className="tiles">
-        {kacheln.map((k) => (
-          <div className="tile stat-tile" key={k.id} data-st={k.tone} data-testid={k.id}>
-            <span className="stat-tile__v">{k.wert}</span>
-            <span className="stat-tile__k">{k.name}</span>
-            {k.detail && <span className="stat-tile__d">{k.detail}</span>}
-          </div>
-        ))}
+      <div className="mb-10 grid gap-4 sm:grid-cols-[220px_1fr] lg:grid-cols-[268px_1fr]">
+        <div
+          className="overflow-hidden rounded-card border border-white/10 p-6 text-center"
+          style={{ background: 'radial-gradient(120% 120% at 30% 0%, rgba(0,245,212,0.16), rgba(22,25,43,0.6) 62%)' }}
+        >
+          <WatchtimeOrbit pct={completionPct} value={watchtimeValue} label={t('statsWatchtime')} />
+          <p className="mt-4 text-[12.5px] text-ink-dim">
+            {days >= 1
+              ? t('statsHoursApprox', { n: Math.round(stats.minutes / 60).toLocaleString(locale) })
+              : t('statsTitles')}
+            {' · '}
+            {total} {total === 1 ? t('entryOne') : t('entryMany')}
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <StatTile value={String(total)} label={t('statsTitles')} />
+          <StatTile value={stats.episodes.toLocaleString(locale)} label={t('statsEpisodes')} />
+          <StatTile
+            value={stats.meanRating !== null ? stats.meanRating.toFixed(1) : '–'}
+            label={t('statsAvgRating')}
+          />
+        </div>
       </div>
 
-      <SectionHead title={t('statsByStatus')} />
-      <BarRows
-        testId="status-spread"
-        rows={STATUS_ORDER.map((s) => ({
-          key: s,
-          label: t(STATUS_THEME[s].labelKey),
-          value: zahlen.proStatus[s],
-          tone: s,
-        }))}
-      />
-
-      {zahlen.genres.length > 0 && (
-        <>
-          <SectionHead title={t('statsGenres')} />
-          <div data-st="nextup">
-            <BarRows testId="genre-spread" rows={zahlen.genres} />
-          </div>
-        </>
-      )}
-
-      {/* Ein einzelnes Jahr ist keine Verteilung — der Abschnitt lohnt erst
-          ab zweien. */}
-      {zahlen.jahre.length > 1 && (
-        <>
-          <SectionHead title={t('statsByYear')} />
-          <div data-st="planned">
-            <BarRows testId="year-spread" rows={zahlen.jahre} />
-          </div>
-        </>
-      )}
-
-      {hatWertungen && (
-        <>
-          <SectionHead title={t('statsRatingDist')} />
-          <div className="panel" data-st="completed" data-testid="rating-spread">
-            <div className="spread">
-              {zahlen.stufen.map((anzahl, i) => (
-                <div className="spread__col" key={i} data-testid="spread-col">
-                  <span className="spread__n">{anzahl > 0 ? anzahl : ''}</span>
+      {stats.byStatus.length > 0 && (
+        <section className="mb-10">
+          <SectionHead title={t('statsByStatus')} />
+          <div className="flex flex-col items-center gap-6 overflow-hidden rounded-card border border-line bg-surface p-5 sm:flex-row">
+            <StatusDonut rows={stats.byStatus} total={total} />
+            <ul className="grid flex-1 grid-cols-2 gap-x-5 gap-y-2.5 sm:grid-cols-3">
+              {stats.byStatus.map(({ status, count }) => (
+                <li key={status} className="flex items-center gap-2 text-[13px] text-ink-dim">
                   <span
-                    className="spread__bar"
-                    style={{
-                      height: `${(anzahl / maxStufe) * 100}%`,
-                      // Eine Stufe ohne Treffer bleibt als Strich sichtbar —
-                      // sonst sähe die Skala aus, als fehlten Werte.
-                      minHeight: anzahl > 0 ? '6px' : '2px',
-                      opacity: anzahl > 0 ? 1 : 0.25,
-                    }}
+                    className="h-2.5 w-2.5 shrink-0 rounded-[3px]"
+                    style={{ background: STATUS_FILL[status] }}
                   />
-                  <span className="spread__n">{i + 1}</span>
-                </div>
+                  <span className="truncate">{t(STATUS_KEY[status])}</span>
+                  <span className="ml-auto font-semibold tabular-nums text-ink">{count}</span>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
-        </>
+        </section>
       )}
-    </>
+
+      <div className="grid gap-6 sm:grid-cols-2 sm:gap-8 lg:gap-10">
+        {stats.genres.length > 0 && (
+          <section>
+            <SectionHead title={t('statsGenres')} />
+            <GenreBars rows={stats.genres} />
+          </section>
+        )}
+
+        {anyRatings && (
+          <section>
+            <SectionHead title={t('statsRatingDist')} />
+            <div className="flex h-36 items-end gap-1.5">
+              {stats.ratingDist.map((r) => {
+                const isPeak = r.value > 0 && r.value === peakRating;
+                return (
+                  <div key={r.label} className="flex flex-1 flex-col items-center gap-1.5">
+                    {r.value > 0 && (
+                      <span
+                        className={`text-[11px] font-semibold tabular-nums ${isPeak ? 'text-pink' : 'text-ink-dim'}`}
+                      >
+                        {r.value}
+                      </span>
+                    )}
+                    <div
+                      className="w-full rounded-t-[5px] transition-[height] duration-500 ease-out"
+                      style={{
+                        height: r.value > 0 ? `${Math.max(8, (r.value / maxRatingCount) * 100)}%` : '3px',
+                        background: isPeak
+                          ? 'linear-gradient(180deg,#ff0055,#8a2be2)'
+                          : r.value > 0
+                            ? 'linear-gradient(180deg,#ffcf4d,rgba(255,207,77,0.25))'
+                            : '#1e2338',
+                        boxShadow: isPeak ? '0 0 20px -4px rgba(255,0,85,0.6)' : undefined,
+                      }}
+                    />
+                    <span className="text-[11px] tabular-nums text-ink-faint">{r.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {stats.topYears.length > 1 && (
+          <section>
+            <SectionHead title={t('statsByYear')} />
+            <GenreBars rows={stats.topYears} />
+          </section>
+        )}
+      </div>
+    </div>
   );
 }

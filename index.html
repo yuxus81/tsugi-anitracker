@@ -2,14 +2,10 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
-    <!-- KEIN `user-scalable=no` und kein `maximum-scale`: das sperrt das
-         Aufziehen mit zwei Fingern und ist ein echter Barrierefreiheits-
-         Verstoß (WCAG 1.4.4) — axe meldet ihn auf jeder Seite. Der Grund,
-         aus dem so etwas üblicherweise dasteht (iOS zoomt beim Antippen
-         eines Feldes hinein und nicht zuverlässig wieder heraus), ist
-         anders gelöst: Felder sind unter 768 px 16 px groß, siehe
-         `src/styles/base.css`. -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
     <!-- Färbt auf dem Handy die Browser-/Statusleiste in die App-Farbe, damit
          der Bereich mit Uhrzeit/Akku nicht als schwarzer Fremdkörper über der
          App sitzt. Muss exakt dem Hintergrund der Kopfleiste entsprechen. -->

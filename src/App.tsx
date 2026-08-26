@@ -1,15 +1,12 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { HashRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { HashRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { useLibrary } from '@/store/library';
 import { useAuth } from '@/store/auth';
 import { useToasts } from '@/store/toast';
 import { useStartupScan } from '@/lib/scan';
+import { useT } from '@/i18n';
 import { AuthScreen } from '@/components/AuthScreen';
-import { AppFrame } from '@/components/AppFrame';
-import { Icon } from '@/components/Icon';
 import { HomePage } from '@/pages/HomePage';
-import { SearchOverlay } from '@/components/SearchOverlay';
-
 // Home lädt sofort (erste Ansicht nach dem Start), der Rest erst beim
 // Aufrufen — das nimmt spürbar Gewicht aus dem ersten Laden auf Mobilfunk.
 const DiscoverPage = lazy(() => import('@/pages/DiscoverPage').then((m) => ({ default: m.DiscoverPage })));
@@ -17,47 +14,232 @@ const LibraryPage = lazy(() => import('@/pages/LibraryPage').then((m) => ({ defa
 const DetailPage = lazy(() => import('@/pages/DetailPage').then((m) => ({ default: m.DetailPage })));
 const StatsPage = lazy(() => import('@/pages/StatsPage').then((m) => ({ default: m.StatsPage })));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
+import { SearchOverlay } from '@/components/SearchOverlay';
+import { useSearchOverlay } from '@/components/searchStore';
+import {
+  IconChart,
+  IconCompass,
+  IconGear,
+  IconHome,
+  IconSearch,
+  IconStack,
+} from '@/components/icons';
+import type { DictKey } from '@/i18n';
+
+const NAV: Array<{ to: string; label: DictKey; Icon: typeof IconHome; end: boolean }> = [
+  { to: '/', label: 'navHome', Icon: IconHome, end: true },
+  { to: '/entdecken', label: 'navDiscover', Icon: IconCompass, end: false },
+  { to: '/bibliothek', label: 'navLibrary', Icon: IconStack, end: false },
+  { to: '/statistik', label: 'navStats', Icon: IconChart, end: false },
+  { to: '/einstellungen', label: 'navSettings', Icon: IconGear, end: false },
+];
+
+function Wordmark() {
+  return (
+    <NavLink to="/" className="flex items-center gap-2.5 px-1" aria-label="Tsugi-Anitracker — Home">
+      <img
+        src={`${import.meta.env.BASE_URL}logo.png`}
+        alt=""
+        width={32}
+        height={32}
+        className="h-8 w-8 rounded-ctl shadow-glow-purple"
+      />
+      <span className="hidden font-display text-lg font-semibold leading-tight tracking-tight text-ink lg:block">
+        Tsugi
+        <span className="block text-[11px] font-sans font-medium tracking-wide text-ink-dim">
+          Anitracker
+        </span>
+      </span>
+    </NavLink>
+  );
+}
+
+function Sidebar() {
+  const openSearch = useSearchOverlay((s) => s.open);
+  const t = useT();
+  return (
+    <aside className="fixed inset-y-0 left-0 z-sticky hidden w-16 flex-col gap-6 border-r border-line bg-bg px-2.5 py-5 md:flex lg:w-52 lg:px-4">
+      <Wordmark />
+      <button
+        type="button"
+        onClick={openSearch}
+        className="flex items-center gap-3 rounded-ctl border border-line bg-surface px-2.5 py-2 text-ink-dim transition-colors duration-150 hover:border-accent hover:text-ink"
+      >
+        <IconSearch className="h-5 w-5 shrink-0" />
+        <span className="hidden text-sm lg:block">{t('search')}</span>
+        <kbd className="ml-auto hidden rounded border border-line px-1.5 py-0.5 text-[11px] text-ink-faint lg:block">
+          /
+        </kbd>
+      </button>
+      <nav className="flex flex-col gap-1" aria-label="Navigation">
+        {NAV.map(({ to, label, Icon, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-ctl px-2.5 py-2.5 text-sm transition-colors duration-150 ${
+                isActive
+                  ? 'bg-raised font-semibold text-accent'
+                  : 'text-ink-dim hover:bg-surface hover:text-ink'
+              }`
+            }
+          >
+            <Icon className="h-5 w-5 shrink-0" />
+            <span className="hidden lg:block">{t(label)}</span>
+          </NavLink>
+        ))}
+      </nav>
+      <p className="mt-auto hidden px-1 text-xs leading-5 text-ink-faint lg:block">
+        {t('sidebarTagline')}
+        <br />
+        Tsugi-Anitracker · V2
+      </p>
+    </aside>
+  );
+}
 
 /**
- * Meldungen. Sie tragen die Farbrolle der Kategorie, um die es geht —
- * dieselbe Farbe wie Karte, Auswahlleiste und Schimmer oben.
+ * Mobile-Kopfleiste: die Sidebar (samt Logo) ist unter `md` komplett
+ * ausgeblendet, wodurch auf dem Handy sowohl das Logo als auch der einzige
+ * Weg zur Suche/zum Hinzufügen-Flow verschwanden. `position: fixed` statt
+ * `sticky` — mit `overflow-x: hidden` auf html/body (App-Feeling-Fix)
+ * verlor eine sticky Leiste sonst ihre Fixierung beim Scrollen in Safari.
+ * Ein Platzhalter gleicher Höhe direkt danach schiebt den Inhalt runter,
+ * damit nichts unter der fest positionierten Leiste verschwindet.
  */
+function MobileHeader() {
+  const openSearch = useSearchOverlay((s) => s.open);
+  const t = useT();
+  return (
+    <>
+      <header
+        className="fixed inset-x-0 top-0 z-sticky flex items-center justify-between border-b border-line bg-bg px-4 py-2.5 md:hidden"
+        style={{ paddingTop: 'calc(0.625rem + env(safe-area-inset-top))' }}
+      >
+        <NavLink to="/" className="flex min-h-[44px] items-center gap-2.5" aria-label="Tsugi-Anitracker — Home">
+          <img
+            src={`${import.meta.env.BASE_URL}logo.png`}
+            alt=""
+            width={36}
+            height={36}
+            className="h-9 w-9 rounded-[11px] shadow-glow-purple"
+          />
+          <span className="font-display text-[18px] font-semibold tracking-tight text-ink">Tsugi</span>
+        </NavLink>
+        <button
+          type="button"
+          onClick={openSearch}
+          aria-label={t('search')}
+          className="press grid h-11 w-11 place-items-center rounded-full border border-line bg-surface text-accent"
+        >
+          <IconSearch className="h-[18px] w-[18px]" />
+        </button>
+      </header>
+      <div aria-hidden className="md:hidden" style={{ height: 'calc(60px + env(safe-area-inset-top))' }} />
+    </>
+  );
+}
+
+function BottomBar() {
+  const t = useT();
+  const { pathname } = useLocation();
+  // Aktives Tab bestimmen — das gleitende Glas-Highlight wandert dorthin.
+  const matchIdx = NAV.findIndex(({ to, end }) =>
+    end ? pathname === to : to !== '/' && (pathname === to || pathname.startsWith(`${to}/`)),
+  );
+  const hasActive = matchIdx !== -1;
+  const activeIndex = hasActive ? matchIdx : 0;
+
+  return (
+    <nav
+      aria-label="Navigation"
+      className="fixed inset-x-3 z-sticky flex h-[70px] items-stretch overflow-hidden rounded-[26px] border border-line bg-surface shadow-[0_12px_32px_-10px_rgba(0,0,0,0.7)] md:hidden"
+      style={{ bottom: 'calc(2px + env(safe-area-inset-bottom))' }}
+    >
+      {/* Gleitende Auswahl-Kapsel hinter dem aktiven Tab. Sie füllt das Feld
+          fast komplett aus (nur 3px Luft), damit sie zum Label passt und
+          nicht wie ein zu kleiner Fleck darunter wirkt. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-y-[5px] left-0 transition-transform duration-[360ms] ease-[cubic-bezier(0.32,0.72,0,1)]"
+        style={{
+          width: `${100 / NAV.length}%`,
+          transform: `translateX(${activeIndex * 100}%)`,
+          opacity: hasActive ? 1 : 0,
+        }}
+      >
+        <span className="absolute inset-x-[2px] inset-y-0 rounded-[19px] bg-accent/[0.14]" />
+      </span>
+
+      {NAV.map(({ to, label, Icon, end }) => (
+        <NavLink
+          key={to}
+          to={to}
+          end={end}
+          className={({ isActive }) =>
+            `press relative z-10 flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-semibold tracking-tight transition-colors duration-200 ${
+              isActive ? 'text-accent' : 'text-ink-muted'
+            }`
+          }
+        >
+          {({ isActive }) => (
+            <>
+              <Icon
+                className={`h-[25px] w-[25px] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                  isActive ? '-translate-y-px scale-110' : ''
+                }`}
+              />
+              {t(label)}
+            </>
+          )}
+        </NavLink>
+      ))}
+    </nav>
+  );
+}
+
 function Toasts() {
   const toasts = useToasts((s) => s.toasts);
   return (
-    <>
+    <div className="pointer-events-none fixed inset-x-0 bottom-28 z-toast flex flex-col items-center gap-2 px-4 md:bottom-6">
       {toasts.map((t) => (
-        <div key={t.id} role="status" className="toast" data-st={t.kind === 'error' ? 'planned' : 'watching'}>
-          <span className="toast__ico" aria-hidden>
-            <Icon name={t.kind === 'error' ? 'info' : 'check'} size={17} filled />
-          </span>
-          <span>{t.text}</span>
+        <div
+          key={t.id}
+          role="status"
+          className={`toast-in pointer-events-auto rounded-ctl border px-4 py-2.5 text-sm font-medium shadow-lg ${
+            t.kind === 'error'
+              ? 'border-rose/40 bg-surface text-rose'
+              : 'border-accent/30 bg-raised text-ink'
+          }`}
+        >
+          {t.text}
         </div>
       ))}
-    </>
+    </div>
   );
 }
 
 /**
  * Platzhalter, solange eine nachgeladene Seite unterwegs ist. Bewusst die
  * gleiche Skelett-Sprache wie in den Seiten selbst — kein Spinner mitten im
- * Inhalt.
+ * Inhalt (siehe Design-Regel „Skeletons statt Spinner“).
  */
 function RouteSkeleton() {
   return (
     <div aria-busy="true" aria-live="polite">
-      <div className="skel" style={{ height: 36, width: 210 }} />
-      <div className="skel" style={{ height: 16, width: 290, marginTop: 12 }} />
-      <div className="grid" style={{ marginTop: 28 }}>
+      <div className="skeleton h-9 w-52 rounded" />
+      <div className="skeleton mt-3 h-4 w-72 rounded" />
+      <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="skel" style={{ aspectRatio: '2 / 3', width: '100%' }} />
+          <div key={i} className="skeleton aspect-[2/3] w-full" />
         ))}
       </div>
     </div>
   );
 }
 
-/** Beim Bildschirmwechsel neu aufbauen, damit der Übergang überblendet. */
+/** Remount-keyed wrapper so route changes crossfade. */
 function ViewFrame() {
   const location = useLocation();
   return (
@@ -75,6 +257,24 @@ function ViewFrame() {
       </Suspense>
     </div>
   );
+}
+
+function GlobalHotkeys() {
+  const openSearch = useSearchOverlay((s) => s.open);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const typing =
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      if (!typing && (e.key === '/' || ((e.metaKey || e.ctrlKey) && e.key === 'k'))) {
+        e.preventDefault();
+        openSearch();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [openSearch]);
+  return null;
 }
 
 export function App() {
@@ -102,20 +302,20 @@ export function App() {
     else resetLocal();
   }, [authReady, user, syncFromRemote, resetLocal]);
 
-  // Update-Scan: einmal pro App-Öffnung nach neuen Staffeln/Ankündigungen
-  // schauen. Muss als Hook unbedingt aufgerufen werden (Rules of Hooks) —
-  // scan.ts wartet selbst auf `hydrated` und pusht nur bei angemeldetem Nutzer.
+  // Update-Scan: einmal pro App-Öffnung nach neuen Staffeln/Ankündigungen schauen.
+  // Muss als Hook unbedingt aufgerufen werden (Rules of Hooks) — scan.ts wartet
+  // selbst auf `hydrated` und pusht nur, wenn ein Nutzer angemeldet ist.
   useStartupScan();
 
   if (!authReady) {
     return (
-      <div className="bootscreen">
+      <div className="grid min-h-screen place-items-center">
         <img
           src={`${import.meta.env.BASE_URL}logo.png`}
           alt=""
           width={40}
           height={40}
-          className="bootscreen__logo"
+          className="h-10 w-10 animate-pulse rounded-ctl opacity-60"
         />
       </div>
     );
@@ -127,9 +327,15 @@ export function App() {
 
   return (
     <HashRouter>
-      <AppFrame>
-        <ViewFrame />
-      </AppFrame>
+      <GlobalHotkeys />
+      <Sidebar />
+      <main className="min-h-screen pb-[calc(112px+env(safe-area-inset-bottom))] md:pb-10 md:pl-16 lg:pl-52">
+        <MobileHeader />
+        <div className="mx-auto max-w-[1200px] px-4 pt-5 sm:px-6 md:pt-8">
+          <ViewFrame />
+        </div>
+      </main>
+      <BottomBar />
       <SearchOverlay />
       <Toasts />
     </HashRouter>

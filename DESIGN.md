@@ -1,181 +1,102 @@
-# Design — V5 „Gerät"
+# Design
 
-> Stand: 26.08.2026. Dieses Dokument beschreibt die App, **wie sie tatsächlich
-> gebaut ist**. Die vorige Fassung beschrieb das abgelöste Design (Fraunces,
-> Aurora-Nebel, Tailwind-Utility-Klassen, `.press`, Genre-Partikel) — davon ist
-> nichts mehr im Code. Wer sich daran orientiert, baut gegen die App.
->
-> Der Vanilla-Entwurf, aus dem V5 stammt, liegt in `design-lab/v5-nativ/`.
-> **Quelle der Wahrheit für Werte ist `src/styles/tokens.css`**, nicht diese
-> Tabelle.
+> Stand: Juli 2026. Dieses Dokument beschreibt die App, **wie sie tatsächlich
+> gebaut ist**. Eine frühere Fassung beschrieb eine achromatische Jade-Variante
+> und verbot Neon ausdrücklich — die wurde nie umgesetzt: Am 16.07.2026 fiel
+> bewusst die Entscheidung für den **Hybrid mit der V1-Farbwelt** (Yunus'
+> Wunsch, inkl. V1-Logo). Wer sich an der alten Fassung orientiert, arbeitet
+> gegen diese Entscheidung.
 
-## These
+## Theme
 
-**Die App ist ein Gerät, kein Dokument.**
+**„Archiv bei Nacht"** — eine dunkle, tiefblaue Wand, auf der Cover-Artwork wie
+beleuchtete Plakate hängt. Darüber ein sehr langsam driftender Farbnebel
+(Aurora, `body::before`) in Neon-Türkis/Blau/Violett, der der Fläche Tiefe gibt,
+ohne den Inhalt zu stören. Editoriale Serife für Seitentitel, präzise Sans für
+alles Funktionale.
 
-Eine Website scrollt als Ganzes. Ein Gerät nicht: Kopfleiste, Tab-Leiste und
-Seitenschiene gehören zum Gehäuse und bewegen sich nie, darunter läuft der
-Inhalt durch. Alles Drückbare hat eine Oberkante aus Licht und fährt beim
-Drücken nach unten; alles nur Lesbare bleibt flach. Das ist der Unterschied,
-den man ohne Worte spürt.
-
-## Die neun Regeln
-
-1. **Rahmen statt Seite.** Nur `.pane` scrollt (`src/components/AppFrame.tsx`).
-   Festgehalten von `e2e/rahmen.spec.ts` — und zwar mit einem Helfer, der
-   abbricht, wenn es gar nichts zu scrollen gibt. Ohne den wären die Tests
-   grün, sobald der Inhalt auf den Schirm passt.
-2. **Icon-Paare.** Kontur = aus, gefüllt = an (`src/components/Icon.tsx`).
-3. **Knöpfe mit Oberkante.** Lichtkante oben, Kontaktschatten unten, Feder
-   beim Loslassen (`--e-spring`). Steht in `src/styles/controls.css`.
-4. **Formwechsel statt nur Farbwechsel.** Ein aktiver Zustand ändert die
-   Bauform (Kapsel wächst, Zeichen füllt sich), nicht bloß den Farbton.
-5. **Fünf Kategorien, fünf Charaktere.** Jede muss im **Ruhezustand**
-   erkennbar sein: Touch-Geräte haben kein Hover, dort ist der Ruhezustand der
-   einzige Zustand.
-6. **`data-st="…"` setzt die komplette Farbrolle** (`--tone`, `--tone-t`,
-   `--tone-bg`, `--tone-on`, `--tone-glow`, siehe `src/styles/status.css`).
-   Nichts wird von Hand gefärbt. Die JavaScript-Seite derselben Wahrheit ist
-   `STATUS_THEME` in `src/domain/status.ts`; ein Test prüft, dass jeder
-   `WatchStatus` dort einen Eintrag hat.
-7. **Gold trägt nur die Wertung, Pink nur Gefahr und Löschen.**
-8. **Kein `translateZ`, kein `will-change` auf geneigten Flächen** — das war
-   die Unschärfe-Ursache im Avathai-Projekt.
-9. **Farbe steht nie allein** — immer Name und Zahl daneben.
-
-## Farbe
-
-Die Farbwelt ist auf `logo.png` abgestimmt und bleibt gegenüber dem Vorgänger
-unverändert. Neu ist nicht die Farbe, sondern ihre Verwendung: **Farbe bedeutet
-immer einen Status, nie Dekoration.**
-
-### Nachtblau-Leiter
+## Color (Hex, dark-only — Quelle: `tailwind.config.js`)
 
 | Token | Wert | Rolle |
 |---|---|---|
-| `--void` | `#06070d` | Bezel außerhalb der App-Fläche (nur Desktop) |
-| `--bg` | `#0d0f18` | Grundfarbe; zugleich `theme-color` |
-| `--s1` | `#141827` | Inhaltsfläche: Sektionen, Listen, Platte |
-| `--s2` | `#1b2032` | Erhaben: Karten, Bedienelemente |
-| `--s2h` | `#232941` | Oberkante von `--s2` (Licht kommt von oben) |
-| `--s3` | `#262e48` | Gedrückt / schwebend |
-| `--s4` | `#333d5e` | Starker Rand, deaktivierte Füllung |
-| `--ink` / `--ink-2` / `--ink-3` | `#f1f3f9` / `#a8b3cb` / `#8a95af` | Tinte; `--ink-3` liegt bei 4,9:1 auf `--bg` (AA) |
+| `bg` | `#0d0f18` | Body-Hintergrund. Zugleich `theme-color` — färbt die Statusleiste, damit die App randlos wirkt. |
+| `surface` | `#16192b` | Karten, Panels, Tab-Bar, Sheets |
+| `raised` | `#1e2338` | Hover-Flächen, Inputs, Chips |
+| `line` | `#262c47` | Hairline-Borders |
+| `ink` | `#f1f3f9` | Primärtext |
+| `ink-dim` | `#7e8da6` | Sekundärtext |
+| `ink-muted` | `#95a1b8` | Inaktive Navigations-Labels (6,68:1 auf `surface`) |
+| `ink-faint` | `#566078` | Meta/Disabled — **nur groß/fett**, reicht für Fließtext nicht |
+| `accent` | `#00f5d4` | Akzent: Aktionen, Selektion, Fortschritt, „Weiter schauen" |
+| `accent-deep` | `#0b6e63` | Akzent-Flächen |
+| `purple` | `#8a2be2` | Watchlist |
+| `pink` | `#ff0055` | Noch zu schauen |
+| `blue` | `#3a86ff` | Fortsetzung folgt |
+| `green` | `#2ecc71` | Abgeschlossen |
+| `gold` | `#ffcf4d` | Geschaut-Rangliste, Wertungen |
+| `amber` / `rose` | `#f5a524` / `#ff4757` | Warnung / Fehler & Löschen |
 
-### Fünf Bedeutungen, sonst nichts
+**Farbstrategie: Committed, nicht Restrained.** Jede Status-Welt hat ihre eigene
+Signalfarbe und darf auf ihren Karten auch Fläche und Glow tragen — das ist der
+Kern des Hybrid-Entscheids. Regel dabei: Farbe steht **nie allein**, immer mit
+Label und/oder Zahl (Statuspunkte + Text, nicht Punkt allein).
 
-| Token | Wert | Bedeutung |
-|---|---|---|
-| `--cy` | `#00f5d4` | Weiter schauen — läuft |
-| `--bl` | `#3a86ff` | Noch zu schauen — geladen, bereit |
-| `--pu` | `#8a2be2` | Watchlist — vorgemerkt |
-| `--sl` | `#64789f` | Fortsetzung folgt — graublau wartend |
-| `--gr` | `#2ecc71` | Geschaut — abgelegt, versiegelt |
-| `--go` | `#ffcf4d` | **Wertung**, unabhängig vom Status |
-| `--pk` | `#ff2d6f` | **Gefahr/Löschen**, kein Status mehr |
+## Oberflächen — kein Glas
 
-Jede Statusfarbe hat eine schrifttaugliche Aufhellung (`--cy-t` …) und eine
-sehr dunkle Fläche (`--cy-bg` …), damit die Farbe Signal bleibt und nicht
-Anstrich wird.
+Zwischen dem 20. und 21.07.2026 wurde ein iOS-„Liquid Glass"-Look eingeführt
+(`backdrop-filter`-Flächen auf Chrome, Sheets, Chips) und nach Praxistest am
+Handy **wieder vollständig entfernt** — er wirkte vernebelt statt modern und
+traf Apples aktuelle Sprache nicht. Verbindlich seit Commit `535da1c`:
 
-## Typografie
+- **Kein `backdrop-filter` / kein `backdrop-blur` irgendwo.** Chrome (Header,
+  Tab-Bar), Sheets, Dialoge und Popover sind solide Flächen aus `surface`/`bg`.
+- Behalten wurde aus der iOS-Runde, was sich bewährt hat: großzügige Radien
+  (card 16 / ctl 12 / pill 22 / sheet 28), das taktile `.press` (`scale .96`
+  beim Antippen) und die gleitende Auswahl-Kapsel in der Tab-Bar.
 
-- **Inter Variable** durchgehend (`--font-ui`).
-- **JetBrains Mono** (`--font-num`) für alles Gezählte: Folgen, Prozente,
-  Jahre, der technische Grund auf dem Absturzbildschirm.
-- Fraunces ist **raus** (Etappe 2). Eine Tailwind-Klasse `font-display` gibt es
-  nicht mehr — sie färbte zuletzt nur noch nichts.
-- Eingabefelder unter 768 px zwingend 16 px, sonst zoomt iOS beim Fokus hinein
-  und nicht zuverlässig wieder heraus (`src/styles/base.css`). Genau deshalb
-  braucht `index.html` **kein** `user-scalable=no` — das wäre ein
-  Barrierefreiheits-Verstoß (WCAG 1.4.4).
+## Typography
 
-## Bewegung
+- **Display:** Fraunces Variable — nur Seitentitel, Hero, Zahlen auf der
+  Stats-Seite. Nie in Buttons, Labels, Daten.
+- **UI/Body:** Inter Variable — alles andere. Fixe Skala, Ratio ~1.2.
+- `text-wrap: balance` auf h1–h3.
+- Eingabefelder auf Mobil zwingend ≥ 16 px, sonst zoomt iOS beim Fokus rein.
 
-Drei Kurven, mehr braucht es nicht:
+## Layout
 
-| Token | Wofür |
-|---|---|
-| `--e-out` | alles Alltägliche |
-| `--e-spring` | das Zurückschnellen nach dem Druck — der Teil, der sich nach Gerät anfühlt |
-| `--e-snap` | Formwechsel |
+- Desktop: Icon+Label-Sidebar links (64 → 208 px), Content max 1200 px.
+- Mobil (< 768 px): fixe Kopfleiste + schwebende Bottom-Tab-Bar (5 Ziele,
+  70 px hoch, 2 px über der Safe-Area), Content full-width mit 16 px Gutter.
+- Poster-Ratio 2:3. **`aspect-[2/3]` gehört auf den Container, nie aufs `<img>`** —
+  sonst laufen Box und Cover auseinander, sobald das Bild anders lädt als erwartet.
+- Detailseite: Banner-Artwork mit Verlaufsblende nach `bg`, Inhalt überlappt.
+- Horizontal scrollende Chip-Reihen brauchen vertikales Polster (`py-3`):
+  `overflow-x-auto` erzwingt laut Spec auch `overflow-y: auto` und kappt sonst
+  den Glow der aktiven Chips.
 
-Dauern: `--t-tap` 120 ms · `--t-fast` 180 ms · `--t-mid` 280 ms · `--t-slow`
-460 ms. Bewegung nur für Zustand, nie als Schmuck. `prefers-reduced-motion`
-setzt jede Transition auf 0,01 ms (`src/index.css`).
+## Motion
 
-## Layout und Rahmen
+150–250 ms. Zwei Kurven: `cubic-bezier(0.22, 1, 0.36, 1)` fürs Allgemeine,
+`cubic-bezier(0.32, 0.72, 0, 1)` für alles Taktile (Press, Tab-Kapsel).
+Motion nur für Zustand. Der Seiten-Crossfade animiert **ausschließlich
+`opacity`** — ein zusätzliches Transform auf dem ganzen Seitenbaum lässt den
+Tab-Wechsel auf schwächeren Handy-GPUs sichtbar haken.
+`prefers-reduced-motion`: alles wird Crossfade/instant.
 
-- Bis 900 px: feste Kopfleiste (`--topbar` 54 px) plus Tab-Leiste unten
-  (`--tabbar` 60 px). Ab 900 px ersetzt die Seitenschiene (`--rail` 232 px) die
-  Kopfleiste. Beides steht gleichzeitig im Baum, sichtbar ist immer nur eines.
-- Inhaltsbreite `--wide` 1120 px, Innenabstand `--pad` 16 px.
-- Poster-Verhältnis 2:3, **`aspect-ratio` gehört auf den Container, nie aufs
-  `<img>`** — sonst laufen Box und Cover auseinander.
-- Seitlich scrollende Leisten (`.shelf`, `.genrebar`) sind die einzigen Stellen,
-  an denen etwas über den Rand laufen darf. `e2e/messung.spec.ts` hält das fest.
+## Components
 
-## Aufbau der Stilblätter
-
-```
-src/styles/
-  tokens.css      Werte — die einzige Quelle
-  base.css        Grundlagen, Auswahl, iOS-Feldgröße
-  chrome.css      Kopfleiste, Tab-Leiste, Seitenschiene
-  controls.css    Knöpfe, Schalter, Stepper, Pips, Ring
-  status.css      data-st → --tone*
-  cards.css       Eintrags- und Katalogkarten
-  layout.css      Bühne, Regale, Rangliste, Hero
-  pages.css       Detail, Statistik, Einstellungen, Tor, letzte Grenze
-  overlays.css    Blatt, Dialog, Meldung, Befehlspalette
-  app.css         Zusammensetzung
-  responsive.css  was auf welcher Breite weicht
-src/index.css     nur noch Grundgerüst + `.view-enter`
-```
-
-## Bauteile
-
-- **`kit.tsx`** — Button, IconButton, Segmented, Ring, Bar, Stepper, Pips, Tag,
-  SectionHead, EmptyState.
-- **`overlays.tsx`** — Sheet, ConfirmDialog, StatusPicker, `useEscape`. Der
-  Dialog rendert per Portal, sperrt den Hintergrund-Scroll und bringt
-  Außenklick und Escape selbst mit; Aufrufer dürfen **keinen** eigenen
-  Außenklick-Handler darüberlegen.
-- **`EntryCard.tsx`** — die eigene Karte, fünf Charaktere.
-- **`MediaTile.tsx`** — die Katalog-Karte: einheitliche Bewegung, kein Spoiler.
-- **`AddSheet.tsx`** — Aufnahme-Weg: Kategorie → „wie weit?" inklusive Schere.
-- **`ErrorBoundary.tsx`** — die letzte Grenze, auf derselben Platte wie das Tor.
-- **Keine Emojis** in der Oberfläche, auch keine Unicode-Symbole, die iOS zur
-  Farb-Emoji-Schrift hochziehen. Dekorative Formen sind SVG-Pfade
-  (`src/components/iconPaths.ts`).
-
-## Was bewusst nicht (mehr) da ist
-
-| Weg | Warum |
-|---|---|
-| Glasflächen (`backdrop-filter`) | Wirkten vernebelt statt modern; seit `535da1c` verbindlich raus. |
-| Aurora-Farbnebel hinter der App | Hinter einem Gerät liegt kein Wetter. |
-| Genre-Bühne mit Partikeln auf Entdecken | Dieselbe Begründung; die Genre-Färbung macht jetzt die Chip-Leiste. |
-| Fraunces (Display-Serife) | V5 nutzt Inter durchgehend, Mono für Gezähltes. |
-| Tailwind `ring*` | Namenskollision mit `.ring` des Designsystems — es baute eine blaue Kiste um jeden Fortschrittsring. |
-| Inhaltsangabe auf der Entdecken-Bühne | `description` steckt nur in der Detail-Abfrage; 90 Synopsen für eine Zeile zu laden lohnt nicht. Genres tragen die Fläche genauso. |
-
-**Bewusst geblieben:** der Home-Abschnitt „Als Nächstes im Simulcast" (gegen
-den Entwurf, auf Yunus' Entscheidung) in Graublau `--sl`, und die
-Community-Wertung auf der Katalog-Karte — „Bestbewertet" ohne sichtbares
-Kriterium wäre sinnlos.
-
-## Gemessen, nicht behauptet
-
-`e2e/messung.spec.ts` prüft auf acht Größen — **mit kleinen Höhen**, nicht nur
-schmalen Breiten (320×640, 375×667, 375×812, 768×1024, 1280×720, 1280×800,
-1440×760, 1920×1080) über sechs Ansichten:
-
-- kein waagerechtes Scrollen, nichts ragt aus dem Schirm,
-- `elementFromPoint` über jedes Bedienelement: es muss selbst obenauf liegen,
-- Touchziele ≥ 44 px mit **benannter** Ausnahmeliste (Wertungs-Pips 30×44,
-  Schalter 52×31, kleine Symbolknöpfe 40×40, Hero-Pfeile 28×28) — steht eine
-  Ausnahme nicht auf der Liste, fällt der Test,
-- Kontrast und Barrierefreiheit über `@axe-core/playwright`,
-- **die Zahl der angefassten Elemente** (rund 135 je Größe). Ein Prüfwerkzeug,
-  das zu wenig prüft, meldet sonst fröhlich „alles gut".
+- **PosterCard**: Cover + Titel + Meta-Zeile; Fortschrittsleiste am unteren
+  Cover-Rand bei getrackten Einträgen. Bewusst **ohne** Blur-Effekte — hier
+  liegen viele Karten gleichzeitig im Blick, das kostet auf Safari Frames.
+- **EpisodeStepper**: −/+ mit direkt editierbarer Zahl, optimistisches Update.
+- **ConfirmDialog**: rendert per Portal auf `<body>`, sperrt den
+  Hintergrund-Scroll und bleibt während der Abgangs-Animation (160 ms) liegen —
+  das fängt den Geister-Klick ab, den Touch-Geräte nachschicken. Er bringt
+  Backdrop-Klick und Escape selbst mit; Aufrufer dürfen **keinen** eigenen
+  Außenklick-Handler darüberlegen (der schlüge sonst bei jedem Tipp im Dialog zu).
+- **ErrorBoundary**: umschließt die ganze App. Bietet „Neu laden" und
+  „Lokalen Zwischenspeicher leeren" (löscht nur IndexedDB, nie die Cloud).
+- **Skeletons** statt Spinner; Empty-States erklären die nächste Aktion.
+- **Keine Emojis** in der Oberfläche — auch keine Unicode-Symbole, die iOS zur
+  Farb-Emoji-Schrift hochzieht (♥, ☺ …). Dekorative Formen werden als
+  SVG-Pfade gezeichnet (siehe Genre-Partikel in `DiscoverPage`).

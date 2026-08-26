@@ -1,6 +1,4 @@
 import { useState, type FormEvent } from 'react';
-import { Icon } from '@/components/Icon';
-import { Button } from '@/components/kit';
 import {
   authErrorMessage,
   sendPasswordReset,
@@ -10,46 +8,41 @@ import {
   useAuth,
 } from '@/store/auth';
 import { useT } from '@/i18n';
-
-/**
- * DAS TOR.
- *
- * Ohne Konto gibt es die App nicht zu sehen — seit dem Umstieg auf
- * Supabase-Sync braucht Tsugi eine echte Anmeldung (Mehrgeräte-Betrieb).
- *
- * Diese Seite hatte im V5-Entwurf KEINE Vorlage; sie ist hier in derselben
- * Sprache entworfen: das Gerät als Platte auf dunklem Grund, versenkte
- * Felder, ein Knopf mit Lichtkante, ein Schalter statt einer Ankreuzbox.
- *
- * Der Sonderfall `passwordRecovery` (Klick auf den Link aus der E-Mail)
- * zeigt statt Anmelden/Registrieren direkt das Formular für ein neues
- * Passwort — dort ist eine E-Mail-Eingabe nur ein Umweg.
- */
+import { IconCheck } from '@/components/icons';
 
 type Mode = 'login' | 'signup' | 'forgot' | 'forgotSent';
 
+/**
+ * Login-Gate: Tsugi braucht seit dem Umstieg auf Supabase-Sync ein echtes
+ * Konto (Multi-Device), also gibt es ohne Session keine App zu sehen. Ein
+ * Sonderfall wird separat behandelt: `passwordRecovery` (Klick auf den
+ * Reset-Link) zeigt statt Login/Signup ein „neues Passwort setzen“-Formular.
+ */
 export function AuthScreen() {
   const t = useT();
   const passwordRecovery = useAuth((s) => s.passwordRecovery);
 
   return (
-    <div className="gate">
-      <div className="gate__plate">
-        <header className="gate__head">
+    <div className="relative flex min-h-screen items-center justify-center px-4 py-10">
+      <div className="w-full max-w-[380px]">
+        <div className="mb-8 flex flex-col items-center text-center">
           <img
             src={`${import.meta.env.BASE_URL}logo.png`}
             alt=""
-            width={54}
-            height={54}
-            className="gate__logo"
+            width={52}
+            height={52}
+            className="h-13 w-13 rounded-card shadow-glow-purple"
           />
-          <h1 className="gate__title">
-            Tsugi <span className="gate__title-dim">Anitracker</span>
+          <h1 className="mt-4 font-display text-[26px] font-semibold tracking-tight text-ink">
+            Tsugi
+            <span className="ml-1.5 text-ink-dim">Anitracker</span>
           </h1>
-          <p className="sub gate__tagline">{t('authTagline')}</p>
-        </header>
+          <p className="mt-1.5 max-w-[32ch] text-sm text-ink-dim">{t('authTagline')}</p>
+        </div>
 
-        {passwordRecovery ? <RecoveryForm /> : <LoginForm />}
+        <div className="rounded-card border border-line bg-surface p-6 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.8)]">
+          {passwordRecovery ? <RecoveryForm /> : <LoginForm />}
+        </div>
       </div>
     </div>
   );
@@ -69,42 +62,17 @@ function Field({
   autoComplete?: string;
 }) {
   return (
-    <label className="field">
-      <span className="field__label">{label}</span>
+    <label className="block">
+      <span className="mb-1.5 block text-[13px] font-medium text-ink-dim">{label}</span>
       <input
-        className="field__input"
         type={type}
         required
         value={value}
         autoComplete={autoComplete}
         onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-ctl border border-line bg-raised px-3.5 py-2.5 text-sm text-ink outline-none transition-colors duration-150 focus:border-accent"
       />
     </label>
-  );
-}
-
-/** Ein echter Schalter statt einer Ankreuzbox — dieselbe Sprache wie sonst. */
-function Switch({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (next: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      className="switchrow"
-      data-st="watching"
-      onClick={() => onChange(!checked)}
-    >
-      <span className="switchrow__label">{label}</span>
-      <span className={`switch${checked ? ' is-on' : ''}`} aria-hidden />
-    </button>
   );
 }
 
@@ -139,31 +107,25 @@ function LoginForm() {
 
   if (mode === 'forgotSent') {
     return (
-      <div className="gate__done">
-        <span className="gate__seal" aria-hidden>
-          <Icon name="check" size={22} filled />
-        </span>
-        <p className="sub">{t('authResetSent', { email })}</p>
-        <Button variant="quiet" wide onClick={() => setMode('login')}>
+      <div className="py-2 text-center">
+        <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-accent/15 text-accent">
+          <IconCheck className="h-5 w-5" />
+        </div>
+        <p className="mt-3 text-sm leading-6 text-ink-dim">{t('authResetSent', { email })}</p>
+        <button
+          type="button"
+          onClick={() => setMode('login')}
+          className="mt-4 text-sm font-semibold text-accent hover:opacity-80"
+        >
           {t('authBackToLogin')}
-        </Button>
+        </button>
       </div>
     );
   }
 
-  const primaer =
-    mode === 'forgot' ? t('authSendReset') : mode === 'signup' ? t('authSignUp') : t('authLogIn');
-
   return (
-    <form className="gate__form" onSubmit={(e) => void submit(e)}>
-      <Field
-        label={t('authEmail')}
-        type="email"
-        value={email}
-        onChange={setEmail}
-        autoComplete="email"
-      />
-
+    <form onSubmit={(e) => void submit(e)} className="space-y-4">
+      <Field label={t('authEmail')} type="email" value={email} onChange={setEmail} autoComplete="email" />
       {mode !== 'forgot' && (
         <Field
           label={t('authPassword')}
@@ -175,40 +137,51 @@ function LoginForm() {
       )}
 
       {mode === 'login' && (
-        <>
-          <Switch label={t('authRemember')} checked={remember} onChange={setRemember} />
-          <button type="button" className="linkish" onClick={() => setMode('forgot')}>
+        <div className="flex items-center justify-between text-[13px]">
+          <label className="flex items-center gap-2 text-ink-dim">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="h-3.5 w-3.5 accent-accent"
+            />
+            {t('authRemember')}
+          </label>
+          <button
+            type="button"
+            onClick={() => setMode('forgot')}
+            className="font-medium text-ink-dim hover:text-accent"
+          >
             {t('authForgot')}
           </button>
-        </>
+        </div>
       )}
 
-      {/* `role="alert"` liest ein Screenreader von selbst vor — ohne das
-          bliebe ein Anmeldefehler für Blinde unsichtbar. */}
-      {error && (
-        <p className="gate__error" role="alert">
-          {error}
-        </p>
-      )}
+      {error && <p className="text-[13px] leading-5 text-rose">{error}</p>}
 
-      {/* Ein echtes `submit`: die Eingabetaste im Feld muss abschicken.
-          `Button` aus dem Baukasten ist bewusst immer `type="button"`. */}
-      <button type="submit" className="btn btn--primary btn--wide" disabled={busy} aria-busy={busy}>
-        <Icon name={mode === 'forgot' ? 'globe' : 'check'} size={18} filled />
-        <span>{primaer}</span>
+      <button
+        type="submit"
+        disabled={busy}
+        className="w-full rounded-ctl bg-accent py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter] duration-150 hover:brightness-110 disabled:opacity-50"
+      >
+        {mode === 'forgot' ? t('authSendReset') : mode === 'signup' ? t('authSignUp') : t('authLogIn')}
       </button>
 
       {mode === 'forgot' ? (
-        <Button variant="quiet" wide onClick={() => setMode('login')}>
+        <button
+          type="button"
+          onClick={() => setMode('login')}
+          className="block w-full text-center text-[13px] font-medium text-ink-dim hover:text-ink"
+        >
           {t('authBackToLogin')}
-        </Button>
+        </button>
       ) : (
-        <p className="gate__switch muted">
+        <p className="text-center text-[13px] text-ink-dim">
           {mode === 'signup' ? t('authHaveAccount') : t('authNoAccount')}{' '}
           <button
             type="button"
-            className="linkish"
             onClick={() => setMode(mode === 'signup' ? 'login' : 'signup')}
+            className="font-semibold text-accent hover:opacity-80"
           >
             {mode === 'signup' ? t('authLogIn') : t('authSignUp')}
           </button>
@@ -218,7 +191,7 @@ function LoginForm() {
   );
 }
 
-/** Nach dem Klick auf den Zurücksetzen-Link aus der E-Mail. */
+/** Nach Klick auf den Passwort-Reset-Link aus der E-Mail. */
 function RecoveryForm() {
   const t = useT();
   const [password, setPassword] = useState('');
@@ -242,18 +215,18 @@ function RecoveryForm() {
 
   if (done) {
     return (
-      <div className="gate__done">
-        <span className="gate__seal" aria-hidden>
-          <Icon name="check" size={22} filled />
-        </span>
-        <p className="sub">{t('authPasswordUpdated')}</p>
+      <div className="py-2 text-center">
+        <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-accent/15 text-accent">
+          <IconCheck className="h-5 w-5" />
+        </div>
+        <p className="mt-3 text-sm text-ink-dim">{t('authPasswordUpdated')}</p>
       </div>
     );
   }
 
   return (
-    <form className="gate__form" onSubmit={(e) => void submit(e)}>
-      <p className="sub">{t('authNewPasswordHint')}</p>
+    <form onSubmit={(e) => void submit(e)} className="space-y-4">
+      <p className="text-sm text-ink-dim">{t('authNewPasswordHint')}</p>
       <Field
         label={t('authNewPassword')}
         type="password"
@@ -261,14 +234,13 @@ function RecoveryForm() {
         onChange={setPassword}
         autoComplete="new-password"
       />
-      {error && (
-        <p className="gate__error" role="alert">
-          {error}
-        </p>
-      )}
-      <button type="submit" className="btn btn--primary btn--wide" disabled={busy} aria-busy={busy}>
-        <Icon name="check" size={18} filled />
-        <span>{t('authSetPassword')}</span>
+      {error && <p className="text-[13px] leading-5 text-rose">{error}</p>}
+      <button
+        type="submit"
+        disabled={busy}
+        className="w-full rounded-ctl bg-accent py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter] duration-150 hover:brightness-110 disabled:opacity-50"
+      >
+        {t('authSetPassword')}
       </button>
     </form>
   );

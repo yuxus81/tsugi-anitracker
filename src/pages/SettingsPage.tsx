@@ -1,20 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Icon } from '@/components/Icon';
-import { Button, Segmented } from '@/components/kit';
-import { ConfirmDialog } from '@/components/overlays';
-import { signOut, useAuth } from '@/store/auth';
 import { useLibrary, type LibraryEntry } from '@/store/library';
+import { signOut, useAuth } from '@/store/auth';
 import { useToasts } from '@/store/toast';
+import { PageTitle } from '@/components/ui';
 import { useSettings, useT, type Lang } from '@/i18n';
-
-/**
- * EINSTELLUNGEN — Konto, Sprache, Sicherung, Gefahrenzone.
- *
- * Die einzige Seite, auf der man Daten unwiderruflich verlieren kann.
- * Deshalb steht die Gefahrenzone ganz unten und allein, und alles darin
- * fragt zurück. Das ist die Anordnung nativer Apps, kein Zufall: was
- * gefährlich ist, soll man suchen müssen.
- */
+import { IconCheck, IconDownload, IconTrash, IconUpload } from '@/components/icons';
 
 const USERNAME_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -23,44 +13,6 @@ interface BackupFile {
   version: 2;
   exportedAt: string;
   entries: LibraryEntry[];
-}
-
-/** Eine Zeile in einer Gruppe: Zeichen, Text, Hinweis, Pfeil. */
-function SetRow({
-  icon,
-  title,
-  hint,
-  tone,
-  danger = false,
-  disabled = false,
-  onClick,
-}: {
-  icon: Parameters<typeof Icon>[0]['name'];
-  title: string;
-  hint: string;
-  tone: string;
-  danger?: boolean;
-  disabled?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      className="setrow"
-      data-st={tone}
-      disabled={disabled}
-      onClick={onClick}
-    >
-      <span className="setrow__ico" aria-hidden>
-        <Icon name={icon} size={17} filled />
-      </span>
-      <span className="setrow__body">
-        <span className={`setrow__t${danger ? ' is-danger' : ''}`}>{title}</span>
-        <span className="setrow__s">{hint}</span>
-      </span>
-      <Icon name="right" size={16} />
-    </button>
-  );
 }
 
 export function SettingsPage() {
@@ -74,36 +26,35 @@ export function SettingsPage() {
   const t = useT();
   const lang = useSettings((s) => s.lang);
   const setLang = useSettings((s) => s.setLang);
-
   const fileRef = useRef<HTMLInputElement>(null);
-  const [wipeOffen, setWipeOffen] = useState(false);
-  const [nameEntwurf, setNameEntwurf] = useState(username ?? '');
+  const [confirmWipe, setConfirmWipe] = useState(false);
+  const [nameDraft, setNameDraft] = useState(username ?? '');
 
-  useEffect(() => setNameEntwurf(username ?? ''), [username]);
+  useEffect(() => setNameDraft(username ?? ''), [username]);
 
-  const anzahl = Object.keys(entries).length;
+  const count = Object.keys(entries).length;
 
-  const seitAenderung = usernameChangedAt ? Date.now() - usernameChangedAt : Infinity;
-  const nameGesperrt = seitAenderung < USERNAME_COOLDOWN_MS;
-  const restTage = nameGesperrt
-    ? Math.max(1, Math.ceil((USERNAME_COOLDOWN_MS - seitAenderung) / 86_400_000))
+  const msSinceNameChange = usernameChangedAt ? Date.now() - usernameChangedAt : Infinity;
+  const nameLocked = msSinceNameChange < USERNAME_COOLDOWN_MS;
+  const nameLockedDays = nameLocked
+    ? Math.max(1, Math.ceil((USERNAME_COOLDOWN_MS - msSinceNameChange) / 86_400_000))
     : 0;
 
-  const nameSpeichern = () => {
-    const sauber = nameEntwurf.trim();
-    if (!sauber || nameGesperrt) return;
-    setUsername(sauber);
+  const saveUsername = () => {
+    const trimmed = nameDraft.trim();
+    if (!trimmed || nameLocked) return;
+    setUsername(trimmed);
     push(t('profileSavedToast'));
   };
 
-  const exportieren = () => {
-    const inhalt: BackupFile = {
+  const doExport = () => {
+    const payload: BackupFile = {
       app: 'tsugi',
       version: 2,
       exportedAt: new Date().toISOString(),
       entries: Object.values(entries),
     };
-    const blob = new Blob([JSON.stringify(inhalt, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -113,180 +64,203 @@ export function SettingsPage() {
     push(t('exportedToast'));
   };
 
-  const einspielen = async (file: File) => {
+  const doImport = async (file: File) => {
     try {
-      const gelesen = JSON.parse(await file.text()) as BackupFile;
-      if (gelesen.app !== 'tsugi' || !Array.isArray(gelesen.entries)) {
+      const parsed = JSON.parse(await file.text()) as BackupFile;
+      if (parsed.app !== 'tsugi' || !Array.isArray(parsed.entries)) {
         throw new Error('Kein Tsugi-Backup');
       }
-      // Nur nehmen, was die Form hat, die der Store erwartet — eine
-      // beschädigte Datei darf die Bibliothek nicht vergiften.
-      const gueltig = gelesen.entries.filter(
+      const valid = parsed.entries.filter(
         (e) => typeof e.rootId === 'number' && Array.isArray(e.seasons) && e.status,
       );
-      await importAll(gueltig);
-      push(t('importedToast', { n: gueltig.length }));
+      await importAll(valid);
+      push(t('importedToast', { n: valid.length }));
     } catch {
       push(t('importError'), 'error');
     }
   };
 
-  const leeren = async () => {
+  const doWipe = async () => {
     await importAll([]);
-    setWipeOffen(false);
+    setConfirmWipe(false);
     push(t('wipedToast'));
   };
 
-  const SPRACHEN: Array<{ key: Lang; label: string }> = [
+  const LANGS: Array<{ key: Lang; label: string }> = [
     { key: 'de', label: t('languageGerman') },
     { key: 'en', label: t('languageEnglish') },
   ];
 
   return (
-    <>
-      <header className="pagehead">
-        <h1 className="h-large">{t('settingsTitle')}</h1>
-        <p className="sub">{t('settingsSub')}</p>
-      </header>
+    <div className="mx-auto max-w-2xl">
+      <PageTitle title={t('settingsTitle')} sub={t('settingsSub')} />
 
-      {/* ---- Konto ---------------------------------------------------- */}
-      <div className="panel account" data-st="watching">
-        <span className="account__ico" aria-hidden>
-          <Icon name="person" size={26} filled />
-        </span>
-        <span className="account__body">
-          <span className="account__name">{username ?? t('profilePlaceholder')}</span>
-          <span className="muted">{user?.email ?? ''}</span>
-        </span>
-      </div>
-
-      {/* ---- Profilname ----------------------------------------------- */}
-      <p className="grouptitle">{t('profileTitle')}</p>
-      <div className="panel">
-        {nameGesperrt ? (
-          <p className="sub">{t('profileLockedHint', { name: username ?? '', days: restTage })}</p>
+      {/* Profil */}
+      <p className="mb-2 ml-4 text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
+        {t('profileTitle')}
+      </p>
+      <div className="overflow-hidden rounded-card border border-line bg-surface">
+        {nameLocked ? (
+          <p className="px-4 py-4 text-sm leading-6 text-ink-dim">
+            {t('profileLockedHint', { name: username ?? '', days: nameLockedDays })}
+          </p>
         ) : (
-          <>
-            <label className="field">
-              <span className="field__label">{t('profileLabel')}</span>
+          <div className="px-4 py-4">
+            <label className="block">
+              <span className="mb-1.5 block text-xs text-ink-faint">{t('profileLabel')}</span>
               <input
-                className="field__input"
-                value={nameEntwurf}
+                value={nameDraft}
                 maxLength={24}
+                onChange={(e) => setNameDraft(e.target.value)}
                 placeholder={t('profilePlaceholder')}
-                onChange={(e) => setNameEntwurf(e.target.value)}
+                className="w-full rounded-ctl border border-white/10 bg-white/[0.05] px-3.5 py-2.5 text-[15px] text-ink outline-none transition-colors duration-150 focus:border-accent"
               />
             </label>
-            <div className="field__act">
-              <Button
-                variant="primary"
-                icon="check"
-                disabled={!nameEntwurf.trim() || nameEntwurf.trim() === username}
-                onClick={nameSpeichern}
-              >
-                {t('profileSaveBtn')}
-              </Button>
-            </div>
-            {username && <p className="muted field__note">{t('profileChangeNote')}</p>}
-          </>
+            <button
+              type="button"
+              onClick={saveUsername}
+              disabled={!nameDraft.trim() || nameDraft.trim() === username}
+              className="press mt-3 inline-flex items-center gap-2 rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter] duration-150 hover:brightness-110 disabled:opacity-40"
+            >
+              <IconCheck className="h-4 w-4" />
+              {t('profileSaveBtn')}
+            </button>
+            {username && <p className="mt-3 text-xs text-ink-faint">{t('profileChangeNote')}</p>}
+          </div>
         )}
       </div>
 
-      {/* ---- Sprache --------------------------------------------------- */}
-      <p className="grouptitle">{t('languageTitle')}</p>
-      {/* Zwei Segmente über die volle Breite sehen auf dem Laptop aus wie ein
-          Bedienfehler — hier bleibt der Schalter so breit wie nötig. */}
-      <div className="langbar">
-        <Segmented
-          label={t('languageTitle')}
-          value={lang}
-          onChange={setLang}
-          tone="watching"
-          options={SPRACHEN.map(({ key, label }) => ({
-            key,
-            label,
-            icon: 'globe' as const,
-          }))}
-        />
-      </div>
-      <p className="muted field__note">{t('languageNote')}</p>
-
-      {/* ---- Sicherung ------------------------------------------------- */}
-      <p className="grouptitle">{t('backupTitle')}</p>
-      <p className="muted field__note groupnote">
-        {t('backupText', { n: anzahl, plural: anzahl === 1 ? t('entryOne') : t('entryMany') })}
+      {/* Konto */}
+      <p className="mb-2 ml-4 mt-7 text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
+        {t('accountTitle')}
       </p>
-      <div className="group">
-        <SetRow
-          icon="download"
-          tone="completed"
-          title={t('exportBtn')}
-          hint={t('exportHint', {
-            n: anzahl,
-            plural: anzahl === 1 ? t('entryOne') : t('entryMany'),
-          })}
-          disabled={anzahl === 0}
-          onClick={exportieren}
-        />
-        <SetRow
-          icon="upload"
-          tone="completed"
-          title={t('importBtn')}
-          hint={t('importHint')}
-          onClick={() => fileRef.current?.click()}
-        />
-      </div>
-      <input
-        ref={fileRef}
-        type="file"
-        accept="application/json"
-        className="visually-hidden"
-        // Unsichtbar heißt nicht namenlos: Vorleseprogramme finden das Feld
-        // trotzdem, und axe meldet ein Formularfeld ohne Beschriftung als
-        // schweren Fehler. Bedient wird es über die Zeile darüber.
-        aria-label={t('importBtn')}
-        tabIndex={-1}
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) void einspielen(f);
-          // Zurücksetzen, sonst löst dieselbe Datei ein zweites Mal nichts aus.
-          e.target.value = '';
-        }}
-      />
-
-      {/* ---- Gefahrenzone ---------------------------------------------- */}
-      <p className="grouptitle grouptitle--danger">{t('dangerTitle')}</p>
-      <p className="muted field__note groupnote">{t('dangerText')}</p>
-      <div className="group">
-        <SetRow
-          icon="trash"
-          tone="planned"
-          danger
-          title={t('wipeBtn')}
-          hint={t('wipeHint')}
-          disabled={anzahl === 0}
-          onClick={() => setWipeOffen(true)}
-        />
-        <SetRow
-          icon="exit"
-          tone="planned"
-          title={t('authLogOut')}
-          hint={user?.email ?? ''}
+      <div className="overflow-hidden rounded-card border border-line bg-surface">
+        <div className="px-4 py-3.5">
+          <p className="min-w-0 truncate text-[15px] text-ink">{user?.email ?? ''}</p>
+          <p className="mt-0.5 text-xs text-ink-faint">{t('settingsSub')}</p>
+        </div>
+        <div className="ml-4 h-px bg-line" />
+        <button
+          type="button"
           onClick={() => void signOut()}
-        />
+          className="press flex w-full items-center px-4 py-3.5 text-left text-[15px] font-semibold text-rose"
+        >
+          {t('authLogOut')}
+        </button>
       </div>
 
-      {wipeOffen && (
-        <ConfirmDialog
-          title={t('wipeBtn')}
-          message={t('wipeConfirm', { n: anzahl })}
-          confirmLabel={t('wipeYes')}
-          onConfirm={() => void leeren()}
-          onCancel={() => setWipeOffen(false)}
-        />
-      )}
+      {/* Sprache — Segmented Control */}
+      <p className="mb-2 ml-4 mt-7 text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
+        {t('languageTitle')}
+      </p>
+      <div
+        className="flex gap-1 rounded-ctl border border-white/[0.06] bg-white/[0.05] p-1"
+        role="radiogroup"
+        aria-label={t('languageTitle')}
+      >
+        {LANGS.map(({ key, label }) => {
+          const active = key === lang;
+          return (
+            <button
+              key={key}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => setLang(key)}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-[9px] py-2 text-sm font-semibold transition-all duration-200 ${
+                active
+                  ? 'border border-accent/30 bg-accent/15 text-accent shadow-[0_2px_10px_-2px_rgba(0,245,212,0.4)]'
+                  : 'border border-transparent text-ink-dim'
+              }`}
+            >
+              {active && <IconCheck className="h-3.5 w-3.5" />}
+              {label}
+            </button>
+          );
+        })}
+      </div>
+      <p className="ml-4 mt-2 max-w-[60ch] text-xs leading-5 text-ink-faint">{t('languageNote')}</p>
 
-      <p className="muted appfoot">Tsugi-Anitracker</p>
-    </>
+      {/* Backup */}
+      <p className="mb-2 ml-4 mt-7 text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
+        {t('backupTitle')}
+      </p>
+      <div className="overflow-hidden rounded-card border border-line bg-surface p-4">
+        <p className="text-sm leading-6 text-ink-dim">
+          {t('backupText', { n: count, plural: count === 1 ? t('entryOne') : t('entryMany') })}
+        </p>
+        <div className="mt-4 flex gap-2.5">
+          <button
+            type="button"
+            onClick={doExport}
+            disabled={count === 0}
+            className="press inline-flex flex-1 items-center justify-center gap-2 rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter] duration-150 hover:brightness-110 disabled:opacity-40"
+          >
+            <IconDownload className="h-4 w-4" />
+            {t('exportBtn')}
+          </button>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="press inline-flex flex-1 items-center justify-center gap-2 rounded-ctl border border-white/10 bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-ink"
+          >
+            <IconUpload className="h-4 w-4" />
+            {t('importBtn')}
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void doImport(f);
+              e.target.value = '';
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Gefahrenzone */}
+      <p className="mb-2 ml-4 mt-7 text-[12px] font-semibold uppercase tracking-wide text-rose/80">
+        {t('dangerTitle')}
+      </p>
+      <div className="overflow-hidden rounded-card border border-rose/25 bg-rose/[0.06] p-4">
+        {confirmWipe ? (
+          <>
+            <p className="text-sm font-medium text-ink">{t('wipeConfirm', { n: count })}</p>
+            <div className="mt-4 flex gap-2.5">
+              <button
+                type="button"
+                onClick={() => void doWipe()}
+                className="press flex-1 rounded-ctl bg-rose px-4 py-2.5 text-sm font-semibold text-bg transition-[filter] duration-150 hover:brightness-110"
+              >
+                {t('wipeYes')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmWipe(false)}
+                className="press flex-1 rounded-ctl border border-white/10 bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-ink"
+              >
+                {t('cancel')}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-sm leading-6 text-ink-dim">{t('dangerText')}</p>
+            <button
+              type="button"
+              onClick={() => setConfirmWipe(true)}
+              disabled={count === 0}
+              className="press mt-4 inline-flex w-full items-center justify-center gap-2 rounded-ctl border border-rose/40 py-2.5 text-sm font-semibold text-rose transition-colors duration-150 hover:bg-rose/10 disabled:opacity-40"
+            >
+              <IconTrash className="h-4 w-4" />
+              {t('wipeBtn')}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
   );
 }

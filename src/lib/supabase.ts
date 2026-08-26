@@ -18,7 +18,7 @@ export function setSessionPersistence(persist: boolean): void {
   }
 }
 
-function shouldPersist(): boolean {
+function usePersistent(): boolean {
   try {
     return localStorage.getItem(PERSIST_KEY) !== '0';
   } catch {
@@ -36,7 +36,7 @@ const hybridStorage = {
   },
   setItem(key: string, value: string): void {
     try {
-      if (shouldPersist()) {
+      if (usePersistent()) {
         localStorage.setItem(key, value);
         sessionStorage.removeItem(key);
       } else {
