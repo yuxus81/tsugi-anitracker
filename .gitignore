@@ -2,3 +2,15 @@ node_modules
 dist
 *.local
 .DS_Store
+
+# Design-Lab: Quelltext der Entwuerfe kommt mit, die 42 MB Cover/Banner nicht.
+# Wiederherstellen mit: node design-lab/_quelle/fetch-media.mjs
+design-lab/assets/
+design-lab/_quelle/_raw*.json
+
+# Testartefakte
+coverage
+test-results
+playwright-report
+.playwright
+e2e/bilder/

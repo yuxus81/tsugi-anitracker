@@ -1,0 +1,88 @@
+/**
+ * V2 „SENDEPLAN" — Token-Plan
+ * ===========================
+ * These: Anime wird GESENDET. Die App ist ein Programmplan und ein
+ * Regieplatz. Die Hauptachse ist die Zeit — alles hängt an Terminen,
+ * Laufzeiten und Zählern.
+ *
+ * Farbe: eine kalte, weit gestufte Tinte-Leiter plus GENAU EIN heißes
+ * Signal-Orange und ein Live-Rot. Mehr Farben gibt es nicht — im Regieraum
+ * bedeutet Farbe immer etwas, sonst wäre sie Dekoration.
+ *
+ * Zuordnung nach Tailwind (für die spätere Code-Phase):
+ * ----------------------------------------------------
+ *   --bg        → colors.bg           --panel   → colors.surface
+ *   --panel-2   → colors.raised       --panel-3 → colors['raised-2']
+ *   --ink       → colors.ink          --ink-2   → colors['ink-dim']
+ *   --ink-3     → colors['ink-mute']
+ *   --sig-500   → colors.accent       --sig-300 → colors['accent-hi']
+ *   --live      → colors.live         --cue     → colors.ok
+ *   --hold      → colors.muted        --grid    → colors.line
+ *   --r-1/--r-2 → borderRadius.ctl / .card  (bewusst winzig)
+ *   Chivo       → fontFamily.display
+ *   IBM Plex Sans → fontFamily.sans
+ *   IBM Plex Mono → fontFamily.mono   (ALLE Zahlen und Zeiten)
+ */
+
+:root {
+  /* ---- Tinte-Leiter (kalt) ------------------------------------------ */
+  --void:     #030304;
+  --bg:       #0a0b0c;
+  --panel:    #101315;
+  --panel-2:  #171b1e;
+  --panel-3:  #202629;
+  --panel-4:  #2c3438;
+
+  --ink:      #f3f6f7;
+  --ink-2:    #a6b1b7;
+  --ink-3:    #74818a;   /* AA auf --bg */
+
+  /* ---- Signal (nur EIN Akzent) -------------------------------------- */
+  --sig-100:  #ffe3d1;
+  --sig-300:  #ff9a5e;
+  --sig-500:  #ff5a1f;
+  --sig-700:  #c23c0c;
+  --sig-900:  #571a04;
+  --sig-tint: rgba(255, 90, 31, .12);
+
+  /* ---- Zustandsfarben: bedeuten etwas, sind keine Deko --------------- */
+  --live:     #ff2f45;   /* läuft gerade / on air                        */
+  --live-tint: rgba(255, 47, 69, .13);
+  --cue:      #3ad07f;   /* eingelegt, bereit                            */
+  --cue-tint: rgba(58, 208, 127, .12);
+  --hold:     #7d8a93;   /* geplant, noch nicht da                       */
+  --hold-tint: rgba(125, 138, 147, .10);
+
+  /* ---- Linien: das Raster des Sendeplans ---------------------------- */
+  --grid:     rgba(243, 246, 247, .09);
+  --grid-2:   rgba(243, 246, 247, .18);
+  --grid-3:   rgba(243, 246, 247, .30);
+  --focus:    var(--sig-300);
+
+  /* ---- Radien: fast keine. Hardware im Rack ist kantig. ------------- */
+  --r-1: 2px;
+  --r-2: 3px;
+  --r-3: 4px;
+
+  /* ---- Raster ------------------------------------------------------- */
+  --pad: 16px;
+  --gap: 14px;
+  --tap: 44px;
+  --rail: 232px;
+  --tabbar: 60px;
+  --bw: 2px;            /* Rahmenstärke — konstant, das ist die Sprache  */
+
+  /* ---- Schrift ------------------------------------------------------ */
+  --font-display: 'Chivo', 'IBM Plex Sans', system-ui, sans-serif;
+  --font-ui: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --font-kana: 'Yu Gothic', 'Hiragino Sans', 'Noto Sans JP', 'MS PGothic', sans-serif;
+
+  /* ---- Bewegung: mechanisch und rastend ----------------------------- */
+  --e-step: steps(4, end);                       /* rastet, gleitet nicht */
+  --e-snap: cubic-bezier(.16, 1, .3, 1);
+  --e-lin: linear;
+  --t-fast: 90ms;
+  --t-mid: 170ms;
+  --t-slow: 300ms;
+}

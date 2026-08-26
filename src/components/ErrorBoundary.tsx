@@ -1,14 +1,25 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Icon } from '@/components/Icon';
+import { Button } from '@/components/kit';
+import { translate, useSettings } from '@/i18n';
 
 /**
+ * DIE LETZTE GRENZE.
+ *
  * Fängt Render-Fehler ab, damit ein einzelner kaputter Datensatz nicht die
  * ganze App weiß werden lässt. Ohne diese Grenze reißt React bei jedem
  * geworfenen Fehler den kompletten Baum ab — auf dem Handy ohne Konsole ist
  * das eine Sackgasse, aus der auch ein Neustart nicht herausführt, solange der
  * auslösende Eintrag im Speicher liegt.
  *
+ * Sie trägt dieselbe Platte wie das Tor (`.gate`): wer hier landet, hat kein
+ * funktionierendes Gerät in der Hand, also gibt es auch keinen Rahmen, keine
+ * Kopf- und keine Tab-Leiste. Nur die Platte, der Grund und zwei Auswege.
+ *
  * Bewusst eine Klassenkomponente: `componentDidCatch`/`getDerivedStateFromError`
- * haben bis heute kein Hook-Äquivalent.
+ * haben bis heute kein Hook-Äquivalent. Die Sprache kommt deshalb über
+ * `useSettings.getState()` statt über `useT()` — ein Hook geht hier nicht, und
+ * live umschalten kann man ohnehin nichts mehr, wenn die App gerade steht.
  */
 interface Props {
   children: ReactNode;
@@ -38,7 +49,7 @@ export class ErrorBoundary extends Component<Props, State> {
    * nur den Cache leeren, NICHT die Cloud. Beim nächsten Start lädt die App
    * frisch aus Supabase — die Bibliothek ist also nicht verloren.
    */
-  private resetCache = async () => {
+  private resetCache = () => {
     try {
       indexedDB.deleteDatabase('tsugi');
     } catch {
@@ -51,30 +62,28 @@ export class ErrorBoundary extends Component<Props, State> {
     const { error } = this.state;
     if (!error) return this.props.children;
 
+    const t = (key: 'errTitle' | 'errHint' | 'errReload' | 'errClearCache') =>
+      translate(useSettings.getState().lang, key);
+
     return (
-      <div className="grid min-h-screen place-items-center px-6">
-        <div className="w-full max-w-sm rounded-card border border-line bg-surface p-6 text-center">
-          <p className="font-display text-xl font-semibold text-ink">Da ist etwas schiefgelaufen</p>
-          <p className="mt-2 text-sm leading-6 text-ink-dim">
-            Die Ansicht konnte nicht geladen werden. Deine Bibliothek ist sicher — sie liegt in
-            deinem Konto, nicht nur auf diesem Gerät.
-          </p>
-          <p className="mt-3 break-words text-xs text-ink-faint">{error.message}</p>
-          <div className="mt-5 flex flex-col gap-2.5">
-            <button
-              type="button"
-              onClick={this.reload}
-              className="press min-h-[44px] rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg"
-            >
-              Neu laden
-            </button>
-            <button
-              type="button"
-              onClick={() => void this.resetCache()}
-              className="press min-h-[44px] rounded-ctl border border-line bg-raised px-4 py-2.5 text-sm font-medium text-ink"
-            >
-              Lokalen Zwischenspeicher leeren
-            </button>
+      <div className="gate">
+        <div className="gate__plate" role="alert">
+          <div className="gate__head">
+            {/* Pink trägt in V5 ausschließlich Gefahr — hier ist sie am Platz. */}
+            <span className="errb__seal" aria-hidden>
+              <Icon name="info" size={24} filled />
+            </span>
+            <h1 className="gate__title">{t('errTitle')}</h1>
+            <p className="sub gate__tagline">{t('errHint')}</p>
+            <p className="errb__reason">{error.message}</p>
+          </div>
+          <div className="errb__ways">
+            <Button onClick={this.reload} variant="primary" icon="refresh" wide>
+              {t('errReload')}
+            </Button>
+            <Button onClick={this.resetCache} variant="quiet" wide>
+              {t('errClearCache')}
+            </Button>
           </div>
         </div>
       </div>

@@ -244,25 +244,55 @@ const RELATION_QUERY = (alias: string) => `
   }
 `;
 
+/**
+ * Wie viele Titel höchstens in EINE Sammelabfrage dürfen.
+ *
+ * AniList rechnet jeder Abfrage eine „Komplexität" zu und lehnt alles über
+ * 500 mit HTTP 400 ab. Jeder Alias hier kostet rund 54 Punkte, weil an ihm
+ * der komplette Kartensatz UND dessen Verknüpfungen hängen.
+ *
+ * Gemessen am 26.08.2026 gegen die echte API:
+ *   8 Titel  → geht durch
+ *   10 Titel → „Max query complexity should be 500 but got 648."
+ *
+ * 8 statt 9: bei 9 wären es 486 von 500 Punkten. Ein einziges zusätzliches
+ * Feld in `CARD_FIELDS` würde die Grenze wieder reißen — und zwar überall
+ * gleichzeitig und still.
+ */
+const MAX_IDS_PRO_ABFRAGE = 8;
+
+/**
+ * Verknüpfungen für mehrere Titel holen, gebündelt in möglichst wenige
+ * Abfragen.
+ *
+ * Die Obergrenze steckt bewusst HIER und nicht in den Aufrufern: `scanLibrary`
+ * teilte selbst in Zwölferblöcke (und lief damit in jeden einzelnen Fehler),
+ * `fetchFranchise` gab überhaupt keine Grenze mit. Eine Regel, die jeder
+ * Aufrufer selbst einhalten muss, hält irgendwann einer nicht ein.
+ */
 export async function fetchRelationSlices(
   ids: number[],
   signal?: AbortSignal,
 ): Promise<Map<number, RelationSlice>> {
-  if (ids.length === 0) return new Map();
-  const aliases = ids.map((_, i) => `m${i}`);
-  const query = `query (${aliases.map((a) => `$${a}: Int`).join(', ')}) {
+  const out = new Map<number, RelationSlice>();
+  if (ids.length === 0) return out;
+
+  for (let i = 0; i < ids.length; i += MAX_IDS_PRO_ABFRAGE) {
+    const block = ids.slice(i, i + MAX_IDS_PRO_ABFRAGE);
+    const aliases = block.map((_, k) => `m${k}`);
+    const query = `query (${aliases.map((a) => `$${a}: Int`).join(', ')}) {
     ${aliases.map((a) => RELATION_QUERY(a)).join('\n')}
   }`;
-  const vars = Object.fromEntries(ids.map((id, i) => [`m${i}`, id]));
-  const data = await gql<Record<string, (MediaCard & { relations: MediaDetail['relations'] }) | null>>(
-    query,
-    vars,
-    signal,
-  );
-  const out = new Map<number, RelationSlice>();
-  for (const node of Object.values(data)) {
-    if (node) out.set(node.id, { id: node.id, relations: node.relations, card: node });
+    const vars = Object.fromEntries(block.map((id, k) => [`m${k}`, id]));
+    const data = await gql<
+      Record<string, (MediaCard & { relations: MediaDetail['relations'] }) | null>
+    >(query, vars, signal);
+
+    for (const node of Object.values(data)) {
+      if (node) out.set(node.id, { id: node.id, relations: node.relations, card: node });
+    }
   }
+
   return out;
 }
 

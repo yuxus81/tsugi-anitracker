@@ -1,0 +1,105 @@
+/**
+ * V1 „REGAL" — Token-Plan
+ * =======================
+ * These: Dein Archiv ist eine physische Sammlung. Cover sind Objekte mit
+ * Dicke, Bedienelemente sind Hardware aus Messing auf Espresso-Graphit.
+ *
+ * Farbe kommt NICHT als „Hintergrund/Fläche/Rand", sondern als durchgestufte
+ * Tonleiter mit bewusstem Kontrastabstand (Methode aus den Paletten-Einträgen
+ * der Referenzbibliothek). Zwei Leitern: Espresso (neutral, warm) und Messing
+ * (Akzent). Status ist eine dritte, sehr kurze Leiter: Oxblood + Jade.
+ *
+ * Zuordnung nach Tailwind (für die spätere Code-Phase in anitracker-v2):
+ * ---------------------------------------------------------------------
+ *   --bg          → theme.colors.bg          (bg-bg)
+ *   --surface     → theme.colors.surface     (bg-surface)
+ *   --raised      → theme.colors.raised      (bg-raised)
+ *   --raised-2    → theme.colors['raised-2']
+ *   --ink         → theme.colors.ink         (text-ink)
+ *   --ink-2       → theme.colors['ink-dim']  (text-ink-dim)
+ *   --ink-3       → theme.colors['ink-mute']
+ *   --brass-500   → theme.colors.accent      (text-accent / bg-accent)
+ *   --brass-300   → theme.colors['accent-hi']
+ *   --brass-900   → theme.colors['accent-lo']
+ *   --ox-500      → theme.colors.danger
+ *   --jade-500    → theme.colors.ok
+ *   --line        → theme.colors.line        (border-line)
+ *   --r-2 / --r-3 → theme.borderRadius.card / .panel
+ *   --sh-1..3     → theme.boxShadow.rise1..3
+ *   Bricolage     → fontFamily.display
+ *   Archivo       → fontFamily.sans
+ */
+
+:root {
+  /* ---- Espresso-Leiter (neutral, warm) ------------------------------ */
+  --void:      #080605;   /* hinter allem, nur Rahmen/Ränder            */
+  --bg:        #14100c;   /* Seitengrund                                */
+  --surface:   #1c1611;   /* Karte, Panel                               */
+  --raised:    #262019;   /* gehobenes Element, Eingabefeld             */
+  --raised-2:  #33291f;   /* gedrückt/aktiv, Chip-Grund                 */
+  --raised-3:  #43362a;   /* Trennung innerhalb gehobener Flächen       */
+
+  /* ---- Tinte ------------------------------------------------------- */
+  --ink:       #f6efe4;   /* Titel, Zahlen                              */
+  --ink-2:     #cbbcab;   /* Fließtext, Sekundärzeile                   */
+  --ink-3:     #9b8b7c;   /* Beschriftungen, Einheiten (AA auf --bg)    */
+
+  /* ---- Messing-Leiter (Akzent) ------------------------------------- */
+  --brass-100: #fbeec6;
+  --brass-300: #edcd85;   /* Text auf Dunkel, Zahlen im Fokus           */
+  --brass-500: #cda14a;   /* Primärfläche                               */
+  --brass-700: #8f6a25;   /* Rand einer Messingfläche unten             */
+  --brass-900: #4b3712;   /* Schattenkante, gedrückter Zustand          */
+  --brass-tint: rgba(205, 161, 74, .14);
+
+  /* ---- Status (kurze Leiter) --------------------------------------- */
+  --ox-300:    #e08a80;
+  --ox-500:    #b04a42;
+  --ox-tint:   rgba(176, 74, 66, .16);
+  --jade-300:  #8ed0ac;
+  --jade-500:  #4f9a76;
+  --jade-tint: rgba(79, 154, 118, .16);
+
+  /* ---- Kanten, Linien, Licht --------------------------------------- */
+  --line:      rgba(246, 239, 228, .10);
+  --line-2:    rgba(246, 239, 228, .18);
+  /* Der helle Streifen an der OBERKANTE ist das, was „Objekt" sagt.  */
+  --edge-top:  rgba(255, 243, 224, .13);
+  --edge-bot:  rgba(0, 0, 0, .55);
+  --focus:     var(--brass-300);
+
+  /* ---- Erhebung: gestufter Schatten, kein Weichzeichner ------------ */
+  --sh-1: 0 1px 0 var(--edge-top) inset, 0 2px 4px rgba(0,0,0,.45), 0 1px 0 rgba(0,0,0,.6);
+  --sh-2: 0 1px 0 var(--edge-top) inset, 0 4px 10px rgba(0,0,0,.5), 0 12px 22px -12px rgba(0,0,0,.75);
+  --sh-3: 0 1px 0 var(--edge-top) inset, 0 8px 18px rgba(0,0,0,.55), 0 26px 46px -20px rgba(0,0,0,.85);
+  --sh-in: inset 0 2px 5px rgba(0,0,0,.55), inset 0 1px 0 rgba(0,0,0,.4);
+
+  /* ---- Radien: Hardware, nicht Seifenstück ------------------------- */
+  --r-1: 6px;
+  --r-2: 10px;
+  --r-3: 14px;
+  --r-4: 20px;
+  --r-pill: 999px;
+
+  /* ---- Raster ------------------------------------------------------ */
+  --pad: 16px;
+  --gap: 14px;
+  --tap: 44px;          /* Mindest-Touchziel, nie unterschritten       */
+  --rail: 240px;        /* Seitenschiene ab Laptop                     */
+  --tabbar: 62px;
+
+  /* ---- Schrift ------------------------------------------------------ */
+  --font-display: 'Bricolage Grotesque', 'Archivo', system-ui, sans-serif;
+  --font-ui: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* つぎ: Kana kommt aus der Systemschrift — die Latin-Subsets enthalten
+     keine Kana. Bewusst so, statt eine 4-MB-CJK-Datei mitzuschleppen. */
+  --font-kana: 'Yu Gothic', 'Hiragino Sans', 'Noto Sans JP', 'MS PGothic', sans-serif;
+
+  /* ---- Bewegung: Gewicht und Feder --------------------------------- */
+  --e-out: cubic-bezier(.2, .8, .3, 1);
+  --e-spring: cubic-bezier(.22, 1.2, .36, 1);   /* leichtes Überschwingen */
+  --e-drop: cubic-bezier(.4, 0, .2, 1);
+  --t-fast: 120ms;
+  --t-mid: 220ms;
+  --t-slow: 380ms;
+}

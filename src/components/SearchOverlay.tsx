@@ -1,12 +1,27 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { searchAnime } from '@/api/anilist';
 import { bestTitle, cover, formatLabel, seasonLabel } from '@/api/types';
+import { Icon } from '@/components/Icon';
+import { Button, SectionHead } from '@/components/kit';
 import { findEntryFor, useLibrary } from '@/store/library';
 import { useSettings, useT } from '@/i18n';
+import { useEscape } from '@/components/overlays';
 import { useSearchOverlay } from './searchStore';
-import { IconSearch, IconX } from './icons';
+
+/**
+ * DIE BEFEHLSPALETTE.
+ *
+ * `/` oder Strg/Cmd+K öffnet sie überall. Sie ist der einzige Weg, neue
+ * Titel in die Bibliothek zu bekommen — deshalb muss sie mit der Tastatur
+ * ALLEIN vollständig bedienbar sein: tippen, ↑/↓, Enter, Escape.
+ *
+ * Sie liegt bewusst oben am Rand und nicht mittig: auf dem Handy steht sie
+ * damit direkt unter der Tastatur-freien Fläche, und die Trefferliste wächst
+ * nach unten weg, statt sich um die Mitte herum zu verschieben.
+ */
 
 function useDebounced<T>(value: T, ms: number): T {
   const [v, setV] = useState(value);
@@ -17,147 +32,156 @@ function useDebounced<T>(value: T, ms: number): T {
   return v;
 }
 
-/**
- * Command-palette style search. `/` or Cmd/Ctrl+K opens it anywhere; results
- * navigate to the detail page. Keyboard: ↑/↓ to move, Enter to open, Esc closes.
- */
 export function SearchOverlay() {
   const { isOpen, close } = useSearchOverlay();
   const [term, setTerm] = useState('');
   const [cursor, setCursor] = useState(0);
-  const debounced = useDebounced(term.trim(), 300);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const gewartet = useDebounced(term.trim(), 300);
+  const feld = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const entries = useLibrary((s) => s.entries);
   const t = useT();
   const lang = useSettings((s) => s.lang);
 
   const q = useQuery({
-    queryKey: ['search', debounced],
-    enabled: isOpen && debounced.length >= 2,
-    queryFn: ({ signal }) => searchAnime(debounced, signal),
+    queryKey: ['search', gewartet],
+    // Ab zwei Zeichen: ein einzelner Buchstabe trifft praktisch alles und
+    // kostet nur einen Rundlauf.
+    enabled: isOpen && gewartet.length >= 2,
+    queryFn: ({ signal }) => searchAnime(gewartet, signal),
   });
 
-  const results = q.data ?? [];
+  const treffer = q.data ?? [];
+
+  // Escape schließt immer — auch wenn der Fokus die Palette verlassen hat.
+  useEscape(close);
 
   useEffect(() => {
-    if (isOpen) {
-      setTerm('');
-      setCursor(0);
-      // Focus after the dialog paints.
-      requestAnimationFrame(() => inputRef.current?.focus());
-    }
+    if (!isOpen) return;
+    setTerm('');
+    setCursor(0);
+    // Erst nach dem Zeichnen — vorher gibt es das Feld noch nicht.
+    const id = requestAnimationFrame(() => feld.current?.focus());
+    return () => cancelAnimationFrame(id);
   }, [isOpen]);
 
-  useEffect(() => setCursor(0), [results.length]);
+  useEffect(() => setCursor(0), [treffer.length]);
+
+  // Der Inhalt dahinter darf nicht mitscrollen, solange die Palette liegt.
+  useEffect(() => {
+    if (!isOpen) return;
+    const wurzel = document.documentElement;
+    const vorher = Number(wurzel.dataset.sheetOpen ?? '0');
+    wurzel.dataset.sheetOpen = String(vorher + 1);
+    return () => {
+      const jetzt = Number(wurzel.dataset.sheetOpen ?? '1') - 1;
+      if (jetzt > 0) wurzel.dataset.sheetOpen = String(jetzt);
+      else delete wurzel.dataset.sheetOpen;
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const go = (id: number) => {
+  const oeffne = (id: number) => {
     close();
     navigate(`/anime/${id}`);
   };
 
-  const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') close();
+  // Pfeile und Enter gelten nur im Feld — Escape dagegen überall, siehe
+  // `useEscape` weiter oben in der Komponente.
+  const onKey = (e: KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setCursor((c) => Math.min(c + 1, results.length - 1));
+      // Kein Umlaufen: vom ersten Treffer ans Listenende zu springen sieht
+      // bei vielen Treffern wie ein Fehler aus.
+      setCursor((c) => Math.min(c + 1, treffer.length - 1));
     }
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       setCursor((c) => Math.max(c - 1, 0));
     }
-    if (e.key === 'Enter' && results[cursor]) go(results[cursor].id);
+    if (e.key === 'Enter' && treffer[cursor]) oeffne(treffer[cursor].id);
   };
 
-  return (
-    <div
-      className="fixed inset-0 z-modal flex items-start justify-center bg-bg/85 p-4 pt-[12vh]"
-      onPointerDown={(e) => {
-        if (e.target === e.currentTarget) close();
-      }}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={t('search')}
-        className="unfold w-full max-w-xl overflow-hidden rounded-sheet border border-line bg-surface shadow-glass-lift transition-colors duration-150 focus-within:border-accent/60"
-        onKeyDown={onKey}
-      >
-        <div className="flex items-center gap-3 border-b border-line px-4">
-          <IconSearch className="h-5 w-5 shrink-0 text-ink-dim" />
-          <input
-            ref={inputRef}
-            value={term}
-            onChange={(e) => setTerm(e.target.value)}
-            placeholder={t('searchPlaceholder')}
-            className="no-focus-ring w-full bg-transparent py-3.5 text-[15px] text-ink outline-none placeholder:text-ink-dim"
-          />
-          <button
-            type="button"
-            onClick={close}
-            aria-label={t('searchClose')}
-            className="rounded p-1 text-ink-dim transition-colors duration-150 hover:text-ink"
-          >
-            <IconX className="h-4 w-4" />
-          </button>
+  return createPortal(
+    <>
+      <div className="scrim" onClick={close} />
+      <div className="pal" role="dialog" aria-modal="true" aria-label={t('search')} onKeyDown={onKey}>
+        <div className="pal__bar">
+          <label className="pal__field">
+            <Icon name="search" size={18} />
+            <input
+              ref={feld}
+              type="search"
+              className="pal__input"
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
+              placeholder={t('searchPlaceholder')}
+              aria-label={t('search')}
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </label>
+          <Button variant="quiet" size="sm" onClick={close}>
+            {t('cancel')}
+          </Button>
         </div>
 
-        <div className="max-h-[52vh] overflow-y-auto">
-          {debounced.length < 2 ? (
-            <p className="px-4 py-8 text-center text-sm text-ink-dim">{t('searchMinChars')}</p>
+        <div className="pal__list">
+          {gewartet.length < 2 ? (
+            <p className="muted pal__note">{t('searchMinChars')}</p>
           ) : q.isLoading ? (
-            <div className="space-y-2 p-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="skeleton h-14 w-full" />
+            <div className="grid" aria-hidden>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i}>
+                  <div className="skel skel--poster" />
+                  <div className="skel skel--line" />
+                </div>
               ))}
             </div>
           ) : q.isError ? (
-            <p className="px-4 py-8 text-center text-sm text-ink-dim">{t('searchError')}</p>
-          ) : results.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-ink-dim">
-              {t('searchEmpty', { q: debounced })}
-            </p>
+            <p className="muted pal__note">{t('searchError')}</p>
+          ) : treffer.length === 0 ? (
+            <p className="muted pal__note">{t('searchEmpty', { q: gewartet })}</p>
           ) : (
-            <ul>
-              {results.map((m, i) => (
-                <li key={m.id}>
-                  <button
-                    type="button"
-                    onClick={() => go(m.id)}
-                    onPointerEnter={() => setCursor(i)}
-                    className={`flex w-full items-center gap-3.5 px-4 py-2.5 text-left transition-colors duration-100 ${
-                      i === cursor ? 'bg-raised' : ''
-                    }`}
-                  >
-                    <span className="h-14 w-10 shrink-0 overflow-hidden rounded bg-raised">
-                      {cover(m) && (
-                        <img src={cover(m)!} alt="" className="h-full w-full object-cover" />
-                      )}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium text-ink">
-                        {bestTitle(m)}
-                      </span>
-                      <span className="block text-xs text-ink-dim">
-                        {[m.format ? formatLabel(m.format, lang) : null, seasonLabel(m, lang)]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </span>
-                    </span>
-                    {findEntryFor(entries, m.id) && (
-                      <span className="ml-auto shrink-0 rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-medium text-accent">
-                        {t('inArchive')}
-                      </span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <>
+              <SectionHead title={t('searchHits', { n: treffer.length })} />
+              <ul className="grid" role="listbox" aria-label={t('search')}>
+                {treffer.map((m, i) => {
+                  const drin = findEntryFor(entries, m.id);
+                  return (
+                    <li
+                      key={m.id}
+                      role="option"
+                      aria-selected={i === cursor}
+                      data-testid={`hit-${m.id}`}
+                      className={`palhit${i === cursor ? ' is-on' : ''}`}
+                      data-st={drin?.status ?? 'watching'}
+                      onPointerEnter={() => setCursor(i)}
+                    >
+                      <button type="button" className="card card--uniform" onClick={() => oeffne(m.id)}>
+                        <span className="card__art">
+                          {cover(m) && <img src={cover(m)!} alt="" loading="lazy" />}
+                          {drin && <span className="palhit__mark">{t('inArchive')}</span>}
+                        </span>
+                        <span className="card__meta">
+                          <span className="card__title">{bestTitle(m)}</span>
+                          <span className="card__sub">
+                            {[m.format ? formatLabel(m.format, lang) : null, seasonLabel(m, lang)]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
           )}
         </div>
       </div>
-    </div>
+    </>,
+    document.body,
   );
 }

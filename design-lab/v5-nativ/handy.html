@@ -1,0 +1,43 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Tsugi V5 — Handy-Ansichten nebeneinander</title>
+<link rel="icon" href="/assets/logo.png">
+<link rel="stylesheet" href="/assets/fonts/inter.css">
+
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 22px;
+    background: #06070d; color: #f1f3f9;
+    font-family: 'Inter Variable', system-ui, sans-serif;
+  }
+  h1 { font-size: 20px; font-weight: 750; letter-spacing: -.03em; margin: 0 0 4px; }
+  p { margin: 0 0 20px; color: #8a95af; font-size: 13.5px; max-width: 76ch; line-height: 1.55; }
+  .row { display: flex; gap: 18px; overflow-x: auto; padding-bottom: 14px; }
+  figure { margin: 0; flex: 0 0 auto; }
+  figcaption { margin-top: 8px; font-size: 12.5px; color: #a8b3cb; text-align: center; }
+  /* Echte Gerätebreite im Rahmen — die Umbruchpunkte greifen dadurch richtig. */
+  iframe {
+    width: 390px; height: 844px;
+    border: 0; border-radius: 22px;
+    background: #0d0f18;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 30px 60px -24px #000;
+  }
+</style>
+
+<h1>Tsugi V5 „Gerät“ — Handy, echte 390 × 844</h1>
+<p>
+  Vier Bildschirme nebeneinander in echter Handy-Breite. Zum Prüfen trotzdem
+  <a href="/v5-nativ/" style="color:#5ff5df">im Vollfenster öffnen</a> und das Fenster selbst
+  schmal ziehen — ein Rahmen ist kein Gerät.
+</p>
+
+<div class="row">
+  <figure><iframe src="/v5-nativ/#/home" title="Start"></iframe><figcaption>Home · Weiter schauen</figcaption></figure>
+  <figure><iframe src="/v5-nativ/#/bibliothek" title="Bibliothek"></iframe><figcaption>Bibliothek · Geschaut</figcaption></figure>
+  <figure><iframe src="/v5-nativ/#/detail/113415" title="Detail"></iframe><figcaption>Detail</figcaption></figure>
+  <figure><iframe src="/v5-nativ/#/entdecken" title="Entdecken"></iframe><figcaption>Entdecken</figcaption></figure>
+</div>
