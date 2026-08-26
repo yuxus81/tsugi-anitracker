@@ -442,6 +442,15 @@ const DICT = {
   seasonFall: { de: 'Herbst', en: 'Fall' },
   episodesN: { de: '{n} Episoden', en: '{n} episodes' },
   ongoing: { de: 'Laufend', en: 'Ongoing' },
+
+  // Letzte Grenze (ErrorBoundary)
+  errTitle: { de: 'Da ist etwas schiefgelaufen', en: 'Something went wrong' },
+  errHint: {
+    de: 'Die Ansicht konnte nicht geladen werden. Deine Bibliothek ist sicher — sie liegt in deinem Konto, nicht nur auf diesem Gerät.',
+    en: 'This view could not be rendered. Your library is safe — it lives in your account, not just on this device.',
+  },
+  errReload: { de: 'Neu laden', en: 'Reload' },
+  errClearCache: { de: 'Lokalen Zwischenspeicher leeren', en: 'Clear local cache' },
 } satisfies Record<string, Entry>;
 
 export type DictKey = keyof typeof DICT;
