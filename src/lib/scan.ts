@@ -106,7 +106,7 @@ async function scanLibrary(): Promise<void> {
 
       for (let round = 0; round < MAX_SEQUEL_ROUNDS; round++) {
         const last = seasons[seasons.length - 1];
-        let slice = await ensureSlice(last.id);
+        const slice = await ensureSlice(last.id);
         if (!slice) break;
 
         let sequel = pickSequel(slice);

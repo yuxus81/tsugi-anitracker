@@ -1,0 +1,359 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Tsugi — vier Design-Entwürfe</title>
+<link rel="icon" href="./assets/logo.png">
+<link rel="stylesheet" href="./assets/fonts/archivo.css">
+<link rel="stylesheet" href="./assets/fonts/bricolage.css">
+<link rel="stylesheet" href="./shared/reset.css">
+
+<style>
+  :root {
+    --bg: #0e0e10;
+    --surface: #16161a;
+    --raised: #1e1e24;
+    --line: rgba(255,255,255,.09);
+    --line-2: rgba(255,255,255,.16);
+    --ink: #f2f2f4;
+    --ink-2: #b6b6bf;
+    --ink-3: #85858f;
+    --focus: #f2f2f4;
+    --r: 14px;
+    font-family: 'Archivo', system-ui, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 15px;
+    padding: 0 20px 80px;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; }
+
+  header.top {
+    display: flex; align-items: center; gap: 12px;
+    padding: 22px 0 8px;
+  }
+  header.top img { width: 38px; height: 38px; border-radius: 10px; }
+  h1 {
+    font-family: 'Bricolage Grotesque', 'Archivo', sans-serif;
+    font-size: clamp(26px, 5vw, 38px);
+    font-weight: 800; letter-spacing: -.03em; line-height: 1.05;
+  }
+  .lede { color: var(--ink-2); max-width: 74ch; margin-top: 10px; font-size: 15px; }
+  .lede b { color: var(--ink); font-weight: 600; }
+
+  .note {
+    margin-top: 18px; padding: 14px 16px;
+    border: 1px solid var(--line); border-left: 3px solid #cda14a;
+    border-radius: 10px; background: rgba(205,161,74,.06);
+    color: var(--ink-2); font-size: 13.5px; max-width: 80ch;
+  }
+
+  .cards { display: grid; gap: 18px; margin-top: 28px; grid-template-columns: 1fr; }
+  @media (min-width: 760px) { .cards { grid-template-columns: 1fr 1fr; } }
+
+  .v {
+    border: 1px solid var(--line); border-radius: var(--r);
+    background: var(--surface); overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .v__head { padding: 16px 16px 12px; display: flex; align-items: flex-start; gap: 12px; }
+  .v__key {
+    font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800;
+    font-size: 13px; letter-spacing: .04em;
+    padding: 4px 9px; border-radius: 7px; flex: 0 0 auto;
+  }
+  .v1 .v__key { background: #cda14a; color: #201808; }
+  .v2 .v__key { background: #ff5c1a; color: #14100c; }
+  .v3 .v__key { background: #e8e6e1; color: #17171a; }
+  .v4 .v__key { background: linear-gradient(120deg,#00f5d4,#8a2be2); color: #07070d; }
+  .v5 .v__key { background: linear-gradient(180deg,#6bfbe6,#00f5d4); color: #04241f; }
+  /* V5 ist die aktuelle Runde — sie steht oben und über die volle Breite. */
+  .v.v5 { grid-column: 1 / -1; border-color: rgba(0,245,212,.32); }
+  .v.v5 .v__head { padding-top: 18px; }
+  .v__badge {
+    display: inline-block; margin-bottom: 6px;
+    padding: 3px 9px; border-radius: 999px;
+    background: rgba(0,245,212,.12); color: #5ff5df;
+    font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  }
+
+  .v__t { font-family: 'Bricolage Grotesque', sans-serif; font-size: 19px; font-weight: 700; letter-spacing: -.02em; }
+  .v__thesis { color: var(--ink-2); font-size: 13.5px; margin-top: 4px; }
+
+  .v__facts { padding: 0 16px 14px; display: grid; gap: 6px; font-size: 12.5px; color: var(--ink-3); }
+  .v__facts div { display: flex; gap: 8px; }
+  .v__facts b { color: var(--ink-2); font-weight: 600; flex: 0 0 96px; }
+
+  .v__frames { padding: 0 16px 16px; }
+  .sizes { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .sz {
+    min-height: 34px; padding: 0 11px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--raised);
+    color: var(--ink-2); font-size: 12.5px; font-weight: 600;
+  }
+  .sz.is-on { background: var(--ink); color: #14141a; border-color: var(--ink); }
+
+  .stage {
+    border: 1px solid var(--line); border-radius: 10px;
+    background: #08080a; padding: 12px;
+    display: grid; place-items: center;
+    overflow: auto;
+  }
+  .stage iframe {
+    border: 0; background: #000; border-radius: 6px;
+    box-shadow: 0 18px 40px -18px rgba(0,0,0,.9);
+    display: block;
+  }
+
+  .v__acts { margin-top: auto; padding: 12px 16px 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn {
+    min-height: 44px; padding: 0 14px; border-radius: 10px;
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--line-2); background: var(--raised);
+    color: var(--ink); font-weight: 600; font-size: 14px;
+    transition: transform .12s ease, background-color .12s ease;
+  }
+  .btn:active { transform: translateY(1.5px); }
+  .btn--go { background: var(--ink); color: #14141a; border-color: var(--ink); }
+
+  .screens { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 16px; }
+  .screens a {
+    font-size: 12px; padding: 5px 9px; border-radius: 7px;
+    border: 1px solid var(--line); color: var(--ink-3);
+  }
+  .screens a:hover { color: var(--ink); border-color: var(--line-2); }
+
+  footer { margin-top: 42px; color: var(--ink-3); font-size: 13px; max-width: 80ch; }
+  footer h2 { font-family: 'Bricolage Grotesque', sans-serif; font-size: 17px; color: var(--ink); margin-bottom: 8px; }
+  footer ul { margin: 8px 0 0 18px; }
+  footer li { margin-bottom: 5px; list-style: disc; }
+  code { background: var(--raised); padding: 1px 6px; border-radius: 5px; font-size: 12.5px; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <img src="./assets/logo.png" alt="">
+    <div>
+      <h1>Tsugi — Design-Entwürfe</h1>
+    </div>
+  </header>
+
+  <p class="lede">
+    <b>V5 „Gerät" ist die aktuelle Runde</b> — keine fünfte Richtung, sondern die Überarbeitung
+    der bestehenden App: gleiche Farbwelt (die sitzt, sie ist aufs Logo abgestimmt), gleiche
+    Namen, neu sind Rahmen, Knöpfe, Zeichen und das Verhalten der fünf Kategorien.
+    V1–V4 stehen darunter als Vergleich. Die App <code>anitracker-v2</code> selbst ist
+    unangetastet.
+  </p>
+
+  <div class="note">
+    <b>Die Vorschau im Rahmen ist kein Beweis.</b> Ein <code>iframe</code> ist kein echtes Gerät —
+    er hat keine Adressleiste, keine Systemleisten und andere Scroll-Regeln. Für das echte Urteil
+    jede Version über <b>„Im Vollfenster öffnen"</b> starten und das Browserfenster selbst
+    schmal ziehen. Die Rahmen hier sind zum schnellen Vergleichen da, nicht zum Prüfen.
+  </div>
+
+  <div class="cards" id="cards"></div>
+
+  <footer>
+    <h2>Was in allen vier gleich bleibt</h2>
+    <ul>
+      <li>Name „Tsugi" und das bestehende <code>logo.png</code> — unverändert, in jeder Version identisch.</li>
+      <li>Kein Glas, kein <code>backdrop-filter</code> (Entscheidung vom 21.07.2026, nach Praxistest am Handy).</li>
+      <li>Keine Emojis und keine Unicode-Symbole als Oberflächen-Zeichen — jedes Zeichen ist ein SVG-Pfad.</li>
+      <li>Touchziele ≥ 44 px, sichtbare Fokusringe, <code>prefers-reduced-motion</code> respektiert.</li>
+      <li>Schriften liegen lokal als <code>woff2</code> — kein einziger externer Request, alles offline lauffähig.</li>
+      <li>3D-Neigung nur hinter <code>@media (hover: hover) and (pointer: fine)</code>, ohne <code>translateZ</code>.</li>
+    </ul>
+  </footer>
+</div>
+
+<script type="module">
+  const SIZES = [
+    { key: 'phone', label: 'Handy 390×844', w: 390, h: 844 },
+    { key: 'phone-short', label: 'Handy niedrig 390×700', w: 390, h: 700 },
+    { key: 'tablet', label: 'Tablet 768×1024', w: 768, h: 1024 },
+    { key: 'laptop', label: 'Laptop 1280×800', w: 1280, h: 800 },
+  ];
+
+  const SCREENS = [
+    ['home', 'Start'], ['bibliothek', 'Bibliothek'], ['entdecken', 'Entdecken'],
+    ['detail', 'Detail'], ['statistik', 'Statistik'], ['einstellungen', 'Einstellungen'],
+    ['suche', 'Suche'],
+  ];
+  /* Die Bausteine-Seite gibt es bewusst nur in V1 — sie war der Bauform-Nachweis
+     der ersten Runde und wurde für V2–V4 abbestellt. */
+  const EXTRA = { 'v1-regal': [['bausteine', 'Bausteine']], 'v5-nativ': [['bausteine', 'Bausteine']] };
+
+  const VERSIONS = [
+    {
+      cls: 'v5', key: 'V5', dir: 'v5-nativ', name: '„Gerät"',
+      badge: 'Aktuelle Runde',
+      thesis: 'Keine neue Farbwelt, sondern die bestehende richtig eingesetzt: Die App ist ein Gerät. Der Rahmen steht fest, nur der Inhalt läuft durch — und jede der fünf Kategorien hat ein eigenes Verhalten, nicht nur eine eigene Farbe.',
+      facts: [
+        ['Farbwelt', 'Unverändert die der aktuellen App (aufs Logo abgestimmt)'],
+        ['Namen', 'Unverändert — Home, Entdecken, Bibliothek, Statistik, Einstellungen'],
+        ['Bedienung', 'Lichtkante oben, Druck fährt runter, Loslassen schwingt über'],
+        ['Icons', 'Paare: Kontur = aus, gefüllt = an'],
+        ['Kategorien', 'Weiter schauen läuft · Noch zu schauen fährt aus · Watchlist heftet · Fortsetzung folgt wartet grau · Geschaut ist versiegelt'],
+        ['Schrift', 'Inter (wie die echte App) + JetBrains Mono für Zahlen'],
+        ['Was echt geht', 'Suchen & Hinzufügen, Episode +1/−1, Status wechseln, Wertung, Zufall'],
+      ],
+    },
+    {
+      cls: 'v1', key: 'V1', dir: 'v1-regal', name: '„Regal"',
+      thesis: 'Dein Archiv ist eine physische Sammlung. Cover sind Objekte mit Dicke, Bedienelemente sind Hardware.',
+      facts: [
+        ['Dunkel-Art', 'Warmes Espresso-Graphit'],
+        ['Akzent', 'Messing / Bernstein, Oxblood + Jade als Status'],
+        ['Bedienung', 'Druck = Element fährt runter, Schatten fällt zusammen'],
+        ['Icons', 'Gefüllt/Kontur-Paare, rund und schwer — Rücken, Disc, Lade, Ticket'],
+        ['Schrift', 'Bricolage Grotesque + Archivo'],
+        ['Roter Faden', 'Der geriffelte Regalrücken aus Messing'],
+      ],
+    },
+    {
+      cls: 'v2', key: 'V2', dir: 'v2-sendeplan', name: '„Sendeplan"',
+      thesis: 'Anime wird gesendet. Die App ist ein Programmplan und Regieplatz — Zeit ist die Hauptachse.',
+      facts: [
+        ['Dunkel-Art', 'Kaltes Tinte-Schwarz'],
+        ['Akzent', 'Ein heißes Signal-Orange, ein Live-Rot'],
+        ['Bedienung', 'Hart, 2 px Rahmen, Druck = sofortige Farbumkehr'],
+        ['Icons', 'Geometrisch, kantig, gefüllte Kacheln — Pegel, Band, Uhr, Marker'],
+        ['Schrift', 'Chivo + IBM Plex Sans, IBM Plex Mono für alle Zahlen'],
+        ['Roter Faden', 'Die laufende Zeitleiste'],
+      ],
+    },
+    {
+      cls: 'v3', key: 'V3', dir: 'v3-buehne', name: '„Bühne"',
+      thesis: 'Das Artwork trägt alles, die Bedienfläche verschwindet fast. Die Akzentfarbe wird aus dem Cover gezogen, das du gerade ansiehst.',
+      facts: [
+        ['Dunkel-Art', 'Neutrales Graphit, weiches Weiß'],
+        ['Akzent', 'Pro Titel dynamisch — aus dem Cover'],
+        ['Bedienung', 'Weich gefüllte Pillen, großzügig, hoher Radius'],
+        ['Icons', 'Zweigewicht-Familie, aktiv gefüllt, größer als üblich'],
+        ['Schrift', 'Instrument Serif + Instrument Sans'],
+        ['Roter Faden', 'Die aus dem Cover gezogene Farbe'],
+      ],
+    },
+    {
+      cls: 'v4', key: 'V4', dir: 'v4-deck', name: '„Deck"',
+      thesis: 'つぎ = als Nächstes. Die App ist ein Stapel, den du durchblätterst: eine große Karte im Fokus, alles andere untergeordnet.',
+      facts: [
+        ['Dunkel-Art', 'Die bekannte V1-Farbwelt: #0d0f18'],
+        ['Akzent', 'Neon-Cyan / Purple / Pink — als Licht, nicht als Verlauf'],
+        ['Bedienung', 'Solide Pillen mit leuchtender Innenkante, Druck = Lichtblitz'],
+        ['Icons', 'Neon-„lit": gefüllte Form mit heller Kontur'],
+        ['Schrift', 'Space Grotesk + Outfit, Mono-Ziffern'],
+        ['Roter Faden', 'Der Stapel'],
+      ],
+    },
+  ];
+
+  const cards = document.getElementById('cards');
+
+  for (const v of VERSIONS) {
+    const card = document.createElement('article');
+    card.className = 'v ' + v.cls;
+
+    const frame = document.createElement('iframe');
+    frame.loading = 'lazy';
+    frame.title = `Vorschau ${v.key} ${v.name}`;
+    frame.src = `./${v.dir}/#/home`;
+
+    let size = SIZES[0];
+    const stage = document.createElement('div');
+    stage.className = 'stage';
+    stage.appendChild(frame);
+
+    const applySize = () => {
+      // Der Rahmen wird auf echte Gerätemaße gesetzt und danach nur optisch
+      // verkleinert — so bleiben die CSS-Breakpoints die echten.
+      frame.style.width = size.w + 'px';
+      frame.style.height = size.h + 'px';
+      const avail = Math.max(240, stage.clientWidth - 24);
+      const scale = Math.min(1, avail / size.w, 460 / size.h);
+      frame.style.transform = `scale(${scale})`;
+      frame.style.transformOrigin = 'top center';
+      stage.style.height = (size.h * scale + 24) + 'px';
+    };
+
+    const sizes = document.createElement('div');
+    sizes.className = 'sizes';
+    SIZES.forEach((s, i) => {
+      const b = document.createElement('button');
+      b.className = 'sz' + (i === 0 ? ' is-on' : '');
+      b.type = 'button';
+      b.textContent = s.label;
+      b.onclick = () => {
+        size = s;
+        [...sizes.children].forEach((c) => c.classList.toggle('is-on', c === b));
+        applySize();
+      };
+      sizes.appendChild(b);
+    });
+
+    card.innerHTML = `
+      <div class="v__head">
+        <span class="v__key">${v.key}</span>
+        <div>
+          ${v.badge ? `<span class="v__badge">${v.badge}</span>` : ''}
+          <div class="v__t">${v.name}</div>
+          <div class="v__thesis">${v.thesis}</div>
+        </div>
+      </div>
+      <div class="v__facts">
+        ${v.facts.map(([k, x]) => `<div><b>${k}</b><span>${x}</span></div>`).join('')}
+      </div>`;
+
+    const frames = document.createElement('div');
+    frames.className = 'v__frames';
+    frames.append(sizes, stage);
+    card.appendChild(frames);
+
+    const screens = document.createElement('div');
+    screens.className = 'screens';
+    for (const [k, label] of [...SCREENS, ...(EXTRA[v.dir] ?? [])]) {
+      const a = document.createElement('a');
+      a.href = `./${v.dir}/#/${k}`;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = label;
+      screens.appendChild(a);
+    }
+    card.appendChild(screens);
+
+    const acts = document.createElement('div');
+    acts.className = 'v__acts';
+    const open = document.createElement('a');
+    open.className = 'btn btn--go';
+    open.href = `./${v.dir}/#/home`;
+    open.target = '_blank';
+    open.rel = 'noopener';
+    open.textContent = 'Im Vollfenster öffnen';
+    const parts = document.createElement('a');
+    parts.className = 'btn';
+    parts.href = `./${v.dir}/#/${EXTRA[v.dir] ? 'bausteine' : 'suche'}`;
+    parts.target = '_blank';
+    parts.rel = 'noopener';
+    parts.textContent = EXTRA[v.dir] ? 'Bausteine' : 'Suche & Aufnehmen';
+    const reload = document.createElement('button');
+    reload.className = 'btn';
+    reload.type = 'button';
+    reload.textContent = 'Vorschau neu laden';
+    reload.onclick = () => { frame.src = frame.src; };
+    acts.append(open, parts, reload);
+    card.appendChild(acts);
+
+    cards.appendChild(card);
+    // Sofort setzen, nicht erst im nächsten Bildaufbau: rAF und ResizeObserver
+    // ruhen beide, solange der Tab nicht gezeichnet wird — der Rahmen behielte
+    // dann für immer seine Startgröße.
+    applySize();
+    new ResizeObserver(applySize).observe(stage);
+    window.addEventListener('resize', applySize);
+  }
+</script>

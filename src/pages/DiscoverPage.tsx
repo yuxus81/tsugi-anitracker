@@ -10,6 +10,7 @@ import { QuickActions } from '@/components/TrackControls';
 import { findEntryFor, useLibrary } from '@/store/library';
 import { useSettings, useT } from '@/i18n';
 import { IconPlus } from '@/components/icons';
+import { useMediaQuery } from '@/lib/useMediaQuery';
 
 /**
  * The whole default view is ONE GraphQL request (five aliased pages). Genres
@@ -119,7 +120,10 @@ function GenreStage({ genre }: { genre: Genre | null }) {
   // Handys: weniger Partikel und ein leiseres Farbbad — auf kleinen Screens
   // wirkte der volle Effekt wie ein Overlay, das den eigentlichen Inhalt
   // (Genre-Filter, Karten) erschlägt, und kostete spürbar Performance.
-  const isNarrow = typeof window !== 'undefined' && window.innerWidth < 768;
+  // Über `useMediaQuery`, nicht über `window.innerWidth`: Letzteres wird beim
+  // Rendern EINMAL gelesen und danach nie wieder — wer sein Fenster schmal
+  // zieht oder das Gerät dreht, behielt die vollen 22 Partikel.
+  const isNarrow = useMediaQuery('(max-width: 767px)');
 
   const particles = useMemo<Particle[]>(() => {
     if (!theme) return [];
@@ -131,7 +135,7 @@ function GenreStage({ genre }: { genre: Genre | null }) {
       size: 12 + ((i * 5) % 18),
       shape: theme.shapes[i % theme.shapes.length],
     }));
-  }, [theme]);
+  }, [theme, isNarrow]);
 
   return createPortal(
     <div
