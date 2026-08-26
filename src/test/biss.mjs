@@ -223,6 +223,102 @@ const MUTATIONEN = [
     von: 'const base = main.length > 0 ? [...main, ...movieExtras] : [detail];',
     nach: 'const base = [detail];',
   },
+
+  // ---- Startup-Scan -------------------------------------------------------
+  // Der Scan läuft im Hintergrund und schiebt Einträge zwischen Kategorien.
+  // Fällt eine dieser Regeln um, merkt es niemand — außer diesen Tests.
+  {
+    name: 'firstUnwatched hält eine angekündigte Staffel für geschaut',
+    datei: 'src/domain/scan.ts',
+    von: 'if (cur && isReleased(cur) && cur.episodes !== null && e.progress >= cur.episodes) {',
+    nach: 'if (cur && cur.episodes !== null && e.progress >= cur.episodes) {',
+  },
+  {
+    name: 'firstUnwatched rückt schon vor dem Staffelende weiter',
+    datei: 'src/domain/scan.ts',
+    von: 'if (cur && isReleased(cur) && cur.episodes !== null && e.progress >= cur.episodes) {',
+    nach: 'if (cur && isReleased(cur) && cur.episodes !== null && e.progress >= 0) {',
+  },
+  {
+    name: 'scanOrder nimmt „Fortsetzung folgt“ nicht mehr zuerst',
+    datei: 'src/domain/scan.ts',
+    von: "const gewicht = (s: WatchStatus) => (s === 'continuation' ? 0 : s === 'completed' ? 1 : 2);",
+    nach: 'const gewicht = () => 0;',
+  },
+  {
+    name: 'scanOrder sortiert die übergebene Liste an Ort und Stelle',
+    datei: 'src/domain/scan.ts',
+    von: 'return [...rows].sort((a, b) => gewicht(a.status) - gewicht(b.status));',
+    nach: 'return rows.sort((a, b) => gewicht(a.status) - gewicht(b.status));',
+  },
+  {
+    name: 'idsToRefresh vergisst die letzte Staffel — kein Sequel wird je gefunden',
+    datei: 'src/domain/scan.ts',
+    von: 'if (last) wanted.add(last.id);',
+    nach: 'if (false && last) wanted.add(last.id);',
+  },
+  {
+    name: 'idsToRefresh fragt laufende Staffeln nicht mehr nach',
+    datei: 'src/domain/scan.ts',
+    von: "if (s.airStatus === 'RELEASING' || s.airStatus === 'NOT_YET_RELEASED' || s.episodes === null) {",
+    nach: "if (s.airStatus === 'NOT_YET_RELEASED') {",
+  },
+  {
+    name: 'refreshedSeasons wirft alte Felder weg, statt sie zu überschreiben',
+    datei: 'src/domain/scan.ts',
+    von: 'return slice ? { ...s, ...seasonSnapFrom(slice.card) } : s;',
+    nach: 'return s;',
+  },
+  {
+    name: 'extendSequelChain hängt Brücken-Specials als Staffeln ein',
+    datei: 'src/domain/scan.ts',
+    von: 'while (sequel && !isMainlineFormat(sequel.format) && bridgeHops < MAX_BRIDGE_HOPS) {',
+    nach: 'while (false) {',
+  },
+  {
+    name: 'extendSequelChain gräbt sich unbegrenzt durch Brücken',
+    datei: 'src/domain/scan.ts',
+    von: 'bridgeHops < MAX_BRIDGE_HOPS) {',
+    nach: 'bridgeHops < 99) {',
+  },
+  {
+    name: 'extendSequelChain läuft im Kreis — dieselbe Staffel doppelt',
+    datei: 'src/domain/scan.ts',
+    von: 'if (chain.some((s) => s.id === sequel.id)) break;',
+    nach: 'if (false) break;',
+  },
+  {
+    name: 'extendSequelChain hängt beliebig viele Staffeln pro Lauf an',
+    datei: 'src/domain/scan.ts',
+    von: 'for (let round = 0; round < MAX_SEQUEL_ROUNDS; round++) {',
+    nach: 'for (let round = 0; round < 99; round++) {',
+  },
+  {
+    name: 'decideScan reißt „Schaue ich“ aus dem laufenden Fortschritt',
+    datei: 'src/domain/scan.ts',
+    von: "if (e.status === 'completed' || e.status === 'continuation') {",
+    nach: 'if (true) {',
+  },
+  {
+    // Kein '\n' im Suchtext (CRLF, siehe oben): `replace` trifft die ERSTE
+    // Fundstelle, und das ist der „neue Staffel da"-Zweig.
+    name: 'decideScan meldet eine neue Staffel, ohne den Fortschritt zurückzusetzen',
+    datei: 'src/domain/scan.ts',
+    von: 'patch.progress = 0;',
+    nach: 'patch.progress = e.progress;',
+  },
+  {
+    name: 'decideScan meldet denselben Termin immer wieder als Neuigkeit',
+    datei: 'src/domain/scan.ts',
+    von: "} else if (e.status === 'continuation' && e.releaseNote !== note) {",
+    nach: "} else if (e.status === 'continuation') {",
+  },
+  {
+    name: 'decideScan lässt abgesagte Fortsetzungen für immer warten',
+    datei: 'src/domain/scan.ts',
+    von: "  } else if (e.status === 'continuation') {",
+    nach: '  } else if (false) {',
+  },
 ];
 
 const dateien = [...new Set(MUTATIONEN.map((m) => m.datei))];
