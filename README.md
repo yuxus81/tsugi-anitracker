@@ -72,7 +72,7 @@ Echter Browser (Playwright, braucht einmalig
 npx playwright test
 ```
 
-`e2e/messung.spec.ts` prüft sieben Größen — **mit kleinen Höhen** — auf
+`e2e/messung.spec.ts` prüft acht Größen — **mit kleinen Höhen** — auf
 waagerechten Überlauf, verdeckte Bedienelemente, Touchziele mit benannter
 Ausnahmeliste und Kontrast (axe), und meldet dabei, wie viele Elemente es
 angefasst hat.

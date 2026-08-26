@@ -167,9 +167,9 @@ Kriterium wäre sinnlos.
 
 ## Gemessen, nicht behauptet
 
-`e2e/messung.spec.ts` prüft auf sieben Größen — **mit kleinen Höhen**, nicht nur
-schmalen Breiten (375×667, 375×812, 768×1024, 1280×720, 1280×800, 1440×760,
-1920×1080) über sechs Ansichten:
+`e2e/messung.spec.ts` prüft auf acht Größen — **mit kleinen Höhen**, nicht nur
+schmalen Breiten (320×640, 375×667, 375×812, 768×1024, 1280×720, 1280×800,
+1440×760, 1920×1080) über sechs Ansichten:
 
 - kein waagerechtes Scrollen, nichts ragt aus dem Schirm,
 - `elementFromPoint` über jedes Bedienelement: es muss selbst obenauf liegen,

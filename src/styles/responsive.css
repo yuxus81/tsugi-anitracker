@@ -12,6 +12,14 @@
 @media (max-width: 419px) {
   .seg__btn > .ico { display: none; }
 }
+/* Zehn Wertungsstufen nebeneinander sind auf 320 px nur noch 24 px breit —
+   unter der ohnehin schon nachgelassenen 30-px-Grenze, und mit dem Daumen
+   nicht mehr sicher zu treffen. Ab hier zwei Reihen zu fünf: jede Stufe wird
+   wieder rund 55 px breit. Der Block wächst dafür um eine Zeile, und das ist
+   der bessere Tausch. Gefunden von e2e/messung.spec.ts. */
+@media (max-width: 360px) {
+  .pips { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+}
 @media (min-width: 900px) {
   .det__banner { margin: -26px -28px 0; height: 240px; }
   .det__back { top: 16px; left: 20px; }

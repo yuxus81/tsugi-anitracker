@@ -5,7 +5,7 @@ import { expect, test } from './fixtures';
 /**
  * DAS MESSWERKZEUG.
  *
- * Sieben Größen, sechs Ansichten, drei Fragen, die eine Website beantworten
+ * Acht Größen, sechs Ansichten, drei Fragen, die eine Website beantworten
  * muss, bevor sie jemand in die Hand bekommt:
  *
  *  1. Läuft irgendwo etwas waagerecht über? (Außer dort, wo eine Leiste
@@ -26,12 +26,18 @@ import { expect, test } from './fixtures';
  *   das zu wenig prüft, meldet sonst fröhlich „alles gut". Bleibt die Zahl
  *   unter der Untergrenze, fällt der Test — auch wenn er nichts gefunden hat.
  *
+ * Der Plan nannte sieben Größen. 320 px kam dazu, weil die Belegbilder dort
+ * eine abgeschnittene Rangliste zeigten — und die anderen Tests diese Breite
+ * längst als unterstützt behandeln (bibliothek.spec.ts, bilder.spec.ts). Der
+ * Lauf fand dort prompt drei echte Brüche.
+ *
  * Gemessen wird komplett IM Browser (ein `page.evaluate` je Ansicht). Ein
- * Locator-Aufruf je Element wären bei 7 × 6 Ansichten Tausende Rundreisen —
+ * Locator-Aufruf je Element wären bei 8 × 6 Ansichten Tausende Rundreisen —
  * der Lauf würde so lang, dass ihn niemand mehr fährt.
  */
 
 const GROESSEN = [
+  { name: 'Handy winzig', width: 320, height: 640 },
   { name: 'Handy klein', width: 375, height: 667 },
   { name: 'Handy', width: 375, height: 812 },
   { name: 'Tablet', width: 768, height: 1024 },

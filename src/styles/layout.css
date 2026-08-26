@@ -74,6 +74,12 @@
    Rand der Frontplatte, sonst wirkt er wie ein loser, unzugehöriger Regler
    statt wie eine Erweiterung der Kennung. */
 .hero__head { display: flex; align-items: center; gap: 6px; }
+/* Auf 320 px schob die nicht umbrechende Kennung („WEITER SCHAUEN") den
+   Umschalter aus dem Schirm — gefunden von e2e/messung.spec.ts. Die Kennung
+   darf schrumpfen und notfalls kürzen; der Umschalter nicht, er ist das
+   Bedienelement. Ohne `min-width: 0` schrumpft ein Flex-Kind nie unter seinen
+   Inhalt, egal was `flex` sagt. */
+.hero__head .kicker { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .hero__switch { display: inline-flex; align-items: center; gap: 0; flex: none; }
 /* Kleiner als die sonstige 40-px-Stufe: das ist ein Wechsler wie ein
    Karussell-Pfeil, keine primäre Aktion — und neben „Weiter schauen" ist
@@ -124,7 +130,13 @@
 .row-item[data-st='completed'] .row-item__art { box-shadow: var(--sh-1), inset 0 0 0 1px rgba(46,204,113,.32); }
 .row-item__body { flex: 1; min-width: 0; }
 .row-item__t { font-size: 15.5px; font-weight: 650; letter-spacing: -0.018em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row-item__s { margin-top: 4px; display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+/* Die Meta-Zeile („12 Episoden · 1 Staffel") ist ein Flex-Kasten, und dessen
+   Kinder schrumpfen ohne `min-width: 0` NIE unter ihren Inhalt. Auf 320 px
+   schob die Zeile deshalb die ganze Rangliste 19 px aus dem Schirm — gefunden
+   von e2e/messung.spec.ts. Jetzt kürzt der hintere Teil mit Auslassung; die
+   Folgenzahl, auf die es ankommt, steht vorn und bleibt stehen. */
+.row-item__s { margin-top: 4px; display: flex; align-items: center; gap: 7px; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 12.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.row-item__s > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .row-item__end { flex: none; display: flex; align-items: center; gap: 8px; }
 @media (hover: hover) and (pointer: fine) {
   .row-item[data-st='continuation']:hover .row-item__art img { filter: grayscale(0) brightness(1) saturate(1); }
