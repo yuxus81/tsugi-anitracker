@@ -166,6 +166,41 @@ export function entryCover(e: LibraryEntry): string | null {
   return currentSeason(e)?.coverUrl ?? e.seasons[0]?.coverUrl ?? null;
 }
 
+/**
+ * Für „Geschaut": Gibt es eine Fortsetzung, die über den zuletzt gesehenen
+ * Stand hinausgeht? Entweder eine spätere Staffel in der Hauptlinie, eine
+ * noch nicht veröffentlichte letzte Staffel, oder eine angekündigte
+ * Fortsetzung (`releaseNote`).
+ */
+export function hasSequel(e: LibraryEntry): boolean {
+  if (e.seasonIndex < e.seasons.length - 1) return true;
+  const last = e.seasons[e.seasons.length - 1];
+  if (last && !isReleased(last)) return true;
+  return e.releaseNote != null && e.releaseNote.trim() !== '';
+}
+
+/**
+ * Für „Geschaut": welche Staffeln der Hauptlinie sind noch offen? `nums` sind
+ * die (1-basierten) Positionen veröffentlichter, noch nicht geschauter
+ * Staffeln; `announced` ist true, wenn zusätzlich eine noch nicht
+ * veröffentlichte Staffel oder eine angekündigte Fortsetzung (`releaseNote`)
+ * aussteht.
+ */
+export function pendingSeasons(e: LibraryEntry): { nums: number[]; announced: boolean } {
+  const watchedThroughIdx =
+    e.status === 'continuation' || e.status === 'nextup' || e.status === 'watching'
+      ? e.seasonIndex - 1
+      : e.seasonIndex;
+  const nums: number[] = [];
+  let announced = false;
+  for (let i = watchedThroughIdx + 1; i < e.seasons.length; i++) {
+    if (isReleased(e.seasons[i])) nums.push(i + 1);
+    else announced = true;
+  }
+  if (e.releaseNote != null && e.releaseNote.trim() !== '') announced = true;
+  return { nums, announced };
+}
+
 /** Insgesamt gesehene Episoden über alle Staffeln. */
 export function watchedEpisodes(e: LibraryEntry): number {
   let sum = e.progress;

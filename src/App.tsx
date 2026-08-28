@@ -1,260 +1,205 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { HashRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { useLibrary } from '@/store/library';
 import { useAuth } from '@/store/auth';
 import { useToasts } from '@/store/toast';
+import { useTone } from '@/store/tone';
 import { useStartupScan } from '@/lib/scan';
-import { useT } from '@/i18n';
+import { useT, type DictKey } from '@/i18n';
 import { AuthScreen } from '@/components/AuthScreen';
 import { HomePage } from '@/pages/HomePage';
-// Home lädt sofort (erste Ansicht nach dem Start), der Rest erst beim
-// Aufrufen — das nimmt spürbar Gewicht aus dem ersten Laden auf Mobilfunk.
+import { SearchOverlay } from '@/components/SearchOverlay';
+import { useSearchOverlay } from '@/components/searchStore';
+import { Icon, IconPair, type IconName } from '@/components/icons';
+
+// Home lädt sofort, der Rest erst beim Aufrufen.
 const DiscoverPage = lazy(() => import('@/pages/DiscoverPage').then((m) => ({ default: m.DiscoverPage })));
 const LibraryPage = lazy(() => import('@/pages/LibraryPage').then((m) => ({ default: m.LibraryPage })));
 const DetailPage = lazy(() => import('@/pages/DetailPage').then((m) => ({ default: m.DetailPage })));
 const StatsPage = lazy(() => import('@/pages/StatsPage').then((m) => ({ default: m.StatsPage })));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
-import { SearchOverlay } from '@/components/SearchOverlay';
-import { useSearchOverlay } from '@/components/searchStore';
-import {
-  IconChart,
-  IconCompass,
-  IconGear,
-  IconHome,
-  IconSearch,
-  IconStack,
-} from '@/components/icons';
-import type { DictKey } from '@/i18n';
 
-const NAV: Array<{ to: string; label: DictKey; Icon: typeof IconHome; end: boolean }> = [
-  { to: '/', label: 'navHome', Icon: IconHome, end: true },
-  { to: '/entdecken', label: 'navDiscover', Icon: IconCompass, end: false },
-  { to: '/bibliothek', label: 'navLibrary', Icon: IconStack, end: false },
-  { to: '/statistik', label: 'navStats', Icon: IconChart, end: false },
-  { to: '/einstellungen', label: 'navSettings', Icon: IconGear, end: false },
+interface NavItem {
+  to: string;
+  label: DictKey;
+  ico: IconName;
+  end: boolean;
+}
+
+/** Reihenfolge wie im Entwurf: Bibliothek neben Home, Entdecken in der Mitte. */
+const NAV: NavItem[] = [
+  { to: '/', label: 'navHome', ico: 'home', end: true },
+  { to: '/bibliothek', label: 'navLibrary', ico: 'stack', end: false },
+  { to: '/entdecken', label: 'navDiscover', ico: 'compass', end: false },
+  { to: '/statistik', label: 'navStats', ico: 'chart', end: false },
+  { to: '/einstellungen', label: 'navSettings', ico: 'gear', end: false },
 ];
 
-function Wordmark() {
-  return (
-    <NavLink to="/" className="flex items-center gap-2.5 px-1" aria-label="Tsugi-Anitracker — Home">
-      <img
-        src={`${import.meta.env.BASE_URL}logo.png`}
-        alt=""
-        width={32}
-        height={32}
-        className="h-8 w-8 rounded-ctl shadow-glow-purple"
-      />
-      <span className="hidden font-display text-lg font-semibold leading-tight tracking-tight text-ink lg:block">
-        Tsugi
-        <span className="block text-[11px] font-sans font-medium tracking-wide text-ink-dim">
-          Anitracker
-        </span>
-      </span>
-    </NavLink>
-  );
+function navActive(to: string, end: boolean, pathname: string): boolean {
+  if (end) return pathname === to;
+  if (to === '/bibliothek' && pathname.startsWith('/anime/')) return true;
+  return pathname === to || pathname.startsWith(`${to}/`);
 }
 
-function Sidebar() {
+/* ---------------------------------------------------------------- Rahmen -- */
+
+function TopBar({ scrolled, title }: { scrolled: boolean; title: string }) {
   const openSearch = useSearchOverlay((s) => s.open);
   const t = useT();
   return (
-    <aside className="fixed inset-y-0 left-0 z-sticky hidden w-16 flex-col gap-6 border-r border-line bg-bg px-2.5 py-5 md:flex lg:w-52 lg:px-4">
-      <Wordmark />
-      <button
-        type="button"
-        onClick={openSearch}
-        className="flex items-center gap-3 rounded-ctl border border-line bg-surface px-2.5 py-2 text-ink-dim transition-colors duration-150 hover:border-accent hover:text-ink"
-      >
-        <IconSearch className="h-5 w-5 shrink-0" />
-        <span className="hidden text-sm lg:block">{t('search')}</span>
-        <kbd className="ml-auto hidden rounded border border-line px-1.5 py-0.5 text-[11px] text-ink-faint lg:block">
-          /
-        </kbd>
+    <header className={`topbar${scrolled ? ' is-scrolled' : ''}`}>
+      <NavLink to="/" className="topbar__brand" aria-label="Tsugi — Home">
+        <img
+          className="topbar__logo"
+          src={`${import.meta.env.BASE_URL}logo.png`}
+          alt=""
+          width={30}
+          height={30}
+        />
+        <span className="topbar__name">Tsugi</span>
+      </NavLink>
+      <span className="topbar__spacer">
+        <span className="topbar__title">{title}</span>
+      </span>
+      <button type="button" className="iconbtn" aria-label={t('search')} title={t('search')} onClick={openSearch}>
+        <Icon name="search" size={20} filled />
       </button>
-      <nav className="flex flex-col gap-1" aria-label="Navigation">
-        {NAV.map(({ to, label, Icon, end }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={end}
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-ctl px-2.5 py-2.5 text-sm transition-colors duration-150 ${
-                isActive
-                  ? 'bg-raised font-semibold text-accent'
-                  : 'text-ink-dim hover:bg-surface hover:text-ink'
-              }`
-            }
-          >
-            <Icon className="h-5 w-5 shrink-0" />
-            <span className="hidden lg:block">{t(label)}</span>
-          </NavLink>
-        ))}
-      </nav>
-      <p className="mt-auto hidden px-1 text-xs leading-5 text-ink-faint lg:block">
-        {t('sidebarTagline')}
-        <br />
-        Tsugi-Anitracker · V2
-      </p>
-    </aside>
+    </header>
   );
 }
 
-/**
- * Mobile-Kopfleiste: die Sidebar (samt Logo) ist unter `md` komplett
- * ausgeblendet, wodurch auf dem Handy sowohl das Logo als auch der einzige
- * Weg zur Suche/zum Hinzufügen-Flow verschwanden. `position: fixed` statt
- * `sticky` — mit `overflow-x: hidden` auf html/body (App-Feeling-Fix)
- * verlor eine sticky Leiste sonst ihre Fixierung beim Scrollen in Safari.
- * Ein Platzhalter gleicher Höhe direkt danach schiebt den Inhalt runter,
- * damit nichts unter der fest positionierten Leiste verschwindet.
- */
-function MobileHeader() {
+function TabBar() {
+  const { pathname } = useLocation();
+  const t = useT();
+  return (
+    <nav className="tabbar" aria-label="Navigation">
+      {NAV.map((n) => {
+        const on = navActive(n.to, n.end, pathname);
+        return (
+          <NavLink
+            key={n.to}
+            to={n.to}
+            end={n.end}
+            className={`tab${on ? ' is-on' : ''}`}
+            aria-current={on ? 'page' : undefined}
+          >
+            <span className="tab__cap" />
+            <IconPair name={n.ico} size={24} active={on} />
+            <span className="tab__label">{t(n.label)}</span>
+          </NavLink>
+        );
+      })}
+    </nav>
+  );
+}
+
+function Rail() {
+  const { pathname } = useLocation();
   const openSearch = useSearchOverlay((s) => s.open);
   const t = useT();
   return (
-    <>
-      <header
-        className="fixed inset-x-0 top-0 z-sticky flex items-center justify-between border-b border-line bg-bg px-4 py-2.5 md:hidden"
-        style={{ paddingTop: 'calc(0.625rem + env(safe-area-inset-top))' }}
-      >
-        <NavLink to="/" className="flex min-h-[44px] items-center gap-2.5" aria-label="Tsugi-Anitracker — Home">
-          <img
-            src={`${import.meta.env.BASE_URL}logo.png`}
-            alt=""
-            width={36}
-            height={36}
-            className="h-9 w-9 rounded-[11px] shadow-glow-purple"
-          />
-          <span className="font-display text-[18px] font-semibold tracking-tight text-ink">Tsugi</span>
-        </NavLink>
-        <button
-          type="button"
-          onClick={openSearch}
-          aria-label={t('search')}
-          className="press grid h-11 w-11 place-items-center rounded-full border border-line bg-surface text-accent"
-        >
-          <IconSearch className="h-[18px] w-[18px]" />
-        </button>
-      </header>
-      <div aria-hidden className="md:hidden" style={{ height: 'calc(60px + env(safe-area-inset-top))' }} />
-    </>
-  );
-}
-
-function BottomBar() {
-  const t = useT();
-  const { pathname } = useLocation();
-  // Aktives Tab bestimmen — das gleitende Glas-Highlight wandert dorthin.
-  const matchIdx = NAV.findIndex(({ to, end }) =>
-    end ? pathname === to : to !== '/' && (pathname === to || pathname.startsWith(`${to}/`)),
-  );
-  const hasActive = matchIdx !== -1;
-  const activeIndex = hasActive ? matchIdx : 0;
-
-  return (
-    <nav
-      aria-label="Navigation"
-      className="fixed inset-x-3 z-sticky flex h-[70px] items-stretch overflow-hidden rounded-[26px] border border-line bg-surface shadow-[0_12px_32px_-10px_rgba(0,0,0,0.7)] md:hidden"
-      style={{ bottom: 'calc(2px + env(safe-area-inset-bottom))' }}
-    >
-      {/* Gleitende Auswahl-Kapsel hinter dem aktiven Tab. Sie füllt das Feld
-          fast komplett aus (nur 3px Luft), damit sie zum Label passt und
-          nicht wie ein zu kleiner Fleck darunter wirkt. */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-y-[5px] left-0 transition-transform duration-[360ms] ease-[cubic-bezier(0.32,0.72,0,1)]"
-        style={{
-          width: `${100 / NAV.length}%`,
-          transform: `translateX(${activeIndex * 100}%)`,
-          opacity: hasActive ? 1 : 0,
-        }}
-      >
-        <span className="absolute inset-x-[2px] inset-y-0 rounded-[19px] bg-accent/[0.14]" />
-      </span>
-
-      {NAV.map(({ to, label, Icon, end }) => (
-        <NavLink
-          key={to}
-          to={to}
-          end={end}
-          className={({ isActive }) =>
-            `press relative z-10 flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-semibold tracking-tight transition-colors duration-200 ${
-              isActive ? 'text-accent' : 'text-ink-muted'
-            }`
-          }
-        >
-          {({ isActive }) => (
-            <>
-              <Icon
-                className={`h-[25px] w-[25px] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-                  isActive ? '-translate-y-px scale-110' : ''
-                }`}
-              />
-              {t(label)}
-            </>
-          )}
-        </NavLink>
-      ))}
-    </nav>
+    <aside className="rail" aria-label="Navigation">
+      <NavLink to="/" className="rail__brand" aria-label="Tsugi — Home">
+        <img className="rail__logo" src={`${import.meta.env.BASE_URL}logo.png`} alt="" width={38} height={38} />
+        <span>
+          <span className="rail__name">Tsugi</span>
+          <span className="rail__sub">Anitracker</span>
+        </span>
+      </NavLink>
+      <button type="button" className="railitem" style={{ marginBottom: 10 }} onClick={openSearch}>
+        <Icon name="search" size={20} />
+        <span>{t('search')}</span>
+        <kbd style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-num)' }}>/</kbd>
+      </button>
+      {NAV.map((n) => {
+        const on = navActive(n.to, n.end, pathname);
+        return (
+          <NavLink key={n.to} to={n.to} end={n.end} className={`railitem${on ? ' is-on' : ''}`}>
+            <IconPair name={n.ico} size={21} active={on} />
+            <span>{t(n.label)}</span>
+          </NavLink>
+        );
+      })}
+      <p className="rail__foot">{t('sidebarTagline')}</p>
+    </aside>
   );
 }
 
 function Toasts() {
   const toasts = useToasts((s) => s.toasts);
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-28 z-toast flex flex-col items-center gap-2 px-4 md:bottom-6">
-      {toasts.map((t) => (
-        <div
-          key={t.id}
-          role="status"
-          className={`toast-in pointer-events-auto rounded-ctl border px-4 py-2.5 text-sm font-medium shadow-lg ${
-            t.kind === 'error'
-              ? 'border-rose/40 bg-surface text-rose'
-              : 'border-accent/30 bg-raised text-ink'
-          }`}
-        >
-          {t.text}
+    <>
+      {toasts.map((toast) => (
+        <div key={toast.id} className="toast" role="status" data-st={toast.kind === 'error' ? 'planned' : 'watching'}>
+          <span className="toast__ico">
+            <Icon name={toast.kind === 'error' ? 'info' : 'check'} size={18} filled />
+          </span>
+          <span>{toast.text}</span>
         </div>
       ))}
-    </div>
+    </>
   );
 }
 
-/**
- * Platzhalter, solange eine nachgeladene Seite unterwegs ist. Bewusst die
- * gleiche Skelett-Sprache wie in den Seiten selbst — kein Spinner mitten im
- * Inhalt (siehe Design-Regel „Skeletons statt Spinner“).
- */
 function RouteSkeleton() {
   return (
     <div aria-busy="true" aria-live="polite">
-      <div className="skeleton h-9 w-52 rounded" />
-      <div className="skeleton mt-3 h-4 w-72 rounded" />
-      <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+      <div className="skel" style={{ height: 34, width: 200, borderRadius: 8 }} />
+      <div className="skel" style={{ height: 14, width: 280, marginTop: 12, borderRadius: 6 }} />
+      <div className="grid" style={{ marginTop: 26 }}>
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="skeleton aspect-[2/3] w-full" />
+          <div key={i} className="skel" style={{ aspectRatio: '2 / 3' }} />
         ))}
       </div>
     </div>
   );
 }
 
-/** Remount-keyed wrapper so route changes crossfade. */
-function ViewFrame() {
+function screenTitle(pathname: string, t: ReturnType<typeof useT>): string {
+  const hit = NAV.find((n) => navActive(n.to, n.end, pathname));
+  return hit ? t(hit.label) : 'Tsugi';
+}
+
+function AppFrame() {
   const location = useLocation();
+  const t = useT();
+  const tone = useTone((s) => s.tone);
+  const paneRef = useRef<HTMLElement>(null);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Beim Bildschirmwechsel Inhalt nach oben und Kante zurücksetzen.
+  useEffect(() => {
+    paneRef.current?.scrollTo({ top: 0 });
+    setScrolled(false);
+  }, [location.pathname, setScrolled]);
+
   return (
-    <div key={location.pathname} className="view-enter">
-      <Suspense fallback={<RouteSkeleton />}>
-        <Routes location={location}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/entdecken" element={<DiscoverPage />} />
-          <Route path="/bibliothek" element={<LibraryPage />} />
-          <Route path="/anime/:id" element={<DetailPage />} />
-          <Route path="/statistik" element={<StatsPage />} />
-          <Route path="/einstellungen" element={<SettingsPage />} />
-          <Route path="*" element={<HomePage />} />
-        </Routes>
-      </Suspense>
+    <div className="app" data-st={tone}>
+      <Rail />
+      <TopBar scrolled={scrolled} title={screenTitle(location.pathname, t)} />
+      <main
+        className="pane"
+        ref={paneRef}
+        tabIndex={-1}
+        onScroll={(e) => setScrolled((e.target as HTMLElement).scrollTop > 12)}
+      >
+        <div className="pane__inner">
+          <div key={location.pathname} className="view-enter">
+            <Suspense fallback={<RouteSkeleton />}>
+              <Routes location={location}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/entdecken" element={<DiscoverPage />} />
+                <Route path="/bibliothek" element={<LibraryPage />} />
+                <Route path="/anime/:id" element={<DetailPage />} />
+                <Route path="/statistik" element={<StatsPage />} />
+                <Route path="/einstellungen" element={<SettingsPage />} />
+                <Route path="*" element={<HomePage />} />
+              </Routes>
+            </Suspense>
+          </div>
+        </div>
+      </main>
+      <TabBar />
     </div>
   );
 }
@@ -290,52 +235,39 @@ export function App() {
     authInit();
   }, [authInit]);
 
-  // Sofortiges Zeichnen aus dem lokalen Cache, unabhängig vom Login-Status.
   useEffect(() => {
     void hydrate();
   }, [hydrate]);
 
-  // Sobald der Login-Status feststeht: mit Supabase abgleichen bzw. lokal leeren.
   useEffect(() => {
     if (!authReady) return;
     if (user) void syncFromRemote(user.id);
     else resetLocal();
   }, [authReady, user, syncFromRemote, resetLocal]);
 
-  // Update-Scan: einmal pro App-Öffnung nach neuen Staffeln/Ankündigungen schauen.
-  // Muss als Hook unbedingt aufgerufen werden (Rules of Hooks) — scan.ts wartet
-  // selbst auf `hydrated` und pusht nur, wenn ein Nutzer angemeldet ist.
   useStartupScan();
 
   if (!authReady) {
     return (
-      <div className="grid min-h-screen place-items-center">
+      <div style={{ display: 'grid', minHeight: '100dvh', placeItems: 'center' }}>
         <img
           src={`${import.meta.env.BASE_URL}logo.png`}
           alt=""
           width={40}
           height={40}
-          className="h-10 w-10 animate-pulse rounded-ctl opacity-60"
+          className="skel"
+          style={{ width: 40, height: 40, borderRadius: 12, opacity: 0.6 }}
         />
       </div>
     );
   }
 
-  if (!user) {
-    return <AuthScreen />;
-  }
+  if (!user) return <AuthScreen />;
 
   return (
     <HashRouter>
       <GlobalHotkeys />
-      <Sidebar />
-      <main className="min-h-screen pb-[calc(112px+env(safe-area-inset-bottom))] md:pb-10 md:pl-16 lg:pl-52">
-        <MobileHeader />
-        <div className="mx-auto max-w-[1200px] px-4 pt-5 sm:px-6 md:pt-8">
-          <ViewFrame />
-        </div>
-      </main>
-      <BottomBar />
+      <AppFrame />
       <SearchOverlay />
       <Toasts />
     </HashRouter>

@@ -98,6 +98,7 @@ export const CARD_FIELDS = `
   id
   title { romaji english }
   coverImage { extraLarge large color }
+  bannerImage
   format status episodes duration averageScore season seasonYear genres isAdult
   nextAiringEpisode { episode airingAt }
   startDate { year month day }
@@ -189,7 +190,6 @@ export async function searchAnime(
 const DETAIL_QUERY = `query ($id: Int) {
   Media(id: $id, type: ANIME) {
     ${CARD_FIELDS}
-    bannerImage
     description(asHtml: false)
     endDate { year month day }
     trailer { id site }

@@ -52,28 +52,20 @@ export class ErrorBoundary extends Component<Props, State> {
     if (!error) return this.props.children;
 
     return (
-      <div className="grid min-h-screen place-items-center px-6">
-        <div className="w-full max-w-sm rounded-card border border-line bg-surface p-6 text-center">
-          <p className="font-display text-xl font-semibold text-ink">Da ist etwas schiefgelaufen</p>
-          <p className="mt-2 text-sm leading-6 text-ink-dim">
+      <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', padding: 24, background: 'var(--bg)', color: 'var(--ink)' }}>
+        <div className="tile" style={{ width: '100%', maxWidth: 384, textAlign: 'center' }}>
+          <p className="h-sec">Da ist etwas schiefgelaufen</p>
+          <p className="sub" style={{ marginTop: 8 }}>
             Die Ansicht konnte nicht geladen werden. Deine Bibliothek ist sicher — sie liegt in
             deinem Konto, nicht nur auf diesem Gerät.
           </p>
-          <p className="mt-3 break-words text-xs text-ink-faint">{error.message}</p>
-          <div className="mt-5 flex flex-col gap-2.5">
-            <button
-              type="button"
-              onClick={this.reload}
-              className="press min-h-[44px] rounded-ctl bg-accent px-4 py-2.5 text-sm font-bold text-bg"
-            >
-              Neu laden
+          <p className="muted" style={{ marginTop: 12, wordBreak: 'break-word' }}>{error.message}</p>
+          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <button type="button" onClick={this.reload} className="btn btn--primary btn--wide">
+              <span>Neu laden</span>
             </button>
-            <button
-              type="button"
-              onClick={() => void this.resetCache()}
-              className="press min-h-[44px] rounded-ctl border border-line bg-raised px-4 py-2.5 text-sm font-medium text-ink"
-            >
-              Lokalen Zwischenspeicher leeren
+            <button type="button" onClick={() => void this.resetCache()} className="btn btn--quiet btn--wide">
+              <span>Lokalen Zwischenspeicher leeren</span>
             </button>
           </div>
         </div>

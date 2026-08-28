@@ -1,18 +1,23 @@
 @import '@fontsource-variable/inter';
-@import '@fontsource-variable/fraunces';
+@import '@fontsource-variable/jetbrains-mono';
+@import './styles/tokens.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/**
+ * V5 „Gerät": das Aussehen kommt aus styles/theme.css (in main.tsx NACH dieser
+ * Datei importiert, damit es über Tailwinds Preflight/Utilities gewinnt). Hier
+ * bleibt nur, was Tailwind sonst wegräumt oder was theme.css nicht abdeckt.
+ */
 
 :root {
   color-scheme: dark;
 }
 
 html {
-  background: #0d0f18;
-  /* App-Gefühl statt Website: kein Doppeltipp-Zoom, keine Gummiband-Bounce-
-     Lücke, kein horizontales Verrutschen, keine sichtbare Scrollbar. */
+  background: var(--void);
   touch-action: manipulation;
   overscroll-behavior-y: none;
   overflow-x: hidden;
@@ -24,102 +29,13 @@ html::-webkit-scrollbar {
 }
 
 body {
-  /* Hintergrundfarbe bewusst NICHT hier: body ist ein normaler In-Flow-Block
-     und sein eigener Hintergrund wird nach den fixed/negativ-z-indizierten
-     Kindern gemalt (CSS-Maleregeln) — er würde die Aurora & die
-     Entdecken-Genre-Bühne komplett übermalen. <html> trägt die Grundfarbe
-     (malt zuerst, Schritt 1), body bleibt transparent, damit das darunter
-     durchscheint. */
-  background: transparent;
-  overflow-x: hidden;
-  -webkit-user-select: none;
-  user-select: none;
-  @apply font-sans text-[15px] leading-relaxed text-ink antialiased;
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Textfelder brauchen ihre eigene Markierbarkeit zurück (Tippen, Markieren,
-   Kopieren) — nur die App-Chrome drumherum bleibt „nicht markierbar“. */
-input,
-textarea,
-[contenteditable] {
-  -webkit-user-select: text;
-  user-select: text;
-}
-
-/* iOS zoomt beim Fokussieren automatisch rein, wenn ein Feld eine
-   Schriftgröße unter 16px hat — und zoomt danach nicht zuverlässig wieder
-   raus. Das ist der Haupttäter hinter „die Seite zoomt komisch rein“.
-   !important ist hier bewusst: die einzelnen Felder tragen alle eigene
-   Tailwind-Größenklassen (z. B. text-[15px]), die als Klassen-Selektoren
-   sonst gegen dieses Element-Selektor-Fix gewinnen würden. */
-@media (max-width: 767px) {
-  input,
-  textarea,
-  select {
-    font-size: 16px !important;
-  }
-}
-
-/* Ambient-Hintergrund für die ganze App: drei weiche, langsam driftende
-   Farbnebel plus ein feines Vignetten-Dimmen an den Rändern. Liegt hinter
-   allem (negatives z), fest im Viewport. */
-body::before {
-  content: '';
-  position: fixed;
-  inset: -20vh -20vw;
-  z-index: -2;
-  pointer-events: none;
-  background:
-    radial-gradient(38vw 38vw at 12% 8%, rgba(0, 245, 212, 0.15), transparent 60%),
-    radial-gradient(42vw 42vw at 88% 4%, rgba(58, 134, 255, 0.13), transparent 62%),
-    radial-gradient(46vw 46vw at 78% 92%, rgba(138, 43, 226, 0.14), transparent 64%);
-  filter: saturate(1.1);
-  animation: aurora-drift 46s ease-in-out infinite alternate;
-}
-@keyframes aurora-drift {
-  from {
-    transform: translate3d(-2%, -1.5%, 0) scale(1);
-  }
-  to {
-    transform: translate3d(2.5%, 2%, 0) scale(1.08);
-  }
-}
-/* Feines Rausch-/Vignetten-Overlay: nimmt Farbverläufen das „Banding“. */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  background: radial-gradient(120% 120% at 50% 30%, transparent 55%, rgba(6, 8, 14, 0.55) 100%);
-}
-
-h1,
-h2,
-h3 {
-  text-wrap: balance;
-}
-
-/* Focus is part of the design, not an afterthought. */
-:focus-visible {
-  outline: 2px solid #00f5d4;
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-/* Eingebettete Felder (z. B. Suchleiste) markieren ihren Container per
-   focus-within — der eigene Ring würde vom overflow-hidden abgeschnitten. */
-.no-focus-ring:focus-visible {
-  outline: none;
-}
-
-::selection {
-  background: #0b6e63;
-  color: #f1f3f9;
-}
-
-/* Keine sichtbaren Scrollbars irgendwo — Kino-Reihen, Tab-Leisten & Co.
-   scrollen per Touch/Wheel, aber ohne Balken (Website-Tell #1). */
+/* Keine sichtbaren Scrollbars — App, keine Website. */
 * {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -128,303 +44,64 @@ h3 {
   display: none;
 }
 
-@layer components {
-  /* Bewusst KEINE backdrop-filter-Glasflächen mehr (frühere `.ios-glass`/
-     `.ios-spec`): der milchige Blur-Look traf Apples aktuelle Sprache nicht
-     und wirkte eher vernebelt als modern. Chrome und Sheets sind jetzt
-     durchgängig solide Flächen aus der eigenen Palette (bg/surface/line) —
-     das ist auch, was Apples eigene Apps für Bedienflächen tun. Nebeneffekt:
-     spürbar weniger Compositing-Last auf dem iPhone. */
+/* `.ring` (V5 Fortschritts-SVG) trägt denselben Namen wie Tailwinds
+   `.ring`-Utility — deren blauer 3px-Schatten läge sonst als Kasten um den
+   Ring. theme.css setzt kein box-shadow, also hier neutralisieren. */
+.ring {
+  box-shadow: none;
+}
 
-  /* Taktiles Antippen: kurzes Zusammendrücken wie bei nativen iOS-Buttons. */
-  .press {
-    transition: transform 0.16s cubic-bezier(0.32, 0.72, 0, 1);
+/* Bildschirmwechsel: nur ein kurzes Aufblenden (kein Transform — sonst baut der
+   Browser fürs Crossfade eine Layer über den ganzen Seitenbaum). */
+.view-enter {
+  animation: view-in 0.16s var(--e-out, ease-out) both;
+}
+@keyframes view-in {
+  from {
+    opacity: 0;
   }
-  .press:active {
-    transform: scale(0.96);
-  }
-
-  /* Skeleton shimmer — state, not decoration. */
-  .skeleton {
-    @apply relative overflow-hidden rounded-card bg-surface;
-  }
-  .skeleton::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(100deg, transparent 30%, rgba(126, 141, 166, 0.14) 50%, transparent 70%);
-    animation: shimmer 1.6s infinite;
-  }
-  @keyframes shimmer {
-    from {
-      transform: translateX(-100%);
-    }
-    to {
-      transform: translateX(100%);
-    }
-  }
-
-  /* View crossfade on route change — bewusst NUR opacity (kein translateY):
-     ein Transform auf dem kompletten (teils schweren) Seiten-Subtree zwingt
-     den Browser, fürs Crossfade eine neue Compositing-Layer fürs ganze
-     Fragment zu bauen, was auf schwächeren Handy-GPUs genau in dem Moment
-     ruckelt, wenn gleichzeitig noch das Highlight in der Tab-Bar gleitet. */
-  .view-enter {
-    animation: view-in 0.16s ease-out both;
-  }
-  @keyframes view-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  .toast-in {
-    animation: toast-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-  @keyframes toast-in {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-
-  /* Aufklapp-Panel (Hinzufügen-Flow, Franchise-Auswahl). */
-  .unfold {
-    animation: unfold 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
-    transform-origin: top center;
-  }
-  @keyframes unfold {
-    from {
-      opacity: 0;
-      transform: translateY(-8px) scaleY(0.96);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-
-  /* Gestaffeltes Erscheinen von Listen (Zeitstrahl, Panels). */
-  .stagger-in {
-    animation: stagger-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
-    animation-delay: calc(var(--i, 0) * 28ms);
-  }
-  @keyframes stagger-in {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-
-  /* Dialog: Abdunkler + Blatt kommen und gehen mit eigener Kurve, statt
-     hart ein-/auszublenden. Das Blatt geht minimal schneller weg als es
-     kommt — fühlt sich beim Abbrechen entschlossen an, nicht zäh. */
-  .scrim-in {
-    background: rgba(6, 8, 14, 0.62);
-    animation: scrim-in 0.18s ease-out both;
-  }
-  .scrim-out {
-    background: rgba(6, 8, 14, 0.62);
-    animation: scrim-in 0.16s ease-in both reverse;
-  }
-  @keyframes scrim-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-  .sheet-in {
-    animation: sheet-in 0.26s cubic-bezier(0.32, 0.72, 0, 1) both;
-  }
-  @keyframes sheet-in {
-    from {
-      opacity: 0;
-      transform: scale(0.92);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-  .sheet-out {
-    animation: sheet-out 0.16s ease-in both;
-  }
-  @keyframes sheet-out {
-    from {
-      opacity: 1;
-      transform: scale(1);
-    }
-    to {
-      opacity: 0;
-      transform: scale(0.96);
-    }
-  }
-
-  /* Kurzer Erfolgs-Pop, z. B. nach dem Hinzufügen. */
-  .pop-in {
-    animation: pop-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-  @keyframes pop-in {
-    0% {
-      opacity: 0;
-      transform: scale(0.92);
-    }
-    55% {
-      opacity: 1;
-      transform: scale(1.04);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  /* Panel-Wechsel auf Home. */
-  .panel-in {
-    animation: panel-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-  @keyframes panel-in {
-    from {
-      opacity: 0;
-      transform: translateX(14px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-
-  /* Sanftes Heben auf Zeiger-Geräten. */
-  @media (hover: hover) and (pointer: fine) {
-    .hover-lift {
-      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease;
-    }
-    .hover-lift:hover {
-      transform: translateY(-3px) scale(1.015);
-    }
-  }
-
-  /* Play-Button auf der „Weiter schauen“-Kinoreihe: ruhiges Atmen, kein Dauerblinken. */
-  .pulse-play {
-    animation: pulse-play 2.6s ease-in-out infinite;
-  }
-  @keyframes pulse-play {
-    0%,
-    100% {
-      box-shadow: 0 0 0 0 rgba(0, 245, 212, 0.45), 0 0 20px -2px rgba(0, 245, 212, 0.8);
-    }
-    50% {
-      box-shadow: 0 0 0 8px rgba(0, 245, 212, 0), 0 0 20px -2px rgba(0, 245, 212, 0.8);
-    }
-  }
-
-  /* Blinkender Punkt vor Release-Daten (Fortsetzung folgt). */
-  .blink-dot {
-    animation: blink-dot 1.8s ease-in-out infinite;
-  }
-  @keyframes blink-dot {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.25;
-    }
-  }
-
-  /* Neuheiten-Regal (Home „Noch zu schauen“): leichtes 3D-Kippen beim Hover. */
-  @media (hover: hover) and (pointer: fine) {
-    .tilt-card {
-      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
-    }
-    .tilt-card:hover {
-      transform: perspective(700px) rotateY(-6deg) rotateX(3deg) translateY(-4px);
-    }
-  }
-
-  /* Pausiert-Zeilen: Cover entsättigt, wird beim Hover wieder farbig. */
-  .desat-hover {
-    filter: saturate(0.35) brightness(0.85);
-    transition: filter 0.25s ease;
-  }
-  .desat-hover:hover,
-  .row-hover:hover .desat-hover {
-    filter: saturate(0.95) brightness(1);
-  }
-
-  /* Genre-reaktive Entdecken-Bühne: treibende Partikel (Herzen, Funken, …). */
-  .genre-particle {
-    position: absolute;
-    pointer-events: none;
-    will-change: transform, opacity;
-    animation: particle-float linear forwards;
-  }
-  @keyframes particle-float {
-    from {
-      transform: translateY(16px) scale(0.85);
-      opacity: 0;
-    }
-    10% {
-      opacity: 1;
-    }
-    to {
-      transform: translateY(-180px) scale(1.05);
-      opacity: 0;
-    }
+  to {
+    opacity: 1;
   }
 }
 
-/* Handys: der driftende Aurora-Verlauf ist auf schwächeren GPUs spürbar
-   ruckelig (der gemeldete „hängt ein bisschen“-Eindruck). Bild bleibt,
-   Bewegung nicht. */
-@media (max-width: 767px) {
-  body::before {
-    animation: none;
+/* Kurzer Erfolgs-Pop (Zufallsroller-Treffer). */
+.pop-in {
+  animation: pop-in 0.42s var(--e-spring, cubic-bezier(0.34, 1.56, 0.64, 1)) both;
+}
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
   }
+  60% {
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Nur für Screenreader. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skeleton::after {
-    animation: none;
-  }
-  .view-enter,
-  .toast-in,
-  .unfold,
-  .stagger-in,
-  .pop-in,
-  .panel-in,
-  .scrim-in,
-  .scrim-out,
-  .sheet-in,
-  .sheet-out,
-  .pulse-play,
-  .blink-dot,
-  .genre-particle {
-    animation-duration: 0.01ms;
-    animation-delay: 0ms;
-  }
-  .genre-particle {
-    display: none;
-  }
-  .tilt-card:hover {
-    transform: none;
-  }
   *,
   *::before,
   *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }

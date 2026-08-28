@@ -31,6 +31,7 @@ export interface MediaCard {
   id: number;
   title: { romaji: string | null; english: string | null };
   coverImage: { extraLarge: string | null; large: string | null; color: string | null };
+  bannerImage: string | null;
   format: MediaFormat | null;
   status: MediaStatus | null;
   episodes: number | null;
@@ -46,7 +47,6 @@ export interface MediaCard {
 
 /** Full detail payload. */
 export interface MediaDetail extends MediaCard {
-  bannerImage: string | null;
   description: string | null;
   studios: { nodes: Array<{ name: string; isAnimationStudio: boolean }> };
   endDate: FuzzyDate | null;

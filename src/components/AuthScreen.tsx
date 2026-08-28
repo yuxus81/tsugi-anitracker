@@ -8,41 +8,55 @@ import {
   useAuth,
 } from '@/store/auth';
 import { useT } from '@/i18n';
-import { IconCheck } from '@/components/icons';
+import { Btn } from '@/components/ui';
+import { Icon } from '@/components/icons';
 
 type Mode = 'login' | 'signup' | 'forgot' | 'forgotSent';
 
-/**
- * Login-Gate: Tsugi braucht seit dem Umstieg auf Supabase-Sync ein echtes
- * Konto (Multi-Device), also gibt es ohne Session keine App zu sehen. Ein
- * Sonderfall wird separat behandelt: `passwordRecovery` (Klick auf den
- * Reset-Link) zeigt statt Login/Signup ein „neues Passwort setzen“-Formular.
- */
+const fieldStyle: React.CSSProperties = {
+  width: '100%',
+  borderRadius: 'var(--r-1)',
+  background: 'var(--bg)',
+  boxShadow: 'inset 0 0 0 1px var(--line-2)',
+  border: 0,
+  color: 'var(--ink)',
+  padding: '11px 13px',
+  fontSize: 15,
+  outline: 'none',
+};
+
+/** Login-Gate. Ohne Session gibt es keine App zu sehen (Multi-Device-Sync). */
 export function AuthScreen() {
   const t = useT();
   const passwordRecovery = useAuth((s) => s.passwordRecovery);
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="w-full max-w-[380px]">
-        <div className="mb-8 flex flex-col items-center text-center">
+    <div
+      style={{
+        minHeight: '100dvh',
+        display: 'grid',
+        placeItems: 'center',
+        padding: 16,
+        background: 'var(--bg)',
+      }}
+    >
+      <div style={{ width: '100%', maxWidth: 380 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 28 }}>
           <img
             src={`${import.meta.env.BASE_URL}logo.png`}
             alt=""
             width={52}
             height={52}
-            className="h-13 w-13 rounded-card shadow-glow-purple"
+            style={{ borderRadius: 'var(--r-3)', boxShadow: '0 0 0 1px rgba(255,255,255,.1), 0 8px 24px -6px rgba(138,43,226,.7)' }}
           />
-          <h1 className="mt-4 font-display text-[26px] font-semibold tracking-tight text-ink">
-            Tsugi
-            <span className="ml-1.5 text-ink-dim">Anitracker</span>
+          <h1 className="h-sec" style={{ marginTop: 14, fontSize: 22 }}>
+            Tsugi <span style={{ color: 'var(--ink-3)' }}>Anitracker</span>
           </h1>
-          <p className="mt-1.5 max-w-[32ch] text-sm text-ink-dim">{t('authTagline')}</p>
+          <p className="muted" style={{ marginTop: 6, maxWidth: '32ch' }}>
+            {t('authTagline')}
+          </p>
         </div>
-
-        <div className="rounded-card border border-line bg-surface p-6 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.8)]">
-          {passwordRecovery ? <RecoveryForm /> : <LoginForm />}
-        </div>
+        <div className="tile">{passwordRecovery ? <RecoveryForm /> : <LoginForm />}</div>
       </div>
     </div>
   );
@@ -62,15 +76,17 @@ function Field({
   autoComplete?: string;
 }) {
   return (
-    <label className="block">
-      <span className="mb-1.5 block text-[13px] font-medium text-ink-dim">{label}</span>
+    <label style={{ display: 'block' }}>
+      <span className="muted" style={{ display: 'block', marginBottom: 6, fontSize: 13 }}>
+        {label}
+      </span>
       <input
         type={type}
         required
         value={value}
         autoComplete={autoComplete}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-ctl border border-line bg-raised px-3.5 py-2.5 text-sm text-ink outline-none transition-colors duration-150 focus:border-accent"
+        style={fieldStyle}
       />
     </label>
   );
@@ -107,16 +123,17 @@ function LoginForm() {
 
   if (mode === 'forgotSent') {
     return (
-      <div className="py-2 text-center">
-        <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-accent/15 text-accent">
-          <IconCheck className="h-5 w-5" />
-        </div>
-        <p className="mt-3 text-sm leading-6 text-ink-dim">{t('authResetSent', { email })}</p>
-        <button
-          type="button"
-          onClick={() => setMode('login')}
-          className="mt-4 text-sm font-semibold text-accent hover:opacity-80"
+      <div style={{ padding: '8px 0', textAlign: 'center' }}>
+        <div
+          data-st="watching"
+          style={{ margin: '0 auto', display: 'grid', placeItems: 'center', width: 44, height: 44, borderRadius: '50%', background: 'var(--tone-bg)', color: 'var(--tone-t)' }}
         >
+          <Icon name="check" size={20} filled />
+        </div>
+        <p className="sub" style={{ marginTop: 12 }}>
+          {t('authResetSent', { email })}
+        </p>
+        <button type="button" onClick={() => setMode('login')} style={{ marginTop: 16, color: 'var(--cy-t)', fontWeight: 600 }}>
           {t('authBackToLogin')}
         </button>
       </div>
@@ -124,7 +141,7 @@ function LoginForm() {
   }
 
   return (
-    <form onSubmit={(e) => void submit(e)} className="space-y-4">
+    <form onSubmit={(e) => void submit(e)} style={{ display: 'grid', gap: 16 }}>
       <Field label={t('authEmail')} type="email" value={email} onChange={setEmail} autoComplete="email" />
       {mode !== 'forgot' && (
         <Field
@@ -137,51 +154,34 @@ function LoginForm() {
       )}
 
       {mode === 'login' && (
-        <div className="flex items-center justify-between text-[13px]">
-          <label className="flex items-center gap-2 text-ink-dim">
-            <input
-              type="checkbox"
-              checked={remember}
-              onChange={(e) => setRemember(e.target.checked)}
-              className="h-3.5 w-3.5 accent-accent"
-            />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ink-2)' }}>
+            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
             {t('authRemember')}
           </label>
-          <button
-            type="button"
-            onClick={() => setMode('forgot')}
-            className="font-medium text-ink-dim hover:text-accent"
-          >
+          <button type="button" onClick={() => setMode('forgot')} style={{ color: 'var(--ink-2)' }}>
             {t('authForgot')}
           </button>
         </div>
       )}
 
-      {error && <p className="text-[13px] leading-5 text-rose">{error}</p>}
+      {error && <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--pk-t)' }}>{error}</p>}
 
-      <button
-        type="submit"
-        disabled={busy}
-        className="w-full rounded-ctl bg-accent py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter] duration-150 hover:brightness-110 disabled:opacity-50"
-      >
+      <Btn variant="primary" wide type="submit" disabled={busy} loading={busy}>
         {mode === 'forgot' ? t('authSendReset') : mode === 'signup' ? t('authSignUp') : t('authLogIn')}
-      </button>
+      </Btn>
 
       {mode === 'forgot' ? (
-        <button
-          type="button"
-          onClick={() => setMode('login')}
-          className="block w-full text-center text-[13px] font-medium text-ink-dim hover:text-ink"
-        >
+        <button type="button" onClick={() => setMode('login')} className="muted" style={{ textAlign: 'center' }}>
           {t('authBackToLogin')}
         </button>
       ) : (
-        <p className="text-center text-[13px] text-ink-dim">
+        <p className="muted" style={{ textAlign: 'center' }}>
           {mode === 'signup' ? t('authHaveAccount') : t('authNoAccount')}{' '}
           <button
             type="button"
             onClick={() => setMode(mode === 'signup' ? 'login' : 'signup')}
-            className="font-semibold text-accent hover:opacity-80"
+            style={{ color: 'var(--cy-t)', fontWeight: 600 }}
           >
             {mode === 'signup' ? t('authLogIn') : t('authSignUp')}
           </button>
@@ -191,7 +191,6 @@ function LoginForm() {
   );
 }
 
-/** Nach Klick auf den Passwort-Reset-Link aus der E-Mail. */
 function RecoveryForm() {
   const t = useT();
   const [password, setPassword] = useState('');
@@ -215,18 +214,23 @@ function RecoveryForm() {
 
   if (done) {
     return (
-      <div className="py-2 text-center">
-        <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-accent/15 text-accent">
-          <IconCheck className="h-5 w-5" />
+      <div style={{ padding: '8px 0', textAlign: 'center' }}>
+        <div
+          data-st="watching"
+          style={{ margin: '0 auto', display: 'grid', placeItems: 'center', width: 44, height: 44, borderRadius: '50%', background: 'var(--tone-bg)', color: 'var(--tone-t)' }}
+        >
+          <Icon name="check" size={20} filled />
         </div>
-        <p className="mt-3 text-sm text-ink-dim">{t('authPasswordUpdated')}</p>
+        <p className="sub" style={{ marginTop: 12 }}>
+          {t('authPasswordUpdated')}
+        </p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={(e) => void submit(e)} className="space-y-4">
-      <p className="text-sm text-ink-dim">{t('authNewPasswordHint')}</p>
+    <form onSubmit={(e) => void submit(e)} style={{ display: 'grid', gap: 16 }}>
+      <p className="sub">{t('authNewPasswordHint')}</p>
       <Field
         label={t('authNewPassword')}
         type="password"
@@ -234,14 +238,10 @@ function RecoveryForm() {
         onChange={setPassword}
         autoComplete="new-password"
       />
-      {error && <p className="text-[13px] leading-5 text-rose">{error}</p>}
-      <button
-        type="submit"
-        disabled={busy}
-        className="w-full rounded-ctl bg-accent py-2.5 text-sm font-bold text-bg shadow-glow-accent transition-[filter] duration-150 hover:brightness-110 disabled:opacity-50"
-      >
+      {error && <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--pk-t)' }}>{error}</p>}
+      <Btn variant="primary" wide type="submit" disabled={busy} loading={busy}>
         {t('authSetPassword')}
-      </button>
+      </Btn>
     </form>
   );
 }

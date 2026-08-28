@@ -1,0 +1,1331 @@
+[
+  {
+    "rootId": 113415,
+    "status": "watching",
+    "seasons": [
+      {
+        "id": 113415,
+        "title": "JUJUTSU KAISEN",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx113415-LHBAeoZDIsnF.jpg",
+        "format": "TV",
+        "episodes": 24,
+        "season": "FALL",
+        "seasonYear": 2020,
+        "startDate": {
+          "year": 2020,
+          "month": 10,
+          "day": 3
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 84,
+        "duration": 24
+      },
+      {
+        "id": 145064,
+        "title": "JUJUTSU KAISEN Season 2",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx145064-hSNRJM03pvv1.jpg",
+        "format": "TV",
+        "episodes": 23,
+        "season": "SUMMER",
+        "seasonYear": 2023,
+        "startDate": {
+          "year": 2023,
+          "month": 7,
+          "day": 6
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 86,
+        "duration": 24
+      }
+    ],
+    "seasonIndex": 1,
+    "progress": 9,
+    "rating": 9,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Drama",
+      "Supernatural"
+    ],
+    "addedAt": 1785493094666,
+    "updatedAt": 1787825894666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 140960,
+    "status": "watching",
+    "seasons": [
+      {
+        "id": 140960,
+        "title": "SPY x FAMILY",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx140960-Kb6R5nYQfjmP.jpg",
+        "format": "TV",
+        "episodes": 12,
+        "season": "SPRING",
+        "seasonYear": 2022,
+        "startDate": {
+          "year": 2022,
+          "month": 4,
+          "day": 9
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 83,
+        "duration": 24
+      },
+      {
+        "id": 158927,
+        "title": "SPY x FAMILY Season 2",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/b158927-lfO85WVguYgc.png",
+        "format": "TV",
+        "episodes": 12,
+        "season": "FALL",
+        "seasonYear": 2023,
+        "startDate": {
+          "year": 2023,
+          "month": 10,
+          "day": 7
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 80,
+        "duration": 24
+      }
+    ],
+    "seasonIndex": 1,
+    "progress": 7,
+    "rating": 8,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Comedy",
+      "Slice of Life",
+      "Supernatural"
+    ],
+    "addedAt": 1784715494666,
+    "updatedAt": 1787679014666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 150672,
+    "status": "watching",
+    "seasons": [
+      {
+        "id": 150672,
+        "title": "OSHI NO KO",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx150672-WqmmwZ4nMzAy.png",
+        "format": "TV",
+        "episodes": 11,
+        "season": "SPRING",
+        "seasonYear": 2023,
+        "startDate": {
+          "year": 2023,
+          "month": 4,
+          "day": 12
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 84,
+        "duration": 24
+      },
+      {
+        "id": 166531,
+        "title": "OSHI NO KO Season 2",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx166531-dAL5MsqDHUkj.jpg",
+        "format": "TV",
+        "episodes": 13,
+        "season": "SUMMER",
+        "seasonYear": 2024,
+        "startDate": {
+          "year": 2024,
+          "month": 7,
+          "day": 3
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 85,
+        "duration": 24
+      }
+    ],
+    "seasonIndex": 1,
+    "progress": 4,
+    "rating": 8,
+    "notes": "",
+    "genres": [
+      "Drama",
+      "Mystery",
+      "Psychological",
+      "Supernatural"
+    ],
+    "addedAt": 1783937894666,
+    "updatedAt": 1787532134666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 11061,
+    "status": "watching",
+    "seasons": [
+      {
+        "id": 11061,
+        "title": "Hunter x Hunter (2011)",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx11061-y5gsT1hoHuHw.png",
+        "format": "TV",
+        "episodes": 148,
+        "season": "FALL",
+        "seasonYear": 2011,
+        "startDate": {
+          "year": 2011,
+          "month": 10,
+          "day": 2
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 89,
+        "duration": 24
+      }
+    ],
+    "seasonIndex": 0,
+    "progress": 61,
+    "rating": 10,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Fantasy"
+    ],
+    "addedAt": 1783160294666,
+    "updatedAt": 1787385254666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 21355,
+    "status": "watching",
+    "seasons": [
+      {
+        "id": 21355,
+        "title": "Re:ZERO -Starting Life in Another World-",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21355-wRVUrGxpvIQQ.jpg",
+        "format": "TV",
+        "episodes": 25,
+        "season": "SPRING",
+        "seasonYear": 2016,
+        "startDate": {
+          "year": 2016,
+          "month": 4,
+          "day": 4
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 81,
+        "duration": 25
+      },
+      {
+        "id": 189046,
+        "title": "Re:ZERO -Starting Life in Another World- Season 4",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx189046-yaHWtS5FII46.jpg",
+        "format": "TV",
+        "episodes": 19,
+        "season": "SPRING",
+        "seasonYear": 2026,
+        "startDate": {
+          "year": 2026,
+          "month": 4,
+          "day": 8
+        },
+        "airStatus": "RELEASING",
+        "averageScore": 90,
+        "duration": 24
+      }
+    ],
+    "seasonIndex": 1,
+    "progress": 12,
+    "rating": 8,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Drama",
+      "Fantasy",
+      "Psychological",
+      "Romance",
+      "Thriller"
+    ],
+    "addedAt": 1782382694666,
+    "updatedAt": 1787238374666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 178789,
+    "status": "watching",
+    "seasons": [
+      {
+        "id": 178789,
+        "title": "Mushoku Tensei: Jobless Reincarnation Season 3",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx178789-hNXjKFzUq7mk.jpg",
+        "format": "TV",
+        "episodes": 14,
+        "season": "SUMMER",
+        "seasonYear": 2026,
+        "startDate": {
+          "year": 2026,
+          "month": 7,
+          "day": 4
+        },
+        "airStatus": "RELEASING",
+        "averageScore": 84,
+        "duration": 24
+      }
+    ],
+    "seasonIndex": 0,
+    "progress": 6,
+    "rating": 7,
+    "notes": "",
+    "genres": [
+      "Adventure",
+      "Drama",
+      "Ecchi",
+      "Fantasy"
+    ],
+    "addedAt": 1781605094666,
+    "updatedAt": 1787091494666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 196187,
+    "status": "watching",
+    "seasons": [
+      {
+        "id": 196187,
+        "title": "Smoking Behind the Supermarket with You",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx196187-0dgFi2CPp3xn.jpg",
+        "format": "TV",
+        "episodes": 12,
+        "season": "SUMMER",
+        "seasonYear": 2026,
+        "startDate": {
+          "year": 2026,
+          "month": 7,
+          "day": 10
+        },
+        "airStatus": "RELEASING",
+        "averageScore": 82,
+        "duration": 24
+      }
+    ],
+    "seasonIndex": 0,
+    "progress": 5,
+    "rating": 7,
+    "notes": "",
+    "genres": [
+      "Comedy",
+      "Romance",
+      "Slice of Life"
+    ],
+    "addedAt": 1780827494666,
+    "updatedAt": 1786944614666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 101922,
+    "status": "nextup",
+    "seasons": [
+      {
+        "id": 101922,
+        "title": "Demon Slayer: Kimetsu no Yaiba",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx101922-WBsBl0ClmgYL.jpg",
+        "format": "TV",
+        "episodes": 26,
+        "season": "SPRING",
+        "seasonYear": 2019,
+        "startDate": {
+          "year": 2019,
+          "month": 4,
+          "day": 6
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 83,
+        "duration": 24
+      },
+      {
+        "id": 142329,
+        "title": "Demon Slayer: Kimetsu no Yaiba Entertainment District Arc",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx142329-kET1PIXJv2eW.jpg",
+        "format": "TV",
+        "episodes": 11,
+        "season": "WINTER",
+        "seasonYear": 2022,
+        "startDate": {
+          "year": 2021,
+          "month": 12,
+          "day": 5
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 86,
+        "duration": 24
+      },
+      {
+        "id": 145139,
+        "title": "Demon Slayer: Kimetsu no Yaiba Swordsmith Village Arc",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx145139-rRimpHGWLhym.png",
+        "format": "TV",
+        "episodes": 11,
+        "season": "SPRING",
+        "seasonYear": 2023,
+        "startDate": {
+          "year": 2023,
+          "month": 4,
+          "day": 9
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 81,
+        "duration": 24
+      }
+    ],
+    "seasonIndex": 1,
+    "progress": 0,
+    "rating": 8,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Drama",
+      "Fantasy",
+      "Supernatural"
+    ],
+    "addedAt": 1780049894666,
+    "updatedAt": 1786797734666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 151807,
+    "status": "nextup",
+    "seasons": [
+      {
+        "id": 151807,
+        "title": "Solo Leveling",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx151807-it355ZgzquUd.png",
+        "format": "TV",
+        "episodes": 12,
+        "season": "WINTER",
+        "seasonYear": 2024,
+        "startDate": {
+          "year": 2024,
+          "month": 1,
+          "day": 7
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 81,
+        "duration": 24
+      },
+      {
+        "id": 176496,
+        "title": "Solo Leveling Season 2 -Arise from the Shadow-",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx176496-9BDMjAZGEbq4.png",
+        "format": "TV",
+        "episodes": 13,
+        "season": "WINTER",
+        "seasonYear": 2025,
+        "startDate": {
+          "year": 2025,
+          "month": 1,
+          "day": 5
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 84,
+        "duration": 24
+      }
+    ],
+    "seasonIndex": 1,
+    "progress": 0,
+    "rating": 7,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Fantasy"
+    ],
+    "addedAt": 1779272294666,
+    "updatedAt": 1786650854666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 127230,
+    "status": "nextup",
+    "seasons": [
+      {
+        "id": 127230,
+        "title": "Chainsaw Man",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx127230-DdP4vAdssLoz.png",
+        "format": "TV",
+        "episodes": 12,
+        "season": "FALL",
+        "seasonYear": 2022,
+        "startDate": {
+          "year": 2022,
+          "month": 10,
+          "day": 12
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 83,
+        "duration": 25
+      },
+      {
+        "id": 171627,
+        "title": "Chainsaw Man – The Movie: Reze Arc",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx171627-ZN9D7P46yHnw.png",
+        "format": "MOVIE",
+        "episodes": 1,
+        "season": "SUMMER",
+        "seasonYear": 2025,
+        "startDate": {
+          "year": 2025,
+          "month": 9,
+          "day": 19
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 90,
+        "duration": 100
+      }
+    ],
+    "seasonIndex": 1,
+    "progress": 0,
+    "rating": 9,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Drama",
+      "Horror",
+      "Supernatural"
+    ],
+    "addedAt": 1778494694666,
+    "updatedAt": 1786503974666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 185874,
+    "status": "nextup",
+    "seasons": [
+      {
+        "id": 185874,
+        "title": "BLEACH: Thousand-Year Blood War - The Calamity",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx185874-aU3e6tBT6wwA.jpg",
+        "format": "TV",
+        "episodes": 10,
+        "season": "SUMMER",
+        "seasonYear": 2026,
+        "startDate": {
+          "year": 2026,
+          "month": 7,
+          "day": 25
+        },
+        "airStatus": "RELEASING",
+        "averageScore": 90,
+        "duration": null
+      }
+    ],
+    "seasonIndex": 0,
+    "progress": 0,
+    "rating": null,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Supernatural"
+    ],
+    "addedAt": 1777717094666,
+    "updatedAt": 1786357094666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 154587,
+    "status": "continuation",
+    "seasons": [
+      {
+        "id": 154587,
+        "title": "Frieren: Beyond Journey’s End",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx154587-qQTzQnEJJ3oB.jpg",
+        "format": "TV",
+        "episodes": 28,
+        "season": "FALL",
+        "seasonYear": 2023,
+        "startDate": {
+          "year": 2023,
+          "month": 9,
+          "day": 29
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 91,
+        "duration": 24
+      },
+      {
+        "id": 182255,
+        "title": "Frieren: Beyond Journey’s End Season 2",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx182255-butzrqd4I0aC.jpg",
+        "format": "TV",
+        "episodes": 10,
+        "season": "WINTER",
+        "seasonYear": 2026,
+        "startDate": {
+          "year": 2026,
+          "month": 1,
+          "day": 16
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 88,
+        "duration": 24
+      },
+      {
+        "id": 209939,
+        "title": "Sousou no Frieren 3rd Season",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx209939-g2Njkml1rheG.jpg",
+        "format": "TV",
+        "episodes": null,
+        "season": "FALL",
+        "seasonYear": 2027,
+        "startDate": {
+          "year": 2027,
+          "month": 10,
+          "day": null
+        },
+        "airStatus": "NOT_YET_RELEASED",
+        "averageScore": null,
+        "duration": null
+      }
+    ],
+    "seasonIndex": 2,
+    "progress": 0,
+    "rating": 10,
+    "notes": "",
+    "genres": [
+      "Adventure",
+      "Drama",
+      "Fantasy"
+    ],
+    "addedAt": 1776939494666,
+    "updatedAt": 1786210214666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": "2027"
+  },
+  {
+    "rootId": 161645,
+    "status": "continuation",
+    "seasons": [
+      {
+        "id": 161645,
+        "title": "The Apothecary Diaries",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx161645-QLbzHXiYRgV2.jpg",
+        "format": "TV",
+        "episodes": 24,
+        "season": "FALL",
+        "seasonYear": 2023,
+        "startDate": {
+          "year": 2023,
+          "month": 10,
+          "day": 22
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 88,
+        "duration": 23
+      },
+      {
+        "id": 195516,
+        "title": "The Apothecary Diaries Season 3",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx195516-MJpUZlOberqH.jpg",
+        "format": "TV",
+        "episodes": null,
+        "season": "FALL",
+        "seasonYear": 2026,
+        "startDate": {
+          "year": 2026,
+          "month": 10,
+          "day": 2
+        },
+        "airStatus": "NOT_YET_RELEASED",
+        "averageScore": null,
+        "duration": null
+      }
+    ],
+    "seasonIndex": 1,
+    "progress": 0,
+    "rating": 9,
+    "notes": "",
+    "genres": [
+      "Drama",
+      "Mystery"
+    ],
+    "addedAt": 1776161894666,
+    "updatedAt": 1786063334666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": "2026"
+  },
+  {
+    "rootId": 171018,
+    "status": "continuation",
+    "seasons": [
+      {
+        "id": 171018,
+        "title": "DAN DA DAN",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx171018-60q1B6GK2Ghb.jpg",
+        "format": "TV",
+        "episodes": 12,
+        "season": "FALL",
+        "seasonYear": 2024,
+        "startDate": {
+          "year": 2024,
+          "month": 10,
+          "day": 4
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 83,
+        "duration": 24
+      },
+      {
+        "id": 198966,
+        "title": "Dandadan 3rd Season",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx198966-9Ji1GwIyRiiu.jpg",
+        "format": "TV",
+        "episodes": null,
+        "season": null,
+        "seasonYear": null,
+        "startDate": {
+          "year": 2027,
+          "month": null,
+          "day": null
+        },
+        "airStatus": "NOT_YET_RELEASED",
+        "averageScore": null,
+        "duration": null
+      }
+    ],
+    "seasonIndex": 1,
+    "progress": 0,
+    "rating": 8,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Comedy",
+      "Drama",
+      "Romance",
+      "Sci-Fi",
+      "Supernatural"
+    ],
+    "addedAt": 1775384294666,
+    "updatedAt": 1785916454666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 130003,
+    "status": "continuation",
+    "seasons": [
+      {
+        "id": 130003,
+        "title": "BOCCHI THE ROCK!",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx130003-HTDmeL4RGeJ4.png",
+        "format": "TV",
+        "episodes": 12,
+        "season": "FALL",
+        "seasonYear": 2022,
+        "startDate": {
+          "year": 2022,
+          "month": 10,
+          "day": 9
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 87,
+        "duration": 24
+      },
+      {
+        "id": 186712,
+        "title": "Bocchi the Rock! 2nd Season",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx186712-d5I2TjUQcHuI.jpg",
+        "format": "TV",
+        "episodes": null,
+        "season": null,
+        "seasonYear": null,
+        "startDate": {
+          "year": null,
+          "month": null,
+          "day": null
+        },
+        "airStatus": "NOT_YET_RELEASED",
+        "averageScore": null,
+        "duration": null
+      }
+    ],
+    "seasonIndex": 1,
+    "progress": 0,
+    "rating": 9,
+    "notes": "",
+    "genres": [
+      "Comedy",
+      "Music",
+      "Slice of Life"
+    ],
+    "addedAt": 1774606694666,
+    "updatedAt": 1785769574666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 16498,
+    "status": "completed",
+    "seasons": [
+      {
+        "id": 16498,
+        "title": "Attack on Titan",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx16498-buvcRTBx4NSm.jpg",
+        "format": "TV",
+        "episodes": 25,
+        "season": "SPRING",
+        "seasonYear": 2013,
+        "startDate": {
+          "year": 2013,
+          "month": 4,
+          "day": 7
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 85,
+        "duration": 24
+      },
+      {
+        "id": 20958,
+        "title": "Attack on Titan Season 2",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20958-HuFJyr54Mmir.jpg",
+        "format": "TV",
+        "episodes": 12,
+        "season": "SPRING",
+        "seasonYear": 2017,
+        "startDate": {
+          "year": 2017,
+          "month": 4,
+          "day": 1
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 85,
+        "duration": 25
+      },
+      {
+        "id": 99147,
+        "title": "Attack on Titan Season 3",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx99147-AiPDD8cwlCfi.jpg",
+        "format": "TV",
+        "episodes": 12,
+        "season": "SUMMER",
+        "seasonYear": 2018,
+        "startDate": {
+          "year": 2018,
+          "month": 7,
+          "day": 23
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 86,
+        "duration": 24
+      },
+      {
+        "id": 110277,
+        "title": "Attack on Titan Final Season",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx110277-sKUNXAsWMNFw.jpg",
+        "format": "TV",
+        "episodes": 16,
+        "season": "WINTER",
+        "seasonYear": 2021,
+        "startDate": {
+          "year": 2020,
+          "month": 12,
+          "day": 7
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 87,
+        "duration": 24
+      }
+    ],
+    "seasonIndex": 3,
+    "progress": 16,
+    "rating": 10,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Drama",
+      "Fantasy",
+      "Mystery"
+    ],
+    "addedAt": 1773829094666,
+    "updatedAt": 1785622694666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 21087,
+    "status": "completed",
+    "seasons": [
+      {
+        "id": 21087,
+        "title": "One-Punch Man",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21087-B5DHjqZ3kW4b.jpg",
+        "format": "TV",
+        "episodes": 12,
+        "season": "FALL",
+        "seasonYear": 2015,
+        "startDate": {
+          "year": 2015,
+          "month": 10,
+          "day": 5
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 83,
+        "duration": 24
+      },
+      {
+        "id": 97668,
+        "title": "One-Punch Man Season 2",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx97668-nC8gQrXVxt7k.png",
+        "format": "TV",
+        "episodes": 12,
+        "season": "SPRING",
+        "seasonYear": 2019,
+        "startDate": {
+          "year": 2019,
+          "month": 4,
+          "day": 10
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 74,
+        "duration": 24
+      }
+    ],
+    "seasonIndex": 1,
+    "progress": 12,
+    "rating": 8,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Comedy",
+      "Sci-Fi",
+      "Supernatural"
+    ],
+    "addedAt": 1773051494666,
+    "updatedAt": 1785475814666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 101348,
+    "status": "completed",
+    "seasons": [
+      {
+        "id": 101348,
+        "title": "Vinland Saga",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx101348-2fhDFPCuMNiz.jpg",
+        "format": "TV",
+        "episodes": 24,
+        "season": "SUMMER",
+        "seasonYear": 2019,
+        "startDate": {
+          "year": 2019,
+          "month": 7,
+          "day": 8
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 87,
+        "duration": 24
+      },
+      {
+        "id": 136430,
+        "title": "Vinland Saga Season 2",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx136430-gsBsJjA7hGh9.jpg",
+        "format": "TV",
+        "episodes": 24,
+        "season": "WINTER",
+        "seasonYear": 2023,
+        "startDate": {
+          "year": 2023,
+          "month": 1,
+          "day": 10
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 88,
+        "duration": 26
+      }
+    ],
+    "seasonIndex": 1,
+    "progress": 24,
+    "rating": 10,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Drama"
+    ],
+    "addedAt": 1772273894666,
+    "updatedAt": 1785328934666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 9253,
+    "status": "completed",
+    "seasons": [
+      {
+        "id": 9253,
+        "title": "Steins;Gate",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx9253-tIUXF2gfU8Sg.jpg",
+        "format": "TV",
+        "episodes": 24,
+        "season": "SPRING",
+        "seasonYear": 2011,
+        "startDate": {
+          "year": 2011,
+          "month": 4,
+          "day": 6
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 89,
+        "duration": 24
+      }
+    ],
+    "seasonIndex": 0,
+    "progress": 24,
+    "rating": 10,
+    "notes": "",
+    "genres": [
+      "Drama",
+      "Psychological",
+      "Sci-Fi",
+      "Thriller"
+    ],
+    "addedAt": 1771496294666,
+    "updatedAt": 1785182054666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 5114,
+    "status": "completed",
+    "seasons": [
+      {
+        "id": 5114,
+        "title": "Fullmetal Alchemist: Brotherhood",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx5114-nSWCgQlmOMtj.jpg",
+        "format": "TV",
+        "episodes": 64,
+        "season": "SPRING",
+        "seasonYear": 2009,
+        "startDate": {
+          "year": 2009,
+          "month": 4,
+          "day": 5
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 90,
+        "duration": 25
+      }
+    ],
+    "seasonIndex": 0,
+    "progress": 64,
+    "rating": 10,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Drama",
+      "Fantasy"
+    ],
+    "addedAt": 1770718694666,
+    "updatedAt": 1785035174666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 21519,
+    "status": "completed",
+    "seasons": [
+      {
+        "id": 21519,
+        "title": "Your Name.",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21519-SUo3ZQuCbYhJ.png",
+        "format": "MOVIE",
+        "episodes": 1,
+        "season": "SUMMER",
+        "seasonYear": 2016,
+        "startDate": {
+          "year": 2016,
+          "month": 8,
+          "day": 26
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 86,
+        "duration": 107
+      }
+    ],
+    "seasonIndex": 0,
+    "progress": 1,
+    "rating": 9,
+    "notes": "",
+    "genres": [
+      "Drama",
+      "Romance",
+      "Supernatural"
+    ],
+    "addedAt": 1769941094666,
+    "updatedAt": 1784888294666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 21827,
+    "status": "completed",
+    "seasons": [
+      {
+        "id": 21827,
+        "title": "Violet Evergarden",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21827-ubzq619ZA2E9.png",
+        "format": "TV",
+        "episodes": 13,
+        "season": "WINTER",
+        "seasonYear": 2018,
+        "startDate": {
+          "year": 2018,
+          "month": 1,
+          "day": 11
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 85,
+        "duration": 24
+      }
+    ],
+    "seasonIndex": 0,
+    "progress": 13,
+    "rating": 8,
+    "notes": "",
+    "genres": [
+      "Drama",
+      "Fantasy",
+      "Slice of Life"
+    ],
+    "addedAt": 1769163494666,
+    "updatedAt": 1784741414666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 137822,
+    "status": "planned",
+    "seasons": [
+      {
+        "id": 137822,
+        "title": "BLUE LOCK",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx137822-U8naszP96vzC.png",
+        "format": "TV",
+        "episodes": 24,
+        "season": "FALL",
+        "seasonYear": 2022,
+        "startDate": {
+          "year": 2022,
+          "month": 10,
+          "day": 9
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 80,
+        "duration": 25
+      }
+    ],
+    "seasonIndex": 0,
+    "progress": 0,
+    "rating": null,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Drama",
+      "Sports"
+    ],
+    "addedAt": 1768385894666,
+    "updatedAt": 1784594534666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 163270,
+    "status": "planned",
+    "seasons": [
+      {
+        "id": 163270,
+        "title": "WIND BREAKER",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx163270-wboZJp0ybwVK.jpg",
+        "format": "TV",
+        "episodes": 13,
+        "season": "SPRING",
+        "seasonYear": 2024,
+        "startDate": {
+          "year": 2024,
+          "month": 4,
+          "day": 5
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 77,
+        "duration": 24
+      }
+    ],
+    "seasonIndex": 0,
+    "progress": 0,
+    "rating": null,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Comedy",
+      "Drama"
+    ],
+    "addedAt": 1767608294666,
+    "updatedAt": 1784447654666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 177709,
+    "status": "planned",
+    "seasons": [
+      {
+        "id": 177709,
+        "title": "SAKAMOTO DAYS",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx177709-e5Qx6RlsBgD5.png",
+        "format": "ONA",
+        "episodes": 11,
+        "season": "WINTER",
+        "seasonYear": 2025,
+        "startDate": {
+          "year": 2025,
+          "month": 1,
+          "day": 11
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 76,
+        "duration": 24
+      }
+    ],
+    "seasonIndex": 0,
+    "progress": 0,
+    "rating": null,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Comedy"
+    ],
+    "addedAt": 1766830694666,
+    "updatedAt": 1784300774666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 178025,
+    "status": "planned",
+    "seasons": [
+      {
+        "id": 178025,
+        "title": "Gachiakuta",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx178025-cWJKEsZynkil.jpg",
+        "format": "TV",
+        "episodes": 24,
+        "season": "SUMMER",
+        "seasonYear": 2025,
+        "startDate": {
+          "year": 2025,
+          "month": 7,
+          "day": 6
+        },
+        "airStatus": "FINISHED",
+        "averageScore": 82,
+        "duration": 24
+      }
+    ],
+    "seasonIndex": 0,
+    "progress": 0,
+    "rating": null,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Drama",
+      "Fantasy"
+    ],
+    "addedAt": 1766053094666,
+    "updatedAt": 1784153894666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 213702,
+    "status": "planned",
+    "seasons": [
+      {
+        "id": 213702,
+        "title": "Witch Hat Atelier Season 2",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx213702-vCWQFcAfDF8c.jpg",
+        "format": "TV",
+        "episodes": null,
+        "season": null,
+        "seasonYear": null,
+        "startDate": {
+          "year": null,
+          "month": null,
+          "day": null
+        },
+        "airStatus": "NOT_YET_RELEASED",
+        "averageScore": null,
+        "duration": null
+      }
+    ],
+    "seasonIndex": 0,
+    "progress": 0,
+    "rating": null,
+    "notes": "",
+    "genres": [
+      "Action",
+      "Drama",
+      "Fantasy"
+    ],
+    "addedAt": 1765275494666,
+    "updatedAt": 1784007014666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  },
+  {
+    "rootId": 199111,
+    "status": "planned",
+    "seasons": [
+      {
+        "id": 199111,
+        "title": "Grand Blue Dreaming Season 3",
+        "coverUrl": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx199111-gBSuBG61ElcW.jpg",
+        "format": "TV",
+        "episodes": 12,
+        "season": "SUMMER",
+        "seasonYear": 2026,
+        "startDate": {
+          "year": 2026,
+          "month": 7,
+          "day": 7
+        },
+        "airStatus": "RELEASING",
+        "averageScore": 82,
+        "duration": 24
+      }
+    ],
+    "seasonIndex": 0,
+    "progress": 0,
+    "rating": null,
+    "notes": "",
+    "genres": [
+      "Comedy",
+      "Slice of Life",
+      "Sports"
+    ],
+    "addedAt": 1764497894666,
+    "updatedAt": 1783860134666,
+    "lastScanAt": 1787825894666,
+    "releaseNote": null
+  }
+]
