@@ -186,19 +186,39 @@ export function hasSequel(e: LibraryEntry): boolean {
  * veröffentlichte Staffel oder eine angekündigte Fortsetzung (`releaseNote`)
  * aussteht.
  */
-export function pendingSeasons(e: LibraryEntry): { nums: number[]; announced: boolean } {
+export function pendingSeasons(e: LibraryEntry): {
+  /** Staffelnummern (nur TV/ONA, Filme zählen NICHT als Staffel mit). */
+  nums: number[];
+  /** Wie viele bereits erschienene Kinofilme noch offen sind. */
+  movies: number;
+  announced: boolean;
+} {
   const watchedThroughIdx =
     e.status === 'continuation' || e.status === 'nextup' || e.status === 'watching'
       ? e.seasonIndex - 1
       : e.seasonIndex;
   const nums: number[] = [];
+  let movies = 0;
   let announced = false;
-  for (let i = watchedThroughIdx + 1; i < e.seasons.length; i++) {
-    if (isReleased(e.seasons[i])) nums.push(i + 1);
-    else announced = true;
+
+  // Staffeln durchzählen, Filme dabei überspringen — sonst wird aus dem
+  // zweiten Kinofilm eine „Staffel 4", die es nie gab.
+  let seasonNo = 0;
+  for (let i = 0; i < e.seasons.length; i++) {
+    const s = e.seasons[i];
+    const isMovie = s.format === 'MOVIE';
+    if (!isMovie) seasonNo += 1;
+    if (i <= watchedThroughIdx) continue;
+    if (!isReleased(s)) {
+      announced = true;
+      continue;
+    }
+    if (isMovie) movies += 1;
+    else nums.push(seasonNo);
   }
+
   if (e.releaseNote != null && e.releaseNote.trim() !== '') announced = true;
-  return { nums, announced };
+  return { nums, movies, announced };
 }
 
 /** Insgesamt gesehene Episoden über alle Staffeln. */

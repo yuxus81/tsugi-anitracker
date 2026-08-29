@@ -113,27 +113,45 @@ export function AddPanel({
     { key: 'specials', ico: 'sparkle', label: t('extrasTitle') },
   ];
 
-  /** Gruppierte Kachel-Raster; `renderTile` bekommt Snap, Originalindex und
-   *  (nur bei Staffeln) die laufende Staffelnummer. */
+  /**
+   * Ein durchgehender Auswahlbogen statt drei getrennter Kästen.
+   *
+   * Vorher stand jede Gruppe (Staffeln / Filme / Specials) in einem eigenen
+   * Block, samt eigener Überschriftenleiste — bei einem Franchise mit einem
+   * einzelnen Film und zwei Specials waren das drei fast leere Kästen
+   * untereinander, und das las sich unruhig statt geordnet (Yunus
+   * 29.08.2026: „sieht sehr chaotisch aus"). Jetzt sind es Abschnitte
+   * INNERHALB einer Fläche: eine dünne Trennlinie, eine kleine Beschriftung,
+   * dasselbe Raster durchgehend. Gruppen ohne Inhalt tauchen gar nicht erst
+   * auf — es gibt also keine leeren, ausgegrauten Reihen mehr.
+   */
   function renderGroups(renderTile: (s: SeasonSnap, i: number, seasonNo: number | null) => ReactNode) {
-    return GROUPS.map(({ key, ico, label }) => {
-      const items = groups[key];
-      if (!items.length) return null;
-      return (
-        <div className="fx__group" key={key}>
-          <div className="fx__gh">
-            <Icon name={ico} size={14} filled />
-            <span>{label}</span>
-            <span className="fx__gn tnum">{items.length}</span>
-          </div>
-          <div className="grid">
-            {items.map(({ snap, idx }, gi) =>
-              renderTile(snap, idx, key === 'seasons' ? gi + 1 : null),
-            )}
-          </div>
-        </div>
-      );
-    });
+    const filled = GROUPS.filter(({ key }) => groups[key].length > 0);
+    return (
+      <div className="pick">
+        {filled.map(({ key, ico, label }) => {
+          const items = groups[key];
+          return (
+            <section className="pick__sec" key={key}>
+              {/* Bei nur einer Art Inhalt braucht es gar keine Beschriftung —
+                  die Kacheln erklären sich dann selbst. */}
+              {filled.length > 1 && (
+                <h3 className="pick__lab">
+                  <Icon name={ico} size={13} filled />
+                  <span>{label}</span>
+                  <span className="pick__n tnum">{items.length}</span>
+                </h3>
+              )}
+              <div className="pick__grid">
+                {items.map(({ snap, idx }, gi) =>
+                  renderTile(snap, idx, key === 'seasons' ? gi + 1 : null),
+                )}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    );
   }
 
   return (
@@ -153,7 +171,7 @@ export function AddPanel({
             {t('addWatchingSeasonPrompt')}
           </p>
           {loading ? (
-            <div className="grid">
+            <div className="pick__grid">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="skel" style={{ aspectRatio: '2 / 3' }} />
               ))}
@@ -242,7 +260,7 @@ export function AddPanel({
           )}
 
           {loading ? (
-            <div className="grid">
+            <div className="pick__grid">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="skel" style={{ aspectRatio: '2 / 3' }} />
               ))}
@@ -322,23 +340,30 @@ function SeasonTile({
   onCut?: () => void;
 }) {
   const t = useT();
-  const art: CSSProperties = {
-    position: 'relative',
-    aspectRatio: '2 / 3',
-    borderRadius: 'var(--r-2)',
-    overflow: 'hidden',
-    background: 'var(--s1)',
-    boxShadow: selected
-      ? `inset 0 0 0 2px ${selectColor}, 0 0 0 3px color-mix(in srgb, ${selectColor} 24%, transparent)`
-      : 'var(--sh-1), inset 0 0 0 1px var(--line)',
-    filter: excluded ? 'grayscale(1) brightness(.7)' : undefined,
-    cursor: onClick ? 'pointer' : 'default',
-  };
+  // Farbe bleibt Farbe: weder „noch nicht erschienen" noch „abgeschnitten"
+  // wird mehr in Graustufen gerechnet (Yunus 29.08.2026). Der Zustand steckt
+  // stattdessen in Deckkraft, Rahmen und Schildchen — das Poster bleibt
+  // erkennbar, die Auswahl trotzdem eindeutig.
+  const cls = [
+    'pick__tile',
+    selected ? 'is-sel' : '',
+    checked ? 'is-checked' : '',
+    excluded ? 'is-excluded' : '',
+    !released ? 'is-soon' : '',
+    onClick ? '' : 'is-locked',
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const style = { '--pick-sel': selectColor } as CSSProperties;
+
   return (
     <div
+      className={cls}
+      style={style}
       role="button"
       tabIndex={onClick ? 0 : -1}
       aria-disabled={!onClick}
+      aria-pressed={selected}
       onClick={onClick}
       onKeyDown={(e) => {
         if (onClick && (e.key === 'Enter' || e.key === ' ')) {
@@ -347,84 +372,27 @@ function SeasonTile({
         }
       }}
     >
-      <div style={art}>
-        {cover && (
-          <img
-            src={cover}
-            alt=""
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              filter: !released && !excluded ? 'grayscale(1) brightness(.7)' : undefined,
-            }}
-          />
-        )}
-        <span
-          style={{
-            position: 'absolute',
-            inset: 'auto 0 0',
-            padding: '18px 6px 6px',
-            background: 'linear-gradient(to top, rgba(6,8,14,.95), transparent)',
-            fontSize: 10.5,
-            fontWeight: 600,
-            color: selected ? 'var(--ink)' : 'var(--ink-2)',
-          }}
-        >
-          {label}
-        </span>
-        {lockedLabel && (
-          <span
-            style={{
-              position: 'absolute',
-              left: 4,
-              top: 4,
-              padding: '2px 6px',
-              borderRadius: 'var(--r-pill)',
-              background: 'rgba(8,10,16,.85)',
-              fontSize: 9,
-              fontWeight: 600,
-              color: excluded ? 'var(--pk-t)' : 'var(--ink-3)',
-            }}
-          >
-            {lockedLabel}
-          </span>
-        )}
-        <span style={{ position: 'absolute', right: 4, top: 4, display: 'flex', gap: 4 }}>
+      <div className="pick__art">
+        {cover && <img src={cover} alt="" loading="lazy" decoding="async" />}
+        <span className="pick__cap">{label}</span>
+        {lockedLabel && <span className="pick__flag">{lockedLabel}</span>}
+        <span className="pick__acts">
           {onCut && (
             <button
               type="button"
+              className={`pick__cut${cutActive ? ' is-on' : ''}`}
               onClick={(e) => {
                 e.stopPropagation();
                 onCut();
               }}
               aria-label={t('addCutoffToggle')}
               title={t('addCutoffToggle')}
-              style={{
-                display: 'grid',
-                placeItems: 'center',
-                width: 20,
-                height: 20,
-                borderRadius: 6,
-                background: cutActive ? 'var(--cy)' : 'rgba(8,10,16,.7)',
-                color: cutActive ? '#04241f' : 'var(--ink-3)',
-              }}
             >
               <Icon name="scissors" size={11} />
             </button>
           )}
           {checked && (
-            <span
-              style={{
-                display: 'grid',
-                placeItems: 'center',
-                width: 20,
-                height: 20,
-                borderRadius: 6,
-                background: 'var(--cy)',
-                color: '#04241f',
-              }}
-            >
+            <span className="pick__check">
               <Icon name="check" size={12} />
             </span>
           )}

@@ -141,20 +141,14 @@ h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.028em; line-height: 1.15; 
   font-size: clamp(8.5px, 2.35vw, 10.5px); font-weight: 600; letter-spacing: -0.015em;
   transition: color var(--t-fast) var(--e-out);
 }
-.tab__cap {
-  position: absolute;
-  top: 3px; left: 50%;
-  width: 46px; height: 30px;
-  margin-left: -23px;
-  border-radius: var(--r-pill);
-  background: var(--tone-bg, var(--cy-bg));
-  transform: scaleX(.35) scaleY(.6);
-  opacity: 0;
-  transition: transform var(--t-mid) var(--e-spring), opacity var(--t-fast) var(--e-out), background var(--t-mid) var(--e-out);
-}
+/* Die getönte Pille hinter dem aktiven Reiter ist weg (Yunus 29.08.2026:
+   „die Navigationsbarkreise bitte weglassen"). Der aktive Reiter erkennt man
+   jetzt an Farbe und gefülltem Zeichen — dasselbe Signal, nur ohne Fläche.
+   `.tab__cap` bleibt als leeres Element im Markup und wird hier stillgelegt,
+   damit kein Layout-Sprung entsteht. */
+.tab__cap { display: none; }
 .tab.is-on { color: var(--tone-t, var(--cy-t)); }
-.tab.is-on .tab__cap { transform: none; opacity: 1; }
-.tab:active .tab__cap { transform: scale(.9); }
+.tab:active .ico-pair { transform: scale(.9); transition: transform var(--t-tap) var(--e-out); }
 .tab .ico-pair { position: relative; z-index: 1; }
 .tab__label {
   position: relative; z-index: 1;
@@ -216,7 +210,17 @@ h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.028em; line-height: 1.15; 
   }
   .railitem:hover { background: rgba(255,255,255,.045); color: var(--ink); }
   .railitem:active { transform: scale(.98); }
-  .railitem.is-on { background: var(--tone-bg, var(--cy-bg)); color: var(--tone-t, var(--cy-t)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone, var(--cy)) 32%, transparent); }
+  /* Wie in der Tab-Leiste: keine gefüllte Pille mehr um den aktiven Eintrag.
+     Stattdessen ein schmaler Strich an der Kante — ruhiger, und der Blick
+     findet die Stelle trotzdem sofort. */
+  .railitem.is-on { background: none; color: var(--tone-t, var(--cy-t)); box-shadow: none; }
+  .railitem.is-on::before {
+    content: '';
+    position: absolute; left: -12px; top: 50%;
+    width: 3px; height: 20px; margin-top: -10px;
+    border-radius: 0 3px 3px 0;
+    background: var(--tone, var(--cy));
+  }
   .rail__foot { margin-top: auto; padding: 14px 10px 0; font-size: 11.5px; line-height: 1.5; color: var(--ink-3); }
   .pane__inner { padding: 26px 28px 40px; }
 }
@@ -973,7 +977,10 @@ h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.028em; line-height: 1.15; 
 .row-item__rank { width: 22px; flex: none; text-align: center; font-family: var(--font-num); font-size: 14px; color: var(--ink-3); }
 .row-item__art { position: relative; width: 66px; height: 99px; border-radius: var(--r-2); overflow: hidden; flex: none; background: var(--s1); box-shadow: var(--sh-1), inset 0 0 0 1px rgba(255,255,255,.08); }
 .row-item__art img { width: 100%; height: 100%; object-fit: cover; transition: filter 900ms var(--e-out); }
-.row-item[data-st='continuation'] .row-item__art img { filter: grayscale(.4) brightness(.8) saturate(.85); }
+/* Kein Ausgrauen mehr in „Geschaut" (Yunus 29.08.2026: „macht das Ganze noch
+   monotoner als es schon ist"). Die Liste ist ohnehin eine Reihe kleiner
+   Bilder — nimmt man denen die Farbe, bleibt eine graue Wand. Der Zustand
+   „Fortsetzung folgt" steht als Text daneben, das reicht. */
 .row-item[data-st='completed'] .row-item__art { box-shadow: var(--sh-1), inset 0 0 0 1px rgba(46,204,113,.32); }
 .row-item__body { flex: 1; min-width: 0; }
 /* Titel dürfen auf dem Handy NICHT abgeschnitten werden (Yunus 28.08.2026) —
@@ -985,8 +992,11 @@ h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.028em; line-height: 1.15; 
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden; overflow-wrap: anywhere;
 }
-/* „Noch zu schauen · Staffel X" — im selben blauen, ringlosen Stil wie
-   „Fortsetzung folgt". */
+/* Zwei verschiedene Aussagen, zwei Farben (Yunus 29.08.2026):
+   – „Staffel 2 offen" / „Film offen": liegt BEREIT, du könntest jetzt
+     schauen → Rot, dieselbe Farbe wie „Noch zu schauen".
+   – „Fortsetzung folgt": gibt es noch gar nicht → Blau, wie bisher.
+   Vorher trugen beide Blau und waren nicht unterscheidbar. */
 .row-item__pending {
   margin-top: 6px;
   display: inline-flex; align-items: center; gap: 5px; max-width: 100%;
@@ -996,6 +1006,8 @@ h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.028em; line-height: 1.15; 
 }
 .row-item__pending span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row-item__pending svg { color: var(--bl); flex: none; }
+.row-item__pending--open { color: #ff96b4; }
+.row-item__pending--open svg { color: #d21f57; }
 .row-item__end { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 @media (hover: hover) and (pointer: fine) {
   .row-item[data-st='continuation']:hover .row-item__art img { filter: grayscale(0) brightness(1) saturate(1); }
@@ -1140,10 +1152,32 @@ h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.028em; line-height: 1.15; 
 }
 /* Eigenständige Kacheln statt Hairline-Raster: `auto-fit` lässt keine leere
    „ausgegraute" Restzelle stehen — angebrochene Reihen füllen die Breite. */
-.factgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 8px; }
-.factgrid > div { background: var(--s1); padding: 11px 13px; border-radius: var(--r-2); box-shadow: inset 0 0 0 1px var(--line); }
-.factgrid dt { font-size: 11.5px; color: var(--ink-3); }
-.factgrid dd { margin-top: 2px; font-size: 14px; font-weight: 600; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; }
+/* Ersetzt das frühere Kachel-Raster (lauter gleich große, ausgefüllte Boxen —
+   genau das „sieht nach Vorlage aus"-Muster, Yunus 29.08.2026 per
+   Screenshot). Jetzt eine einzelne Liste mit Trennlinien statt vieler
+   einzelner Flächen: Label links, Wert rechts, wie eine native
+   Info-/Einstellungsliste — nicht wie ein Bento-Raster aus Stat-Karten. */
+.factlist {
+  border-radius: var(--r-3);
+  background: var(--s1);
+  box-shadow: inset 0 0 0 1px var(--line);
+  padding: 0 14px;
+}
+.factlist > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+}
+.factlist > div + div { border-top: 1px solid var(--hair); }
+.factlist dt { font-size: 13.5px; font-weight: 500; color: var(--ink-2); letter-spacing: -0.005em; }
+.factlist dd {
+  font-size: 14px; font-weight: 650; letter-spacing: -0.012em;
+  color: var(--ink);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
 
 /* Löschen: kleiner Papierkorb oben rechts im Banner (spiegelt den Zurück-
    Knopf), statt der großen Zeile ganz unten (Yunus 28.08.2026). */
@@ -1406,3 +1440,174 @@ h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.028em; line-height: 1.15; 
   .btn, .iconbtn, .chip, .pip, .seg__thumb, .switch::after { transition-duration: .01ms !important; }
 }
 
+
+/* ================================================ Rangliste umsortieren ==
+   Eigenes Ziehen statt HTML5-Drag&Drop (das auf Touch gar nicht griff).
+   Die Zeilen selbst bewegen sich nur per `transform` — kein Layout wird
+   angefasst, deshalb bleibt es auch auf dem Handy flüssig. */
+.droplist { position: relative; }
+.droprow {
+  /* Ausweichbewegung der nicht gezogenen Zeilen. Die gezogene Zeile bekommt
+     ihre Verschiebung direkt vom Skript und überschreibt das hier. */
+  transition: transform 240ms cubic-bezier(.2, .8, .2, 1);
+  will-change: transform;
+}
+.droprow.is-lifted {
+  position: relative;
+  z-index: 4;
+  /* KEIN `transition: none` mehr hier — das blockierte früher auch das
+     Einrasten beim Loslassen (siehe unten), weil die Zeile die ganze Zeit
+     „angehoben" bleibt. Während des aktiven Ziehens folgt die Zeile ohnehin
+     1:1 dem Finger per eigenem Inline-Stil (siehe LibraryPage.tsx); beim
+     Loslassen übernimmt genau DIESE Regel (240ms) das Einrasten in die
+     Lücke — das war vorher der Bruch, der sich „irgendwie komisch" anfühlte. */
+}
+/* Angehoben: die Zeile löst sich sichtbar vom Stapel — etwas größer, mit
+   Schlagschatten und leichtem Farbring in der Kategoriefarbe. */
+.droprow.is-lifted .row-item {
+  transform: scale(1.025);
+  box-shadow:
+    0 18px 40px -14px rgba(0, 0, 0, .75),
+    0 2px 0 rgba(255, 255, 255, .06),
+    inset 0 0 0 1.5px color-mix(in srgb, var(--tone, var(--sl)) 55%, transparent);
+  transition: transform 180ms var(--e-spring), box-shadow 180ms var(--e-out);
+}
+.droprow.is-lifted .row-item__grip { color: var(--ink); cursor: grabbing; }
+/* Die Lücke, in die eingerastet wird, atmet leicht mit. */
+.droplist:has(.is-lifted) .droprow:not(.is-lifted) .row-item { opacity: .82; }
+.row-item.is-dragging { user-select: none; }
+.row-item__grip {
+  display: grid;
+  place-items: center;
+  width: 34px; height: 34px;
+  margin: -6px -6px -6px 0;
+  color: var(--ink-3);
+  cursor: grab;
+  /* Ohne das reißt der Browser die Geste als Scrollen an sich. */
+  touch-action: none;
+  transition: color var(--t-fast) var(--e-out);
+}
+.row-item__grip:hover { color: var(--ink-2); }
+
+@media (prefers-reduced-motion: reduce) {
+  .droprow { transition: none; }
+  .droprow.is-lifted .row-item { transform: none; transition: none; }
+}
+
+/* ============================================= Kippschalter mit Text =====
+   Ersetzt den früheren „Abgeschlossen"-Knopf: keine Knopffläche mehr, nur
+   ein kleiner Schalter mit Beschriftung daneben (Yunus 29.08.2026). */
+.toggleline {
+  display: inline-flex; align-items: center; gap: 10px;
+  min-height: 44px;
+  padding: 0 2px;
+  background: none;
+  color: var(--ink-3);
+  font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em;
+  transition: color var(--t-fast) var(--e-out);
+}
+.toggleline:hover { color: var(--ink-2); }
+.toggleline.is-on { color: var(--tone-t, var(--cy-t)); }
+.toggleline__track {
+  position: relative;
+  width: 34px; height: 20px;
+  border-radius: var(--r-pill);
+  background: var(--s3);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.5);
+  transition: background var(--t-mid) var(--e-out);
+  flex: none;
+}
+.toggleline.is-on .toggleline__track { background: var(--tone, var(--cy)); }
+.toggleline__knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #e8ecf6;
+  box-shadow: 0 1px 3px rgba(0,0,0,.45);
+  transition: transform var(--t-mid) var(--e-spring);
+}
+.toggleline.is-on .toggleline__knob { transform: translateX(14px); }
+.toggleline__count { color: var(--ink-3); font-size: 12px; font-weight: 500; }
+
+/* ================================================ Franchise-Auswahl ======
+   Beim Hinzufügen: EINE Fläche, darin Abschnitte — nicht drei getrennte
+   Kästen. Trennung passiert über eine Haarlinie und eine kleine
+   Beschriftung, nicht über eigene Rahmen (Yunus 29.08.2026). */
+.pick { margin-top: 2px; }
+.pick__sec + .pick__sec {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hair);
+}
+.pick__lab {
+  display: flex; align-items: center; gap: 7px;
+  margin: 0 0 10px;
+  font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.pick__lab svg { color: var(--tone-t, var(--cy-t)); flex: none; }
+.pick__n {
+  margin-left: 2px;
+  color: var(--ink-3); font-weight: 500; letter-spacing: 0;
+}
+.pick__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 10px;
+}
+@media (min-width: 560px) { .pick__grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); } }
+
+.pick__tile { cursor: pointer; }
+.pick__tile.is-locked { cursor: default; }
+.pick__art {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--r-2);
+  overflow: hidden;
+  background: var(--s1);
+  box-shadow: var(--sh-1), inset 0 0 0 1px var(--line);
+  transition: box-shadow 160ms var(--e-out), transform 160ms var(--e-out), opacity 160ms var(--e-out);
+}
+.pick__art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pick__tile:active .pick__art { transform: scale(.965); }
+.pick__tile.is-sel .pick__art {
+  box-shadow:
+    inset 0 0 0 2px var(--pick-sel, var(--cy)),
+    0 0 0 3px color-mix(in srgb, var(--pick-sel, var(--cy)) 22%, transparent);
+}
+/* „Noch nicht erschienen" und „abgeschnitten" ohne Graustufen: nur ruhiger
+   und mit Schildchen. Ein entfärbtes Poster liest sich wie ein Fehler. */
+.pick__tile.is-soon .pick__art { opacity: .72; }
+.pick__tile.is-excluded .pick__art {
+  opacity: .4;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.pick__cap {
+  position: absolute; inset: auto 0 0;
+  padding: 20px 7px 6px;
+  background: linear-gradient(to top, rgba(6,8,14,.95), transparent);
+  font-size: 10.5px; font-weight: 650; letter-spacing: -0.01em;
+  color: var(--ink-2);
+}
+.pick__tile.is-sel .pick__cap { color: var(--ink); }
+.pick__flag {
+  position: absolute; left: 5px; top: 5px;
+  padding: 2px 6px;
+  border-radius: var(--r-pill);
+  background: rgba(8,10,16,.88);
+  font-size: 9px; font-weight: 700; letter-spacing: .01em;
+  color: var(--ink-3);
+}
+.pick__tile.is-excluded .pick__flag { color: var(--pk-t); }
+.pick__acts { position: absolute; right: 5px; top: 5px; display: flex; gap: 4px; }
+.pick__cut,
+.pick__check {
+  display: grid; place-items: center;
+  width: 21px; height: 21px;
+  border-radius: 7px;
+  transition: background 140ms var(--e-out), color 140ms var(--e-out);
+}
+.pick__cut { background: rgba(8,10,16,.72); color: var(--ink-3); }
+.pick__cut:hover { color: var(--ink); }
+.pick__cut.is-on { background: var(--cy); color: #04241f; }
+.pick__check { background: var(--cy); color: #04241f; }
