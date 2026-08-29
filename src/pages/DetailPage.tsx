@@ -485,7 +485,7 @@ export function DetailPage() {
       {fb && (
         <>
           <SectionHead title={t('franchiseBox')} tone={tone} />
-          <dl className="factgrid">
+          <dl className="factlist">
             {fb.score != null && (
               <div>
                 <dt>{t('fbScore')}</dt>
@@ -527,7 +527,7 @@ export function DetailPage() {
       )}
 
       <SectionHead title={t('thisSeasonBox')} tone={tone} />
-      <dl className="factgrid">
+      <dl className="factlist">
         {facts.map(([k, v]) => (
           <div key={k}>
             <dt>{k}</dt>
@@ -566,10 +566,13 @@ export function DetailPage() {
           cancelLabel={t('cancel')}
           danger
           onConfirm={() => {
+            // Bewusst KEIN navigate() mehr (Yunus 29.08.2026: „nicht direkt
+            // von der Seite geschmissen werden"). Der Eintrag verschwindet,
+            // die Seite bleibt — sie zeigt danach einfach den
+            // Nicht-in-Bibliothek-Zustand desselben Animes.
             removeEntry(entry.rootId);
             push(t('removedToast'));
             setConfirmDelete(false);
-            navigate('/bibliothek');
           }}
           onCancel={() => setConfirmDelete(false)}
         />

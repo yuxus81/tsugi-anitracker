@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { fetchDetail, fetchDiscover, fetchGenre } from '@/api/anilist';
+import { fetchDetail, fetchDiscover, fetchGenre, prefetchGenres } from '@/api/anilist';
 import { bestTitle, cover, formatLabel, seasonLabel, type MediaCard } from '@/api/types';
 import { PosterRow, PosterRowSkeleton } from '@/components/PosterCard';
 import { ErrorBox, PageTitle, SectionHead, Btn } from '@/components/ui';
@@ -23,6 +23,34 @@ const GENRES = [
   'Supernatural',
 ] as const;
 type Genre = (typeof GENRES)[number];
+
+/**
+ * Jedes Genre bekommt seinen eigenen Farbton statt des einen Rots für alles.
+ * Bewusst gedeckte, dunklere Töne (kein Neon): der aktive Reiter soll sich
+ * abheben, ohne die Poster darunter zu überstrahlen. Mehrere Genres dürfen
+ * sich einen Ton teilen — verwandte Stimmungen liegen dann sichtbar beieinander.
+ * `hue` = Farbe des Unterstrichs, `text` = die hellere Schriftvariante.
+ */
+const GENRE_TONE: Record<Genre, { hue: string; text: string }> = {
+  Action: { hue: '#c04a4a', text: '#e39a9a' },
+  Adventure: { hue: '#c08340', text: '#e0b483' },
+  Comedy: { hue: '#bfa03c', text: '#ddc87f' },
+  Drama: { hue: '#a85a7a', text: '#d99cb4' },
+  Fantasy: { hue: '#7a5fbe', text: '#b5a4e0' },
+  Mystery: { hue: '#4f6f9e', text: '#9db6d8' },
+  Psychological: { hue: '#6b6f8f', text: '#adb2cb' },
+  Romance: { hue: '#b85c86', text: '#e2a0bd' },
+  'Sci-Fi': { hue: '#3f8f96', text: '#8ecbd0' },
+  'Slice of Life': { hue: '#5b9a6b', text: '#a3d4b0' },
+  Sports: { hue: '#4a86b8', text: '#9cc4e2' },
+  Supernatural: { hue: '#8a5aa8', text: '#c3a0d8' },
+};
+
+/** Ton als CSS-Variablen an den Reiter reichen — `.fchip` liest sie schon. */
+function toneStyle(g: Genre): CSSProperties {
+  const { hue, text } = GENRE_TONE[g];
+  return { '--tone': hue, '--tone-t': text } as CSSProperties;
+}
 
 const GENRE_LABEL_DE: Record<Genre, string> = {
   Action: 'Action',
@@ -117,6 +145,11 @@ export function DiscoverPage() {
     queryKey: ['discover-genre', genre],
     enabled: genre !== null,
     queryFn: ({ signal }) => fetchGenre(genre!, signal),
+    // BEWUSST kein `keepPreviousData`: das ließ beim Filterwechsel das alte
+    // Genre ausgegraut stehen, was sich wie ein Hänger anfühlte (Yunus
+    // 29.08.2026). Ein kurzes Skelett macht sofort klar „lädt", statt
+    // zweideutig auszusehen. Dank Cache + Vorauslesen beim Berühren des
+    // Reiters (`prefetchGenres`) ist das Skelett meist nur ein Wimpernschlag.
   });
 
   // Auch die Genre-Filter bekommen einen großen „Gesprächsthema"-Anime oben:
@@ -148,8 +181,13 @@ export function DiscoverPage() {
             key={g}
             type="button"
             className={`fchip${genre === g ? ' is-on' : ''}`}
-            data-st="nextup"
+            style={toneStyle(g)}
             aria-pressed={genre === g}
+            // Berührung/Zeiger auf dem Reiter heißt fast immer: gleich Klick.
+            // Bis dahin liegt die Antwort schon im Cache.
+            onPointerEnter={() => prefetchGenres([g])}
+            onTouchStart={() => prefetchGenres([g])}
+            onFocus={() => prefetchGenres([g])}
             onClick={() => setGenre((cur) => (cur === g ? null : g))}
           >
             {genreLabel(g)}

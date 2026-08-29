@@ -259,6 +259,10 @@ const DICT = {
   pendingSeasonOne: { de: 'Staffel {n} offen', en: 'Season {n} left' },
   pendingSeasonRange: { de: 'Staffel {a}–{b} offen', en: 'Seasons {a}–{b} left' },
   pendingSequel: { de: 'Fortsetzung folgt', en: 'Sequel coming' },
+  // Ein offener Kinofilm ist keine offene Staffel — er bekommt seinen eigenen
+  // Satz, statt als „Staffel 4" durchzugehen (Yunus 29.08.2026).
+  pendingMovieOne: { de: 'Film offen', en: 'Movie left' },
+  pendingMovieMany: { de: '{n} Filme offen', en: '{n} movies left' },
   waitingForSequel: { de: 'Datum unbekannt', en: 'Release date unknown' },
   announcedFor: { de: 'Angekündigt · {when}', en: 'Announced · {when}' },
   dragToReorder: { de: 'Ziehen zum Umsortieren', en: 'Drag to reorder' },
